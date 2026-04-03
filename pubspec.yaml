@@ -1,0 +1,102 @@
+name: bottles_up_vendor
+description: "Bottles Up Vendor - Event Organizer App"
+publish_to: 'none'
+version: 1.0.3+3
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  
+  # Navigation
+  go_router: ^14.6.2
+  
+  # Supabase
+  supabase_flutter: ^2.8.0
+  
+  # UI & Theming
+  flex_color_scheme: ^8.3.0
+  google_fonts: ^8.0.0
+  ionicons: ^0.2.2
+  
+  # Utilities
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  
+  # Forms & Validation
+  reactive_forms: ^17.0.1
+  
+  # Image handling
+  image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
+  
+  # Animations
+  animations: ^2.0.11
+  
+  # Responsive Design
+  responsive_builder: ^0.7.1
+  
+  # URL handling
+  url_launcher: ^6.3.1
+  flutter_svg: ^2.0.13
+
+  # QR Code
+  qr_code_scanner: ^1.0.1
+  qr_flutter: ^4.1.0
+
+  # Charts & Analytics
+  fl_chart: ^0.69.0
+
+  # File handling
+  csv: ^6.0.0
+  file_picker: ^8.1.2
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  
+  # Code Generation
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.3
+  riverpod_lint: ^2.3.13
+  
+  # Launcher Icon
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+
+
+# Flutter Launcher Icons configuration
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/launcher_icon.jpeg"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/images/launcher_icon.jpeg"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  windows:
+    generate: true
+    image_path: "assets/images/launcher_icon.jpeg"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/images/launcher_icon.jpeg"

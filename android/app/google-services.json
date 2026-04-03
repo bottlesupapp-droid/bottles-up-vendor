@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "49598092873",
+    "project_id": "bottles-up-2d907",
+    "storage_bucket": "bottles-up-2d907.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:49598092873:android:79117c048d6aac8a219198",
+        "android_client_info": {
+          "package_name": "com.example.bottles_up"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "49598092873-fqsc03bll5odsbb9gm1pu3olq0eqo4v8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bottles_up",
+            "certificate_hash": "56dc0641c0312ace304948fc01e4ecd68838418e"
+          }
+        },
+        {
+          "client_id": "49598092873-gd7ub200b96m6glv3v3de4a54f0u20co.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bottles_up",
+            "certificate_hash": "66708e099ea220ef1103958b7a495c9f0e97513a"
+          }
+        },
+        {
+          "client_id": "49598092873-vvb9c9oqi02o1e94iodqv9t5c8oeghp9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZ2q3qOtW4DMRMdOf4eSeTWN16rIXma5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "49598092873-vvb9c9oqi02o1e94iodqv9t5c8oeghp9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "49598092873-rbfegi7rkrris67teh69u7s62up2ct7h.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bottlesUp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:49598092873:android:9f3f18e6cf9e345c219198",
+        "android_client_info": {
+          "package_name": "com.bottlesup.vendor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "49598092873-vvb9c9oqi02o1e94iodqv9t5c8oeghp9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZ2q3qOtW4DMRMdOf4eSeTWN16rIXma5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "49598092873-vvb9c9oqi02o1e94iodqv9t5c8oeghp9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "49598092873-rbfegi7rkrris67teh69u7s62up2ct7h.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bottlesUp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 

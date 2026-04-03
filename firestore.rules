@@ -1,0 +1,138 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isVendor() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/vendors/$(request.auth.uid));
+    }
+    
+    function getVendor() {
+      return get(/databases/$(database)/documents/vendors/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isVendor() && getVendor().role == 'admin';
+    }
+    
+    function hasPermission(permission) {
+      return isVendor() && (
+        getVendor().role == 'admin' || 
+        permission in getVendor().permissions
+      );
+    }
+    
+    // Vendors collection - vendor user profiles
+    match /vendors/{vendorId} {
+      allow read: if isAuthenticated() && isOwner(vendorId);
+      allow write: if isAuthenticated() && isOwner(vendorId);
+    }
+    
+    // Events collection - events managed by vendors
+    match /events/{eventId} {
+      allow read: if true;  // Public read access for events
+      allow create: if isVendor() && hasPermission('write_events');
+      allow update, delete: if isVendor() && (
+        hasPermission('write_events') &&
+        resource.data.vendorId == request.auth.uid
+      );
+      
+      // Bottles subcollection within events
+      match /bottles/{bottleId} {
+        allow read: if true;
+        allow write: if isVendor() && hasPermission('write_inventory');
+      }
+      
+      // Orders/Bookings subcollection within events
+      match /bookings/{bookingId} {
+        allow read: if isAuthenticated() && (
+          isOwner(resource.data.userId) || 
+          (isVendor() && resource.data.vendorId == request.auth.uid)
+        );
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated() && (
+          isOwner(resource.data.userId) || 
+          (isVendor() && resource.data.vendorId == request.auth.uid)
+        );
+        allow delete: if isVendor() && resource.data.vendorId == request.auth.uid;
+      }
+    }
+    
+    // Inventory collection - bottles managed by vendors
+    match /inventory/{bottleId} {
+      allow read: if true;  // Public read access
+      allow create: if isVendor() && hasPermission('write_inventory');
+      allow update, delete: if isVendor() && (
+        hasPermission('write_inventory') &&
+        resource.data.vendorId == request.auth.uid
+      );
+    }
+    
+    // Bookings collection - top-level bookings
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        (isVendor() && resource.data.vendorId == request.auth.uid)
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        (isVendor() && hasPermission('write_bookings') && resource.data.vendorId == request.auth.uid)
+      );
+      allow delete: if isVendor() && hasPermission('write_bookings') && resource.data.vendorId == request.auth.uid;
+    }
+    
+    // Promotions collection
+    match /promotions/{promotionId} {
+      allow read: if true;
+      allow create: if isVendor() && hasPermission('write_events');
+      allow update, delete: if isVendor() && (
+        hasPermission('write_events') &&
+        resource.data.vendorId == request.auth.uid
+      );
+    } 
+    
+    // Users collection - app users (customers)
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (
+        isOwner(userId) || 
+        isVendor()  // Vendors can read user data for bookings
+      );
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Categories collections
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /bottleCategories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Mixers collection
+    match /mixers/{mixerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Analytics and reports (vendor-specific)
+    match /analytics/{vendorId} {
+      allow read, write: if isVendor() && isOwner(vendorId);
+      
+      match /reports/{reportId} {
+        allow read, write: if isVendor() && isOwner(vendorId);
+      }
+    }
+  }
+}
