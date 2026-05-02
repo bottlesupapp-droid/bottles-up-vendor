@@ -7,6 +7,7 @@ import '../../../shared/models/user_model.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../../auth/services/supabase_auth_service.dart';
 import '../providers/profile_stats_provider.dart';
+import 'subscription_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -326,6 +327,19 @@ class ProfileScreen extends ConsumerWidget {
                         subtitle: 'View your booking history',
                         onTap: () {
                           context.push('/bookings');
+                        },
+                      ),
+                      _buildActionTile(
+                        context,
+                        icon: Ionicons.card_outline,
+                        title: 'Subscription',
+                        subtitle: 'Manage your plan & billing',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SubscriptionScreen(),
+                            ),
+                          );
                         },
                       ),
                     ],

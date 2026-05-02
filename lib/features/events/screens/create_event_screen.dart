@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:responsive_builder/responsive_builder.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../../../shared/models/event.dart';
 import '../../../shared/services/event_service.dart';
@@ -25,6 +27,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _maxCapacityController = TextEditingController();
   final _termsController = TextEditingController();
   final _specialInstructionsController = TextEditingController();
+  final _dressCodeController = TextEditingController();
+  final _minAgeController = TextEditingController();
 
   String? _selectedCategoryId;
   String? _selectedClubId;
@@ -38,6 +42,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   List<Map<String, dynamic>> _zones = [];
   bool _isLoading = false;
   bool _isSubmitting = false;
+  File? _flyerImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -53,6 +59,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     _maxCapacityController.dispose();
     _termsController.dispose();
     _specialInstructionsController.dispose();
+    _dressCodeController.dispose();
+    _minAgeController.dispose();
     super.dispose();
   }
 
@@ -126,6 +134,29 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     }
   }
 
+  Future<void> _pickFlyerImage() async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _flyerImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _createEvent() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -133,25 +164,46 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
     try {
       final eventService = EventService();
-      
+
+      // Upload flyer image first if selected
+      List<String>? flyerUrls;
+      if (_flyerImage != null) {
+        final bytes = await _flyerImage!.readAsBytes();
+        final fileName = 'flyer_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        // Create a temporary event ID for upload
+        final tempEventId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+        flyerUrls = await eventService.uploadEventImages(
+          tempEventId,
+          [bytes],
+          [fileName],
+        );
+      }
+
       final request = CreateEventRequest(
         name: _nameController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty 
-            ? null 
+        description: _descriptionController.text.trim().isEmpty
+            ? null
             : _descriptionController.text.trim(),
         categoryId: _selectedCategoryId,
         clubId: _selectedClubId,
         zoneId: _selectedZoneId!,
+        images: flyerUrls,
         eventDate: _selectedDate,
         startTime: '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
         endTime: '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
         ticketPrice: double.parse(_ticketPriceController.text),
         maxCapacity: int.parse(_maxCapacityController.text),
-        termsAndConditions: _termsController.text.trim().isEmpty 
-            ? null 
+        dressCode: _dressCodeController.text.trim().isEmpty
+            ? null
+            : _dressCodeController.text.trim(),
+        minAge: _minAgeController.text.trim().isEmpty
+            ? null
+            : int.parse(_minAgeController.text.trim()),
+        termsAndConditions: _termsController.text.trim().isEmpty
+            ? null
             : _termsController.text.trim(),
-        specialInstructions: _specialInstructionsController.text.trim().isEmpty 
-            ? null 
+        specialInstructions: _specialInstructionsController.text.trim().isEmpty
+            ? null
             : _specialInstructionsController.text.trim(),
       );
 
@@ -425,6 +477,53 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
                       SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
 
+                      // Flyer Upload Section
+                      _buildSectionHeader(context, 'Event Flyer', Ionicons.image_outline),
+                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
+
+                      ResponsiveContainer(
+                        decoration: AppTheme.darkCardDecoration,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_flyerImage != null) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(
+                                  _flyerImage!,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
+                            ],
+                            OutlinedButton.icon(
+                              onPressed: _pickFlyerImage,
+                              icon: Icon(_flyerImage == null ? Ionicons.cloud_upload_outline : Ionicons.refresh_outline),
+                              label: Text(_flyerImage == null ? 'Upload Flyer' : 'Change Flyer'),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 48),
+                              ),
+                            ),
+                            if (_flyerImage != null) ...[
+                              SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.5),
+                              TextButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _flyerImage = null;
+                                  });
+                                },
+                                icon: const Icon(Ionicons.trash_outline, color: Colors.red),
+                                label: const Text('Remove Flyer', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
+
                       // Additional Information Section
                       _buildSectionHeader(context, 'Additional Information', Ionicons.document_text_outline),
                       SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
@@ -433,6 +532,28 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                         decoration: AppTheme.darkCardDecoration,
                         child: Column(
                           children: [
+                            _buildTextField(
+                              controller: _dressCodeController,
+                              label: 'Dress Code',
+                              hint: 'e.g., Smart Casual, Formal, etc.',
+                            ),
+                            SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
+                            _buildTextField(
+                              controller: _minAgeController,
+                              label: 'Minimum Age',
+                              hint: '18',
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value != null && value.trim().isNotEmpty) {
+                                  final age = int.tryParse(value);
+                                  if (age == null || age < 0 || age > 100) {
+                                    return 'Please enter a valid age between 0-100';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
                             _buildTextField(
                               controller: _termsController,
                               label: 'Terms & Conditions',

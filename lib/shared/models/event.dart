@@ -15,6 +15,8 @@ class Event {
   final int currentBookings;
   final bool isFeatured;
   final String status;
+  final String? dressCode;
+  final int? minAge;
   final String? termsAndConditions;
   final String? specialInstructions;
   final bool isActive;
@@ -38,6 +40,8 @@ class Event {
     this.currentBookings = 0,
     this.isFeatured = false,
     this.status = 'upcoming',
+    this.dressCode,
+    this.minAge,
     this.termsAndConditions,
     this.specialInstructions,
     this.isActive = true,
@@ -63,6 +67,8 @@ class Event {
       currentBookings: json['current_bookings'] ?? 0,
       isFeatured: json['is_featured'] ?? false,
       status: json['status'] ?? 'upcoming',
+      dressCode: json['dress_code'],
+      minAge: json['min_age'],
       termsAndConditions: json['terms_and_conditions'],
       specialInstructions: json['special_instructions'],
       isActive: json['is_active'] ?? true,
@@ -89,6 +95,8 @@ class Event {
       'current_bookings': currentBookings,
       'is_featured': isFeatured,
       'status': status,
+      'dress_code': dressCode,
+      'min_age': minAge,
       'terms_and_conditions': termsAndConditions,
       'special_instructions': specialInstructions,
       'is_active': isActive,
@@ -110,8 +118,11 @@ class CreateEventRequest {
   final String endTime;
   final double ticketPrice;
   final int maxCapacity;
+  final String? dressCode;
+  final int? minAge;
   final String? termsAndConditions;
   final String? specialInstructions;
+  final String status;
 
   CreateEventRequest({
     required this.name,
@@ -125,8 +136,11 @@ class CreateEventRequest {
     required this.endTime,
     required this.ticketPrice,
     required this.maxCapacity,
+    this.dressCode,
+    this.minAge,
     this.termsAndConditions,
     this.specialInstructions,
+    this.status = 'active',
   });
 
   Map<String, dynamic> toJson() {
@@ -142,8 +156,11 @@ class CreateEventRequest {
       'end_time': endTime,
       'ticket_price': ticketPrice,
       'max_capacity': maxCapacity,
+      'dress_code': dressCode,
+      'min_age': minAge,
       'terms_and_conditions': termsAndConditions,
       'special_instructions': specialInstructions,
+      'status': status,
     };
   }
 }
@@ -163,6 +180,8 @@ class UpdateEventRequest {
   final int? currentBookings;
   final bool? isFeatured;
   final String? status;
+  final String? dressCode;
+  final int? minAge;
   final String? termsAndConditions;
   final String? specialInstructions;
   final bool? isActive;
@@ -182,6 +201,8 @@ class UpdateEventRequest {
     this.currentBookings,
     this.isFeatured,
     this.status,
+    this.dressCode,
+    this.minAge,
     this.termsAndConditions,
     this.specialInstructions,
     this.isActive,
@@ -203,6 +224,8 @@ class UpdateEventRequest {
     if (currentBookings != null) json['current_bookings'] = currentBookings;
     if (isFeatured != null) json['is_featured'] = isFeatured;
     if (status != null) json['status'] = status;
+    if (dressCode != null) json['dress_code'] = dressCode;
+    if (minAge != null) json['min_age'] = minAge;
     if (termsAndConditions != null) json['terms_and_conditions'] = termsAndConditions;
     if (specialInstructions != null) json['special_instructions'] = specialInstructions;
     if (isActive != null) json['is_active'] = isActive;

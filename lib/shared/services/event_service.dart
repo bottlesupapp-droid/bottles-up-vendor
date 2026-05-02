@@ -191,11 +191,15 @@ class EventService {
       // Apply tab filter
       final now = DateTime.now().toIso8601String();
       if (tab == 'active') {
-        query = query.eq('status', 'published').gte('event_date', now);
+        // Show all future events that are not drafts, completed, or cancelled
+        query = query
+            .not('status', 'in', '(draft,completed,cancelled)')
+            .gte('event_date', now);
       } else if (tab == 'draft') {
         query = query.eq('status', 'draft');
       } else if (tab == 'past') {
-        query = query.inFilter('status', ['completed', 'cancelled']);
+        // Show completed and cancelled events, OR past events regardless of status
+        query = query.or('status.in.(completed,cancelled),event_date.lt.$now');
       }
 
       // Apply additional filters if filter object has properties

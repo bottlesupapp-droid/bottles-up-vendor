@@ -5,7 +5,7 @@
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
     <application
-        android:label="bottles_up_vendor"
+        android:label="Vendor"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

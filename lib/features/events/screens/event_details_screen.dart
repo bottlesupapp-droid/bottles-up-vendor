@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
 
+import 'manage_ticket_tiers_screen.dart';
+import 'manage_lineup_screen.dart';
+
 class EventDetailsScreen extends ConsumerWidget {
   final String eventId;
 
@@ -141,6 +144,48 @@ class EventDetailsScreen extends ConsumerWidget {
               color: Colors.purple,
               onTap: () {
                 context.push('/events/$eventId/releases');
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // Ticket Tiers Button (NEW)
+            _buildActionCard(
+              context,
+              icon: Ionicons.pricetags_outline,
+              title: 'Ticket Tiers',
+              subtitle: 'Manage ticket pricing & capacity',
+              color: Colors.teal,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ManageTicketTiersScreen(
+                      eventId: eventId,
+                      eventName: 'Event', // TODO: Pass actual event name
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // DJ/Lineup Management Button (NEW)
+            _buildActionCard(
+              context,
+              icon: Ionicons.musical_notes_outline,
+              title: 'Team & Lineup',
+              subtitle: 'Manage DJs, security & staff',
+              color: Colors.purple,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ManageLineupScreen(
+                      eventId: eventId,
+                      eventName: 'Event', // TODO: Pass actual event name
+                    ),
+                  ),
+                );
               },
             ),
 

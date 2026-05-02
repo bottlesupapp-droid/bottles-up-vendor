@@ -38,6 +38,7 @@ class EventModel {
   final String? invitationCode;
   final String? city;
   final String? dressCode;
+  final int? minAge;
   final String? termsAndConditions;
   final String? specialInstructions;
   final String userId; // Event organizer
@@ -73,6 +74,7 @@ class EventModel {
     this.invitationCode,
     this.city,
     this.dressCode,
+    this.minAge,
     this.termsAndConditions,
     this.specialInstructions,
     required this.userId,
@@ -110,6 +112,7 @@ class EventModel {
       invitationCode: json['invitation_code'] as String?,
       city: json['city'] as String?,
       dressCode: json['dress_code'] as String?,
+      minAge: json['min_age'] as int?,
       termsAndConditions: json['terms_and_conditions'] as String?,
       specialInstructions: json['special_instructions'] as String?,
       userId: json['user_id'] as String,
@@ -157,6 +160,7 @@ class EventModel {
       'invitation_code': invitationCode,
       'city': city,
       'dress_code': dressCode,
+      'min_age': minAge,
       'terms_and_conditions': termsAndConditions,
       'special_instructions': specialInstructions,
       'user_id': userId,
@@ -209,6 +213,7 @@ class EventModel {
     String? invitationCode,
     String? city,
     String? dressCode,
+    int? minAge,
     String? termsAndConditions,
     String? specialInstructions,
     String? userId,
@@ -244,6 +249,7 @@ class EventModel {
       invitationCode: invitationCode ?? this.invitationCode,
       city: city ?? this.city,
       dressCode: dressCode ?? this.dressCode,
+      minAge: minAge ?? this.minAge,
       termsAndConditions: termsAndConditions ?? this.termsAndConditions,
       specialInstructions: specialInstructions ?? this.specialInstructions,
       userId: userId ?? this.userId,
