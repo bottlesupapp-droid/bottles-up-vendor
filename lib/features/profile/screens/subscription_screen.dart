@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/subscription_plan.dart';
@@ -138,20 +139,156 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     if (confirmed != true) return;
 
     try {
-      // TODO: Implement actual Stripe integration
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Stripe integration required to upgrade to ${plan.name}. '
-            'This is a placeholder.',
-          ),
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    } catch (e) {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Show loading indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upgrade: $e')),
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12),
+                Text('Redirecting to checkout...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      // Create Stripe checkout session
+      final checkoutUrl = await _subscriptionService.createCheckoutSession(
+        vendorId: userId,
+        planId: plan.id,
+        successUrl: 'myapp://subscription/success',
+        cancelUrl: 'myapp://subscription/cancel',
+      );
+
+      // Launch checkout URL in browser
+      // Note: You'll need to add url_launcher package for this
+      // For now, show the URL to the user
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Complete Payment'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Please complete your payment in the browser window that will open.',
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Redirecting to: $checkoutUrl',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final uri = Uri.parse(checkoutUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not open checkout page'),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Open Checkout'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create checkout: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _manageSubscription() async {
+    if (_currentSubscription == null ||
+        _currentSubscription!.stripeCustomerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No active Stripe subscription found'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 12),
+              Text('Opening billing portal...'),
+            ],
+          ),
+          duration: Duration(seconds: 30),
+        ),
+      );
+
+      // Get portal URL
+      final portalUrl = await _subscriptionService.createPortalSession(
+        stripeCustomerId: _currentSubscription!.stripeCustomerId!,
+        returnUrl: 'myapp://subscription',
+      );
+
+      // Launch portal
+      final uri = Uri.parse(portalUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+        }
+      } else {
+        throw Exception('Could not open billing portal');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open portal: $e')),
         );
       }
     }
@@ -400,6 +537,23 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                         ],
                       ],
                     ),
+
+                    // Manage Billing Button (for Stripe customers)
+                    if (_currentSubscription != null &&
+                        _currentSubscription!.stripeCustomerId != null) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _manageSubscription,
+                          icon: const Icon(Ionicons.card_outline),
+                          label: const Text('Manage Billing'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 32),
 

@@ -24,9 +24,11 @@ import '../../features/clubs/screens/create_club_screen.dart';
 import '../../features/events/screens/events_list_screen.dart';
 import '../../features/events/screens/event_details_screen.dart';
 import '../../features/events/screens/create_event_screen.dart';
+import '../../features/events/screens/edit_event_screen.dart';
 import '../../features/events/screens/inventory_screen.dart';
 import '../../features/events/screens/bookings_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/earnings/screens/earnings_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/business_details_screen.dart';
 import '../../features/profile/screens/security_screen.dart';
@@ -350,6 +352,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ),
                 routes: [
                   GoRoute(
+                    path: 'edit',
+                    name: 'editEvent',
+                    pageBuilder: (context, state) => CupertinoTransitionPage(
+                      name: 'editEvent',
+                      child: EditEventScreen(
+                        eventId: state.pathParameters['eventId']!,
+                      ),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'scanner',
                     name: 'qrScanner',
                     pageBuilder: (context, state) => CupertinoTransitionPage(
@@ -414,18 +426,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
 
-          // Earnings (placeholder)
+          // Earnings
           GoRoute(
             path: AppRoutes.earnings,
             name: 'earnings',
             pageBuilder: (context, state) => CupertinoTransitionPage(
               name: 'earnings',
-              child: const Scaffold(
-                appBar: null,
-                body: Center(
-                  child: Text('Earnings - Coming Soon'),
-                ),
-              ),
+              child: const EarningsScreen(),
             ),
           ),
 

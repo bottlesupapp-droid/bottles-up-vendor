@@ -250,32 +250,70 @@ class SubscriptionService {
     }
   }
 
-  /// Placeholder for Stripe integration
-  /// In production, this would create a Stripe Checkout session
+  /// Create Stripe checkout session via Supabase Edge Function
   Future<String> createCheckoutSession({
     required String vendorId,
     required String planId,
     required String successUrl,
     required String cancelUrl,
   }) async {
-    // TODO: Implement Stripe Checkout Session creation
-    // This is a placeholder that returns a mock URL
-    throw UnimplementedError(
-      'Stripe integration not implemented yet. '
-      'You need to integrate Stripe Checkout API here.',
-    );
+    try {
+      // Call Supabase Edge Function for Stripe checkout
+      final response = await _supabase.functions.invoke(
+        'create-checkout-session',
+        body: {
+          'vendor_id': vendorId,
+          'plan_id': planId,
+          'success_url': successUrl,
+          'cancel_url': cancelUrl,
+        },
+      );
+
+      if (response.status != 200) {
+        throw Exception('Failed to create checkout session: ${response.data}');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+
+      if (data['error'] != null) {
+        throw Exception(data['error']);
+      }
+
+      return data['url'] as String;
+    } catch (e) {
+      throw Exception('Stripe checkout failed: $e');
+    }
   }
 
-  /// Placeholder for Stripe portal session
+  /// Create Stripe customer portal session via Supabase Edge Function
   /// This allows vendors to manage their subscription via Stripe's customer portal
   Future<String> createPortalSession({
     required String stripeCustomerId,
     required String returnUrl,
   }) async {
-    // TODO: Implement Stripe Customer Portal session creation
-    throw UnimplementedError(
-      'Stripe Customer Portal not implemented yet. '
-      'You need to integrate Stripe Customer Portal API here.',
-    );
+    try {
+      // Call Supabase Edge Function for Stripe portal
+      final response = await _supabase.functions.invoke(
+        'create-portal-session',
+        body: {
+          'customer_id': stripeCustomerId,
+          'return_url': returnUrl,
+        },
+      );
+
+      if (response.status != 200) {
+        throw Exception('Failed to create portal session: ${response.data}');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+
+      if (data['error'] != null) {
+        throw Exception(data['error']);
+      }
+
+      return data['url'] as String;
+    } catch (e) {
+      throw Exception('Stripe portal failed: $e');
+    }
   }
 }
