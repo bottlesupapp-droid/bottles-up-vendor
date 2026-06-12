@@ -19,3 +19,15 @@ ios/build/
 **/*.perspectivev3
 **/xcuserdata/
 **/dgph
+
+# Environment variables and secrets
+env.json
+*.env
+firebase.env
+.env
+.env.*
+!env.example.json
+!firebase.env.example
+
+# Supabase local state
+supabase/.temp/
