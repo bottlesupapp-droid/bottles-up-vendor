@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../providers/supabase_auth_provider.dart';
 
 class VenueOnboardingScreen extends ConsumerStatefulWidget {
@@ -15,6 +16,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
   final _pageController = PageController();
   int _currentStep = 0;
   final int _totalSteps = 7;
+  bool _isSubmitting = false;
 
   // Step 1: Venue Basic Info
   final _venueNameController = TextEditingController();
@@ -43,7 +45,6 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
   final _zoneNameController = TextEditingController();
 
   // Step 5: Bottle Menu (optional)
-  final List<Map<String, dynamic>> _bottles = [];
 
   // Step 6: Payout Setup
   bool _payoutConnected = false;
@@ -142,16 +143,131 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-    // TODO: Save all venue data to Supabase
+    // Prevent double submission
+    if (_isSubmitting) return;
 
-    final currentUser = ref.read(currentVendorUserProvider);
-    if (currentUser != null) {
+    setState(() => _isSubmitting = true);
+
+    try {
+      final currentUser = ref.read(currentVendorUserProvider);
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      final supabase = SupabaseConfig.client;
+
+      // Step 1: Save venue basic details to venue_details table
+      final venueResponse = await supabase.from('venue_details').insert({
+        'vendor_id': currentUser.id,
+        'venue_name': _venueNameController.text.trim(),
+        'address_line1': _addressLine1Controller.text.trim(),
+        'address_line2': _addressLine2Controller.text.trim().isEmpty ? null : _addressLine2Controller.text.trim(),
+        'city': _cityController.text.trim(),
+        'state': _stateController.text.trim(),
+        'zip_code': _zipController.text.trim(),
+        'capacity': int.tryParse(_capacityController.text.trim()) ?? 0,
+        'description': _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+      }).select().single();
+
+      final venueId = venueResponse['id'] as String;
+
+      // Step 2: Save gallery photos to venue_gallery table
+      if (_galleryPhotos.isNotEmpty) {
+        final galleryData = _galleryPhotos.asMap().entries.map((entry) => {
+          'vendor_id': currentUser.id,
+          'venue_id': venueId,
+          'image_url': entry.value,
+          'storage_path': 'gallery/${currentUser.id}/${entry.key}',
+          'display_order': entry.key,
+          'is_primary': entry.key == 0,
+        }).toList();
+
+        await supabase.from('venue_gallery').insert(galleryData);
+      }
+
+      // Step 3: Save legal documents to venue_documents table
+      final documentsToSave = _legalDocuments.entries
+          .where((entry) => entry.value != null)
+          .map((entry) => {
+                'vendor_id': currentUser.id,
+                'venue_id': venueId,
+                'document_type': _getDocumentType(entry.key),
+                'document_url': entry.value,
+                'storage_path': 'documents/${currentUser.id}/${entry.key}',
+              })
+          .toList();
+
+      if (documentsToSave.isNotEmpty) {
+        await supabase.from('venue_documents').insert(documentsToSave);
+      }
+
+      // Step 4: Save zones/areas to venue_zones table
+      if (_zones.isNotEmpty) {
+        final zonesData = _zones.asMap().entries.map((entry) => {
+          'vendor_id': currentUser.id,
+          'venue_id': venueId,
+          'zone_name': entry.value['name'],
+          'capacity': entry.value['tables'] ?? 0,
+          'display_order': entry.key,
+        }).toList();
+
+        await supabase.from('venue_zones').insert(zonesData);
+      }
+
+      // Update vendor onboarding_completed flag
       final updatedUser = currentUser.copyWith(onboardingCompleted: true);
       await ref.read(supabaseAuthProvider.notifier).updateVendorUser(updatedUser);
-    }
 
-    if (mounted) {
-      context.go('/dashboard');
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Venue profile completed successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to dashboard
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        // Show error dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to save venue profile: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  String _getDocumentType(String key) {
+    switch (key) {
+      case 'barLicense':
+        return 'bar_license';
+      case 'fssai':
+        return 'fssai';
+      case 'gst':
+        return 'gst';
+      case 'fireNoc':
+        return 'fire_noc';
+      case 'shopAct':
+        return 'shop_act';
+      default:
+        return key;
     }
   }
 
@@ -216,7 +332,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                 Expanded(
                   flex: _currentStep == 0 ? 1 : 1,
                   child: ElevatedButton(
-                    onPressed: _canProceed()
+                    onPressed: (_canProceed() && !_isSubmitting)
                         ? (_currentStep == _totalSteps - 1
                             ? _completeOnboarding
                             : _nextStep)
@@ -224,13 +340,22 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: Text(
-                      _currentStep == _totalSteps - 1 ? 'Complete' : 'Next',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            _currentStep == _totalSteps - 1 ? 'Complete' : 'Next',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ],

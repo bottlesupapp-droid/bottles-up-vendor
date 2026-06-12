@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/config/supabase_config.dart';
+import '../../../../shared/services/stripe_service.dart';
 import '../../providers/supabase_auth_provider.dart';
 
 class OrganizerOnboardingScreen extends ConsumerStatefulWidget {
@@ -15,6 +18,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
   final _pageController = PageController();
   int _currentStep = 0;
   final int _totalSteps = 4;
+  bool _isSubmitting = false;
 
   // Step 1: Organization Info
   final _organizationNameController = TextEditingController();
@@ -29,6 +33,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
 
   // Step 4: Payout Setup
   bool _payoutConnected = false;
+  bool _isConnectingStripe = false;
 
   @override
   void dispose() {
@@ -87,17 +92,136 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
     }
   }
 
-  Future<void> _completeOnboarding() async {
-    // TODO: Save organizer data to Supabase
+  Future<void> _connectStripeAccount() async {
+    setState(() => _isConnectingStripe = true);
 
-    final currentUser = ref.read(currentVendorUserProvider);
-    if (currentUser != null) {
-      final updatedUser = currentUser.copyWith(onboardingCompleted: true);
-      await ref.read(supabaseAuthProvider.notifier).updateVendorUser(updatedUser);
+    try {
+      final currentUser = ref.read(currentVendorUserProvider);
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      final stripeService = StripeService();
+
+      // Call create-connect-account edge function
+      final result = await stripeService.createConnectAccount(
+        vendorId: currentUser.id,
+        email: currentUser.email,
+        businessName: _organizationNameController.text.trim(),
+        returnUrl: 'https://app.bottlesup.com/onboarding-complete',
+        refreshUrl: 'https://app.bottlesup.com/onboarding',
+      );
+
+      // Launch Stripe onboarding URL
+      final url = Uri.parse(result['url'] as String);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+
+        if (mounted) {
+          setState(() => _payoutConnected = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Complete Stripe onboarding in your browser'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Could not launch Stripe onboarding');
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to connect Stripe: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isConnectingStripe = false);
+      }
     }
+  }
 
-    if (mounted) {
-      context.go('/dashboard');
+  Future<void> _completeOnboarding() async {
+    // Prevent double submission
+    if (_isSubmitting) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final currentUser = ref.read(currentVendorUserProvider);
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      final supabase = SupabaseConfig.client;
+
+      // Save organizer profile to organizer_profiles table
+      await supabase.from('organizer_profiles').upsert({
+        'vendor_id': currentUser.id,
+        'organization_name': _organizationNameController.text.trim(),
+        'description': _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+        'instagram_handle': _instagramController.text.trim(),
+        'facebook_page': _facebookController.text.trim().isEmpty ? null : _facebookController.text.trim(),
+      });
+
+      // Update vendor logo_url if logo was uploaded
+      if (_logoUrl != null) {
+        await supabase.from('vendors').update({
+          'logo_url': _logoUrl,
+        }).eq('id', currentUser.id);
+      }
+
+      // Update vendor onboarding_completed flag
+      final updatedUser = currentUser.copyWith(
+        onboardingCompleted: true,
+        logoUrl: _logoUrl ?? currentUser.logoUrl,
+      );
+      await ref.read(supabaseAuthProvider.notifier).updateVendorUser(updatedUser);
+
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile completed successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to dashboard
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        // Show error dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to save profile: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
@@ -159,7 +283,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                 Expanded(
                   flex: _currentStep == 0 ? 1 : 1,
                   child: ElevatedButton(
-                    onPressed: _canProceed()
+                    onPressed: (_canProceed() && !_isSubmitting)
                         ? (_currentStep == _totalSteps - 1
                             ? _completeOnboarding
                             : _nextStep)
@@ -167,13 +291,22 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: Text(
-                      _currentStep == _totalSteps - 1 ? 'Complete' : 'Next',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            _currentStep == _totalSteps - 1 ? 'Complete' : 'Next',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -489,14 +622,15 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement Stripe Connect
-                        setState(() {
-                          _payoutConnected = true;
-                        });
-                      },
-                      icon: const Icon(Icons.link),
-                      label: const Text('Connect Stripe'),
+                      onPressed: _isConnectingStripe ? null : _connectStripeAccount,
+                      icon: _isConnectingStripe
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.link),
+                      label: Text(_isConnectingStripe ? 'Connecting...' : 'Connect Stripe'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
