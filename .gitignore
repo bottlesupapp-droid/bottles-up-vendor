@@ -29,5 +29,8 @@ firebase.env
 !env.example.json
 !firebase.env.example
 
+# Generated Xcode config (contains secrets)
+ios/Flutter/DartDefines.xcconfig
+
 # Supabase local state
 supabase/.temp/
