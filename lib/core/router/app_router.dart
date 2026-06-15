@@ -23,7 +23,7 @@ import '../../features/clubs/screens/club_details_screen.dart';
 import '../../features/clubs/screens/create_club_screen.dart';
 import '../../features/events/screens/events_list_screen.dart';
 import '../../features/events/screens/event_details_screen.dart';
-import '../../features/events/screens/create_event_screen.dart';
+import '../../features/events/screens/simple_create_event_screen.dart';
 import '../../features/events/screens/edit_event_screen.dart';
 import '../../features/events/screens/inventory_screen.dart';
 import '../../features/events/screens/bookings_screen.dart';
@@ -164,8 +164,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           }
         }
 
-        // If onboarding completed and on auth/onboarding route, redirect to dashboard
-        if (vendorUser.onboardingCompleted && (isAuthRoute || isOnboardingRoute)) {
+        // If onboarding completed and on auth route, redirect to dashboard
+        // NOTE: Allow access to onboarding routes even after completion (e.g., creating additional venues)
+        if (vendorUser.onboardingCompleted && isAuthRoute) {
           return AppRoutes.dashboard;
         }
       }
@@ -338,7 +339,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'createEvent',
                 pageBuilder: (context, state) => CupertinoTransitionPage(
                   name: 'createEvent',
-                  child: const CreateEventScreen(),
+                  child: const SimpleCreateEventScreen(),
                 ),
               ),
               GoRoute(

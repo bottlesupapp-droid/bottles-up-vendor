@@ -15,52 +15,71 @@ class VenueOnboardingScreen extends ConsumerStatefulWidget {
 class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
   final _pageController = PageController();
   int _currentStep = 0;
-  final int _totalSteps = 7;
+  final int _totalSteps = 4; // Basic Info -> Details -> Photos -> Review
   bool _isSubmitting = false;
 
   // Step 1: Venue Basic Info
   final _venueNameController = TextEditingController();
-  final _addressLine1Controller = TextEditingController();
-  final _addressLine2Controller = TextEditingController();
+  final _streetController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _zipController = TextEditingController();
+  final _countryController = TextEditingController(text: 'Canada');
   final _capacityController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  // Step 2: Gallery Photos
-  final List<String> _galleryPhotos = [];
+  // Step 2: Venue Details
+  final _venueTypeController = TextEditingController();
+  final _minAgeController = TextEditingController(text: '19');
+  final _dressCodeController = TextEditingController();
+  final _vipBoothsController = TextEditingController();
+  final _sideTablesController = TextEditingController();
 
-  // Step 3: Legal Documents
-  final Map<String, String?> _legalDocuments = {
-    'barLicense': null,
-    'fssai': null,
-    'gst': null,
-    'fireNoc': null,
-    'shopAct': null,
+  // Music genres (checkboxes)
+  final Map<String, bool> _musicGenres = {
+    'Afrobeats': false,
+    'Amapiano': false,
+    'Hip-Hop': false,
+    'Dancehall': false,
+    'R&B': false,
+    'Open Format': false,
+    'EDM': false,
+    'Reggae': false,
   };
 
-  // Step 4: Floorplan (simplified - just zones/areas)
-  final List<Map<String, dynamic>> _zones = [];
-  final _zoneNameController = TextEditingController();
+  // Amenities (checkboxes)
+  final Map<String, bool> _amenities = {
+    'VIP Booth Reservations': false,
+    'Reserved Table Service': false,
+    'Bottle Service': false,
+    'Birthday Celebrations': false,
+    'Private Events': false,
+    'Professional DJ Entertainment': false,
+    'Group Reservations': false,
+    'Guest List Access': false,
+  };
 
-  // Step 5: Bottle Menu (optional)
-
-  // Step 6: Payout Setup
-  bool _payoutConnected = false;
+  // Step 3: Gallery Photos
+  String? _bannerPhoto;
+  final List<String> _menuPhotos = [];
+  final List<String> _interiorPhotos = [];
 
   @override
   void dispose() {
     _pageController.dispose();
     _venueNameController.dispose();
-    _addressLine1Controller.dispose();
-    _addressLine2Controller.dispose();
+    _streetController.dispose();
     _cityController.dispose();
     _stateController.dispose();
     _zipController.dispose();
+    _countryController.dispose();
     _capacityController.dispose();
     _descriptionController.dispose();
-    _zoneNameController.dispose();
+    _venueTypeController.dispose();
+    _minAgeController.dispose();
+    _dressCodeController.dispose();
+    _vipBoothsController.dispose();
+    _sideTablesController.dispose();
     super.dispose();
   }
 
@@ -90,56 +109,54 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
     switch (_currentStep) {
       case 0: // Venue Basic Info
         return _venueNameController.text.isNotEmpty &&
-            _addressLine1Controller.text.isNotEmpty &&
+            _streetController.text.isNotEmpty &&
             _cityController.text.isNotEmpty &&
             _stateController.text.isNotEmpty &&
-            _zipController.text.isNotEmpty &&
             _capacityController.text.isNotEmpty;
-      case 1: // Gallery - minimum 5 photos
-        return _galleryPhotos.length >= 5;
-      case 2: // Legal Documents - at least bar license
-        return _legalDocuments['barLicense'] != null;
-      case 3: // Floorplan - optional
-      case 4: // Bottle Menu - optional
-      case 5: // Payout - optional for now
+      case 1: // Venue Details - all optional
         return true;
-      case 6: // Review
+      case 2: // Photos - at least banner required
+        return _bannerPhoto != null;
+      case 3: // Review
         return true;
       default:
         return false;
     }
   }
 
-  Future<void> _pickGalleryPhoto() async {
+  Future<void> _pickPhoto(String category) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null && mounted) {
+      // For now, use placeholder URL - in production you'd upload to Supabase Storage
       setState(() {
-        _galleryPhotos.add('https://placehold.co/600x400/png?text=Photo+${_galleryPhotos.length + 1}');
+        switch (category) {
+          case 'banner':
+            _bannerPhoto = 'https://placehold.co/1200x400/png?text=Venue+Banner';
+            break;
+          case 'menu':
+            _menuPhotos.add('https://placehold.co/600x800/png?text=Menu+${_menuPhotos.length + 1}');
+            break;
+          case 'interior':
+            _interiorPhotos.add('https://placehold.co/800x600/png?text=Interior+${_interiorPhotos.length + 1}');
+            break;
+        }
       });
     }
   }
 
-  Future<void> _pickDocument(String documentType) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null && mounted) {
-      setState(() {
-        _legalDocuments[documentType] = 'document_${documentType}_uploaded.pdf';
-      });
-    }
+  List<String> _getSelectedGenres() {
+    return _musicGenres.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
   }
 
-  void _addZone() {
-    if (_zoneNameController.text.isNotEmpty) {
-      setState(() {
-        _zones.add({
-          'name': _zoneNameController.text,
-          'tables': 0,
-        });
-        _zoneNameController.clear();
-      });
-    }
+  List<String> _getSelectedAmenities() {
+    return _amenities.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
   }
 
   Future<void> _completeOnboarding() async {
@@ -156,63 +173,70 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
 
       final supabase = SupabaseConfig.client;
 
-      // Step 1: Save venue basic details to venue_details table
-      final venueResponse = await supabase.from('venue_details').insert({
-        'vendor_id': currentUser.id,
-        'venue_name': _venueNameController.text.trim(),
-        'address_line1': _addressLine1Controller.text.trim(),
-        'address_line2': _addressLine2Controller.text.trim().isEmpty ? null : _addressLine2Controller.text.trim(),
+      // Build address JSON object matching Venue model
+      final address = {
+        'street': _streetController.text.trim(),
         'city': _cityController.text.trim(),
         'state': _stateController.text.trim(),
-        'zip_code': _zipController.text.trim(),
+        'zip': _zipController.text.trim().isEmpty ? null : _zipController.text.trim(),
+        'country': _countryController.text.trim(),
+      };
+
+      // Combine all photos in gallery
+      final allPhotos = <String>[];
+      if (_bannerPhoto != null) allPhotos.add(_bannerPhoto!);
+      allPhotos.addAll(_menuPhotos);
+      allPhotos.addAll(_interiorPhotos);
+
+      // Build social links with music and amenities
+      final socialLinks = <String, dynamic>{};
+
+      final selectedGenres = _getSelectedGenres();
+      if (selectedGenres.isNotEmpty) {
+        socialLinks['music_genres'] = selectedGenres;
+      }
+
+      final selectedAmenities = _getSelectedAmenities();
+      if (selectedAmenities.isNotEmpty) {
+        socialLinks['amenities'] = selectedAmenities;
+      }
+
+      if (_venueTypeController.text.isNotEmpty) {
+        socialLinks['venue_type'] = _venueTypeController.text.trim();
+      }
+
+      if (_minAgeController.text.isNotEmpty) {
+        socialLinks['min_age'] = int.tryParse(_minAgeController.text.trim());
+      }
+
+      if (_dressCodeController.text.isNotEmpty) {
+        socialLinks['dress_code'] = _dressCodeController.text.trim();
+      }
+
+      if (_vipBoothsController.text.isNotEmpty) {
+        socialLinks['vip_booths'] = int.tryParse(_vipBoothsController.text.trim());
+      }
+
+      if (_sideTablesController.text.isNotEmpty) {
+        socialLinks['side_tables'] = int.tryParse(_sideTablesController.text.trim());
+      }
+
+      // Save to clubs table (the main venues table)
+      final clubData = {
+        'owner_id': currentUser.id,
+        'name': _venueNameController.text.trim(),
+        'address': address,
+        'gallery': allPhotos,
+        'license_documents': [], // Empty for now - can add documents later
         'capacity': int.tryParse(_capacityController.text.trim()) ?? 0,
-        'description': _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
-      }).select().single();
+        'status': 'pending', // Pending approval
+        'social_links': socialLinks.isEmpty ? null : socialLinks,
+        'floorplan_data': _descriptionController.text.isEmpty
+            ? null
+            : {'description': _descriptionController.text.trim()},
+      };
 
-      final venueId = venueResponse['id'] as String;
-
-      // Step 2: Save gallery photos to venue_gallery table
-      if (_galleryPhotos.isNotEmpty) {
-        final galleryData = _galleryPhotos.asMap().entries.map((entry) => {
-          'vendor_id': currentUser.id,
-          'venue_id': venueId,
-          'image_url': entry.value,
-          'storage_path': 'gallery/${currentUser.id}/${entry.key}',
-          'display_order': entry.key,
-          'is_primary': entry.key == 0,
-        }).toList();
-
-        await supabase.from('venue_gallery').insert(galleryData);
-      }
-
-      // Step 3: Save legal documents to venue_documents table
-      final documentsToSave = _legalDocuments.entries
-          .where((entry) => entry.value != null)
-          .map((entry) => {
-                'vendor_id': currentUser.id,
-                'venue_id': venueId,
-                'document_type': _getDocumentType(entry.key),
-                'document_url': entry.value,
-                'storage_path': 'documents/${currentUser.id}/${entry.key}',
-              })
-          .toList();
-
-      if (documentsToSave.isNotEmpty) {
-        await supabase.from('venue_documents').insert(documentsToSave);
-      }
-
-      // Step 4: Save zones/areas to venue_zones table
-      if (_zones.isNotEmpty) {
-        final zonesData = _zones.asMap().entries.map((entry) => {
-          'vendor_id': currentUser.id,
-          'venue_id': venueId,
-          'zone_name': entry.value['name'],
-          'capacity': entry.value['tables'] ?? 0,
-          'display_order': entry.key,
-        }).toList();
-
-        await supabase.from('venue_zones').insert(zonesData);
-      }
+      await supabase.from('clubs').insert(clubData);
 
       // Update vendor onboarding_completed flag
       final updatedUser = currentUser.copyWith(onboardingCompleted: true);
@@ -222,7 +246,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Venue profile completed successfully!'),
+            content: Text('Venue created successfully! Pending approval.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -237,7 +261,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to save venue profile: ${e.toString()}'),
+            content: Text('Failed to create venue: ${e.toString()}'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -251,23 +275,6 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
       if (mounted) {
         setState(() => _isSubmitting = false);
       }
-    }
-  }
-
-  String _getDocumentType(String key) {
-    switch (key) {
-      case 'barLicense':
-        return 'bar_license';
-      case 'fssai':
-        return 'fssai';
-      case 'gst':
-        return 'gst';
-      case 'fireNoc':
-        return 'fire_noc';
-      case 'shopAct':
-        return 'shop_act';
-      default:
-        return key;
     }
   }
 
@@ -303,11 +310,8 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildBasicInfoStep(theme),
-                _buildGalleryStep(theme),
-                _buildLegalDocumentsStep(theme),
-                _buildFloorplanStep(theme),
-                _buildBottleMenuStep(theme),
-                _buildPayoutStep(theme),
+                _buildDetailsStep(theme),
+                _buildPhotosStep(theme),
                 _buildReviewStep(theme),
               ],
             ),
@@ -373,14 +377,14 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Venue Basic Information',
+            'Venue Information',
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Tell us about your venue',
+            'Basic details about your venue',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -392,7 +396,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
             controller: _venueNameController,
             decoration: InputDecoration(
               labelText: 'Venue Name *',
-              hintText: 'e.g., The Grand Club',
+              hintText: 'e.g., XnO Lounge',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -403,12 +407,12 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
 
           const SizedBox(height: 16),
 
-          // Address Line 1
+          // Street Address
           TextFormField(
-            controller: _addressLine1Controller,
+            controller: _streetController,
             decoration: InputDecoration(
-              labelText: 'Address Line 1 *',
-              hintText: 'Street address',
+              labelText: 'Street Address *',
+              hintText: 'e.g., 1800 Davenport Road',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -419,22 +423,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
 
           const SizedBox(height: 16),
 
-          // Address Line 2
-          TextFormField(
-            controller: _addressLine2Controller,
-            decoration: InputDecoration(
-              labelText: 'Address Line 2 (Optional)',
-              hintText: 'Apartment, suite, etc.',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // City, State, ZIP in Row
+          // City and State
           Row(
             children: [
               Expanded(
@@ -443,6 +432,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                   controller: _cityController,
                   decoration: InputDecoration(
                     labelText: 'City *',
+                    hintText: 'e.g., Toronto',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -456,7 +446,8 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                 child: TextFormField(
                   controller: _stateController,
                   decoration: InputDecoration(
-                    labelText: 'State *',
+                    labelText: 'State/Province *',
+                    hintText: 'e.g., Ontario',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -465,19 +456,39 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                   onChanged: (_) => setState(() {}),
                 ),
               ),
-              const SizedBox(width: 12),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ZIP and Country
+          Row(
+            children: [
               Expanded(
                 child: TextFormField(
                   controller: _zipController,
                   decoration: InputDecoration(
-                    labelText: 'ZIP *',
+                    labelText: 'Postal Code',
+                    hintText: 'Optional',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
                   ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => setState(() {}),
+                  keyboardType: TextInputType.text,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _countryController,
+                  decoration: InputDecoration(
+                    labelText: 'Country *',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                  ),
                 ),
               ),
             ],
@@ -489,8 +500,8 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
           TextFormField(
             controller: _capacityController,
             decoration: InputDecoration(
-              labelText: 'Capacity *',
-              hintText: 'Maximum number of guests',
+              labelText: 'Maximum Capacity *',
+              hintText: 'e.g., 250',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -507,68 +518,230 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
           TextFormField(
             controller: _descriptionController,
             decoration: InputDecoration(
-              labelText: 'Description (Optional)',
-              hintText: 'Brief description of your venue',
+              labelText: 'About the Venue (Optional)',
+              hintText: 'Describe your venue, atmosphere, and what makes it unique',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
+              alignLabelWithHint: true,
             ),
-            maxLines: 4,
+            maxLines: 5,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGalleryStep(ThemeData theme) {
+  Widget _buildDetailsStep(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Upload Venue Gallery',
+            'Venue Details',
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Add at least 5-6 photos (interior, exterior, bar, dance floor)',
+            'Additional information (all optional)',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 24),
 
-          // Photos Grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1,
+          // Venue Type
+          TextFormField(
+            controller: _venueTypeController,
+            decoration: InputDecoration(
+              labelText: 'Venue Type',
+              hintText: 'e.g., Lounge & Nightclub',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
             ),
-            itemCount: _galleryPhotos.length + 1,
-            itemBuilder: (context, index) {
-              if (index == _galleryPhotos.length) {
-                // Add Photo Button
-                return GestureDetector(
-                  onTap: _pickGalleryPhoto,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Min Age and VIP Booths
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _minAgeController,
+                  decoration: InputDecoration(
+                    labelText: 'Minimum Age',
+                    hintText: '19',
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.dividerColor,
-                        style: BorderStyle.solid,
-                        width: 2,
-                      ),
                     ),
-                    child: Column(
+                    filled: true,
+                    suffixText: '+',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _vipBoothsController,
+                  decoration: InputDecoration(
+                    labelText: 'VIP Booths',
+                    hintText: 'e.g., 11',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Side Tables
+          TextFormField(
+            controller: _sideTablesController,
+            decoration: InputDecoration(
+              labelText: 'Reserved Side Tables',
+              hintText: 'e.g., 7',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+            ),
+            keyboardType: TextInputType.number,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Dress Code
+          TextFormField(
+            controller: _dressCodeController,
+            decoration: InputDecoration(
+              labelText: 'Dress Code',
+              hintText: 'e.g., Fashionable nightlife attire',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+            ),
+            maxLines: 2,
+          ),
+
+          const SizedBox(height: 24),
+
+          // Music Genres
+          Text(
+            'Music Genres',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _musicGenres.keys.map((genre) {
+              return FilterChip(
+                label: Text(genre),
+                selected: _musicGenres[genre]!,
+                onSelected: (selected) {
+                  setState(() {
+                    _musicGenres[genre] = selected;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Amenities
+          Text(
+            'Amenities & Services',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _amenities.keys.map((amenity) {
+              return FilterChip(
+                label: Text(amenity),
+                selected: _amenities[amenity]!,
+                onSelected: (selected) {
+                  setState(() {
+                    _amenities[amenity] = selected;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotosStep(ThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Venue Photos',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Upload banner, menus, and interior photos',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Banner Photo (Required)
+          Text(
+            'Club Banner *',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => _pickPhoto('banner'),
+            child: Container(
+              height: 150,
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _bannerPhoto != null ? Colors.green : theme.dividerColor,
+                  width: 2,
+                ),
+                image: _bannerPhoto != null
+                    ? DecorationImage(
+                        image: NetworkImage(_bannerPhoto!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: _bannerPhoto == null
+                  ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
@@ -578,298 +751,190 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Add Photo',
+                          'Upload Banner Photo',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                );
-              }
-
-              // Photo Card
-              return Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: NetworkImage(_galleryPhotos[index]),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _galleryPhotos.removeAt(index);
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // Photo Count
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _galleryPhotos.length >= 5
-                  ? Colors.green.withOpacity(0.1)
-                  : Colors.orange.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  _galleryPhotos.length >= 5
-                      ? Icons.check_circle
-                      : Icons.info,
-                  color: _galleryPhotos.length >= 5
-                      ? Colors.green
-                      : Colors.orange,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _galleryPhotos.length >= 5
-                        ? '${_galleryPhotos.length} photos uploaded ✓'
-                        : 'Upload at least ${5 - _galleryPhotos.length} more photos',
-                    style: TextStyle(
-                      color: _galleryPhotos.length >= 5
-                          ? Colors.green
-                          : Colors.orange,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+                    )
+                  : null,
             ),
           ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildLegalDocumentsStep(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Upload Legal Documents',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Upload business and compliance documents',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
           const SizedBox(height: 24),
 
-          // Document Upload Cards
-          _buildDocumentCard(theme, 'Bar License', 'barLicense', required: true),
-          const SizedBox(height: 12),
-          _buildDocumentCard(theme, 'FSSAI Certificate', 'fssai'),
-          const SizedBox(height: 12),
-          _buildDocumentCard(theme, 'GST Registration', 'gst'),
-          const SizedBox(height: 12),
-          _buildDocumentCard(theme, 'Fire NOC', 'fireNoc'),
-          const SizedBox(height: 12),
-          _buildDocumentCard(theme, 'Shop Act License', 'shopAct'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocumentCard(ThemeData theme, String title, String key, {bool required = false}) {
-    final isUploaded = _legalDocuments[key] != null;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isUploaded ? Colors.green : theme.dividerColor,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isUploaded ? Icons.check_circle : Icons.upload_file,
-            color: isUploaded ? Colors.green : theme.colorScheme.primary,
-            size: 32,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title + (required ? ' *' : ''),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (isUploaded)
-                  Text(
-                    'Uploaded ✓',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.green,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => _pickDocument(key),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isUploaded ? Colors.green : null,
-            ),
-            child: Text(isUploaded ? 'Replace' : 'Upload'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloorplanStep(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Floorplan Setup (Optional)',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add zones/areas like VIP, General, Dance Floor',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Add Zone Input
+          // Menu Photos (Optional)
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _zoneNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Zone Name',
-                    hintText: 'e.g., VIP Section',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                  ),
+              Text(
+                'Menu Photos',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: _addZone,
+              TextButton.icon(
+                onPressed: () => _pickPhoto('menu'),
                 icon: const Icon(Icons.add),
-                label: const Text('Add'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                ),
+                label: const Text('Add Menu'),
               ),
             ],
           ),
-
-          const SizedBox(height: 24),
-
-          // Zones List
-          if (_zones.isEmpty)
+          const SizedBox(height: 8),
+          if (_menuPhotos.isEmpty)
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.dividerColor),
               ),
               child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.layers_outlined,
-                      size: 48,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No zones added yet',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'You can skip this step',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'No menu photos added (optional)',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             )
           else
-            ListView.builder(
+            GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _zones.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: _menuPhotos.length,
               itemBuilder: (context, index) {
-                final zone = _zones[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const Icon(Icons.location_on),
-                    title: Text(zone['name']),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        setState(() {
-                          _zones.removeAt(index);
-                        });
-                      },
+                return Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(
+                          image: NetworkImage(_menuPhotos[index]),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _menuPhotos.removeAt(index);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+          const SizedBox(height: 24),
+
+          // Interior Photos (Optional)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Club Interior',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => _pickPhoto('interior'),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Photo'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_interiorPhotos.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.dividerColor),
+              ),
+              child: Center(
+                child: Text(
+                  'No interior photos added (optional)',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
+                ),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.33,
+              ),
+              itemCount: _interiorPhotos.length,
+              itemBuilder: (context, index) {
+                return Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(
+                          image: NetworkImage(_interiorPhotos[index]),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _interiorPhotos.removeAt(index);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -878,167 +943,18 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
     );
   }
 
-  Widget _buildBottleMenuStep(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Bottle Menu (Optional)',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add bottles to your menu - you can do this later',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Skip Message
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.wine_bar,
-                    size: 48,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'You can add bottles later',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Skip this step and add your bottle menu from the dashboard',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPayoutStep(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Payout Setup',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Connect with Stripe for payments',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Stripe Connect Card
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _payoutConnected ? Colors.green : theme.dividerColor,
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  _payoutConnected ? Icons.check_circle : Icons.account_balance,
-                  size: 64,
-                  color: _payoutConnected ? Colors.green : theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _payoutConnected ? 'Stripe Connected' : 'Connect with Stripe',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _payoutConnected
-                      ? 'Your account is ready to receive payments'
-                      : 'Connect your bank account to receive payments',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                if (!_payoutConnected)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement Stripe Connect
-                        setState(() {
-                          _payoutConnected = true;
-                        });
-                      },
-                      icon: const Icon(Icons.link),
-                      label: const Text('Connect Stripe'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Skip Option
-          if (!_payoutConnected)
-            Center(
-              child: TextButton(
-                onPressed: _nextStep,
-                child: const Text('Skip for now'),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildReviewStep(ThemeData theme) {
+    final selectedGenres = _getSelectedGenres();
+    final selectedAmenities = _getSelectedAmenities();
+    final totalPhotos = (_bannerPhoto != null ? 1 : 0) + _menuPhotos.length + _interiorPhotos.length;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Review & Complete',
+            'Review & Submit',
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -1058,50 +974,45 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
             'Venue Information',
             [
               'Name: ${_venueNameController.text}',
-              'Address: ${_addressLine1Controller.text}, ${_cityController.text}',
-              'Capacity: ${_capacityController.text}',
+              'Address: ${_streetController.text}, ${_cityController.text}, ${_stateController.text}',
+              'Country: ${_countryController.text}',
+              'Capacity: ${_capacityController.text} guests',
+              if (_venueTypeController.text.isNotEmpty) 'Type: ${_venueTypeController.text}',
+              if (_minAgeController.text.isNotEmpty) 'Age: ${_minAgeController.text}+',
             ],
           ),
 
           const SizedBox(height: 16),
 
-          // Gallery Summary
-          _buildSummaryCard(
-            theme,
-            'Gallery',
-            ['${_galleryPhotos.length} photos uploaded'],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Documents Summary
-          _buildSummaryCard(
-            theme,
-            'Legal Documents',
-            _legalDocuments.entries
-                .where((e) => e.value != null)
-                .map((e) => '✓ ${_getDocumentTitle(e.key)}')
-                .toList(),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Optional Items
-          if (_zones.isNotEmpty)
+          // Details Summary
+          if (_vipBoothsController.text.isNotEmpty ||
+              _sideTablesController.text.isNotEmpty ||
+              selectedGenres.isNotEmpty ||
+              selectedAmenities.isNotEmpty) ...[
             _buildSummaryCard(
               theme,
-              'Zones',
-              _zones.map((z) => '• ${z['name']}').toList(),
+              'Details',
+              [
+                if (_vipBoothsController.text.isNotEmpty) 'VIP Booths: ${_vipBoothsController.text}',
+                if (_sideTablesController.text.isNotEmpty) 'Side Tables: ${_sideTablesController.text}',
+                if (selectedGenres.isNotEmpty) 'Music: ${selectedGenres.join(", ")}',
+                if (selectedAmenities.isNotEmpty) 'Amenities: ${selectedAmenities.length} selected',
+              ],
             ),
-
-          if (_payoutConnected) ...[
             const SizedBox(height: 16),
-            _buildSummaryCard(
-              theme,
-              'Payout',
-              ['✓ Stripe Connected'],
-            ),
           ],
+
+          // Photos Summary
+          _buildSummaryCard(
+            theme,
+            'Photos',
+            [
+              '$totalPhotos photo(s) uploaded',
+              if (_bannerPhoto != null) '✓ Banner photo',
+              if (_menuPhotos.isNotEmpty) '✓ ${_menuPhotos.length} menu photo(s)',
+              if (_interiorPhotos.isNotEmpty) '✓ ${_interiorPhotos.length} interior photo(s)',
+            ],
+          ),
 
           const SizedBox(height: 24),
 
@@ -1109,7 +1020,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -1117,12 +1028,24 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                 const Icon(Icons.check_circle, color: Colors.green, size: 32),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    'Your venue is ready to go live!',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ready to submit!',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Your venue will be pending approval',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1163,22 +1086,5 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
         ],
       ),
     );
-  }
-
-  String _getDocumentTitle(String key) {
-    switch (key) {
-      case 'barLicense':
-        return 'Bar License';
-      case 'fssai':
-        return 'FSSAI Certificate';
-      case 'gst':
-        return 'GST Registration';
-      case 'fireNoc':
-        return 'Fire NOC';
-      case 'shopAct':
-        return 'Shop Act License';
-      default:
-        return key;
-    }
   }
 }

@@ -231,7 +231,7 @@ class DashboardScreen extends ConsumerWidget {
               icon: Ionicons.add_circle_outline,
               title: 'Create Event',
               subtitle: 'New event',
-              onTap: () => context.go('/events/create'),
+              onTap: () => context.push('/events/create'),
             ),
             _buildActionCard(
               context,
