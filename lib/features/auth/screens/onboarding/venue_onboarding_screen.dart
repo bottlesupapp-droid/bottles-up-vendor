@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../providers/supabase_auth_provider.dart';
 
@@ -144,23 +145,106 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
   }
 
   Future<void> _pickPhoto(String category) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null && mounted) {
-      // For now, use placeholder URL - in production you'd upload to Supabase Storage
-      setState(() {
-        switch (category) {
-          case 'banner':
-            _bannerPhoto = 'https://placehold.co/1200x400/png?text=Venue+Banner';
-            break;
-          case 'menu':
-            _menuPhotos.add('https://placehold.co/600x800/png?text=Menu+${_menuPhotos.length + 1}');
-            break;
-          case 'interior':
-            _interiorPhotos.add('https://placehold.co/800x600/png?text=Interior+${_interiorPhotos.length + 1}');
-            break;
-        }
-      });
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (image == null || !mounted) return;
+
+      // Show uploading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 16),
+                Text('Uploading image...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      // Get current user ID
+      final currentUser = ref.read(currentVendorUserProvider);
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Read image as bytes
+      final bytes = await image.readAsBytes();
+      final extension = image.path.split('.').last.toLowerCase();
+
+      // Generate unique filename with timestamp
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = '${currentUser.id}/${category}_$timestamp.$extension';
+
+      // Upload to Supabase Storage
+      final supabase = SupabaseConfig.client;
+      await supabase.storage
+          .from('venue-gallery')
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: FileOptions(
+              contentType: 'image/$extension',
+              upsert: false,
+            ),
+          );
+
+      // Get public URL
+      final publicUrl = supabase.storage
+          .from('venue-gallery')
+          .getPublicUrl(fileName);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image uploaded successfully!'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Update state with actual URL
+        setState(() {
+          switch (category) {
+            case 'banner':
+              _bannerPhoto = publicUrl;
+              break;
+            case 'menu':
+              _menuPhotos.add(publicUrl);
+              break;
+            case 'interior':
+              _interiorPhotos.add(publicUrl);
+              break;
+          }
+        });
+      }
+    } catch (e) {
+      print('Error uploading photo: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
@@ -1082,17 +1166,24 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                         ),
                         const SizedBox(height: 4),
                         if (_skippedSteps.contains(1))
-                          Text('• Venue details (type, age limit, music, amenities)',
-                              style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700)),
+                          Text(
+                            '• Venue details (type, age limit, music, amenities)',
+                            style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
+                            softWrap: true,
+                          ),
                         if (_skippedSteps.contains(2))
-                          Text('• Photos (banner, menu, interior)',
-                              style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700)),
+                          Text(
+                            '• Photos (banner, menu, interior)',
+                            style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
+                            softWrap: true,
+                          ),
                         const SizedBox(height: 4),
                         Text(
                           'You can complete these from your venue profile after submission.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
+                          softWrap: true,
                         ),
                       ],
                     ),

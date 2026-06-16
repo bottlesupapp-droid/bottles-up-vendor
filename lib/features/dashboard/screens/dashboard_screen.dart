@@ -50,11 +50,13 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildDashboardContent(BuildContext context, dynamic data, WidgetRef ref) {
     final hasEvents = data.activeEvents > 0;
+    final completenessAsync = ref.watch(venueProfileCompletenessProvider);
 
     return ResponsiveWrapper(
       child: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(dashboardProvider);
+          ref.invalidate(venueProfileCompletenessProvider);
           await ref.read(dashboardProvider.future);
         },
         child: SingleChildScrollView(
@@ -66,6 +68,15 @@ class DashboardScreen extends ConsumerWidget {
             children: [
             SizedBox(
               height: utils.ResponsiveUtils.getResponsiveSpacing(context),
+            ),
+
+            // Venue profile completeness banner
+            completenessAsync.maybeWhen(
+              data: (missingItems) {
+                if (missingItems.isEmpty) return const SizedBox.shrink();
+                return _buildProfileCompletionBanner(context, missingItems);
+              },
+              orElse: () => const SizedBox.shrink(),
             ),
 
             // Show Empty State or Dashboard Content
@@ -129,60 +140,67 @@ class DashboardScreen extends ConsumerWidget {
 
         ResponsiveGrid(
           children: [
-            // Sales Card
+            // Sales — monthly revenue, taps to earnings
             _buildMetricCard(
               context,
               icon: Ionicons.cash_outline,
               title: 'Sales',
-              value: '\$${NumberFormat('#,###').format(data.monthlyRevenue)}',
+              value: '\$${NumberFormat('#,###').format(data.monthlyRevenue.toInt())}',
               subtitle: 'This month',
               color: Colors.green,
-              trend: data.monthlyRevenue > 0 ? '+12.5%' : null,
+              trend: data.monthlyRevenue > 0 ? 'This month' : null,
+              onTap: () => context.go('/earnings'),
             ),
-            // Events Card
+            // Events — active events, upcoming count, taps to events
             _buildMetricCard(
               context,
               icon: Ionicons.calendar_outline,
               title: 'Events',
-              value: data.activeEvents.toString(),
+              value: data.totalEvents.toString(),
               subtitle: '${data.upcomingEvents} upcoming',
               color: theme.colorScheme.primary,
-              trend: data.upcomingEvents > 0 ? '+${data.upcomingEvents}' : null,
+              trend: data.upcomingEvents > 0
+                  ? '${data.upcomingEvents} soon'
+                  : null,
+              onTap: () => context.go('/events'),
             ),
-            // Payouts Card
+            // Payouts — estimated (85% of all-time revenue), taps to earnings
             _buildMetricCard(
               context,
               icon: Ionicons.wallet_outline,
               title: 'Payouts',
-              value: '\$${NumberFormat('#,###').format((data.monthlyRevenue * 0.85).toInt())}',
-              subtitle: 'Pending',
+              value: '\$${NumberFormat('#,###').format(data.confirmedRevenue.toInt())}',
+              subtitle: 'Est. earnings',
               color: Colors.blue,
-              trend: 'Processing',
+              trend: data.confirmedRevenue > 0 ? '85% rate' : null,
+              onTap: () => context.go('/earnings'),
             ),
-            // Pre-orders Card
+            // Bookings — total, confirmed count, taps to bookings
             _buildMetricCard(
               context,
               icon: Ionicons.bookmarks_outline,
-              title: 'Pre-orders',
+              title: 'Bookings',
               value: data.totalBookings.toString(),
               subtitle: '${data.confirmedBookings} confirmed',
               color: Colors.purple,
-              trend:
-                  data.confirmedBookings > 0
-                      ? '${((data.confirmedBookings / data.totalBookings) * 100).toStringAsFixed(0)}%'
-                      : null,
+              trend: data.totalBookings > 0
+                  ? '${data.confirmedBookings}/${data.totalBookings}'
+                  : null,
+              onTap: () => context.go('/bookings'),
             ),
-            // Love Bottles Card
+            // Pending — pending (unconfirmed) bookings, taps to bookings
             _buildMetricCard(
               context,
-              icon: Ionicons.heart_outline,
-              title: 'Love Bottles',
-              value: '${(data.totalBookings * 0.3).toInt()}',
-              subtitle: 'Favorited',
-              color: Colors.pink,
-              trend: '+8',
+              icon: Ionicons.time_outline,
+              title: 'Pending',
+              value: data.monthlyBookings.toString(), // reused for pendingBookings
+              subtitle: 'Awaiting confirm',
+              color: Colors.orange,
+              trend: data.monthlyBookings > 0 ? 'Action needed' : null,
+              isAlert: data.monthlyBookings > 0,
+              onTap: () => context.go('/bookings'),
             ),
-            // Low Stock Card
+            // Low Stock — items below min stock, taps to inventory
             _buildMetricCard(
               context,
               icon: Ionicons.alert_circle_outline,
@@ -190,11 +208,13 @@ class DashboardScreen extends ConsumerWidget {
               value: data.lowStockItems.toString(),
               subtitle: 'Items need restock',
               color: Colors.amber,
-              trend:
-                  data.lowStockItems > 0
-                      ? '${data.lowStockItems} alerts'
-                      : null,
+              trend: data.lowStockItems > 0
+                  ? '${data.lowStockItems} alerts'
+                  : null,
               isAlert: data.lowStockItems > 0,
+              onTap: data.inventoryCount > 0
+                  ? () => context.go('/inventory')
+                  : null,
             ),
           ],
         ),
@@ -348,10 +368,14 @@ class DashboardScreen extends ConsumerWidget {
     required Color color,
     String? trend,
     bool isAlert = false,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
 
-    return ResponsiveContainer(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: ResponsiveContainer(
       decoration: AppTheme.darkCardDecoration.copyWith(
         border:
             isAlert
@@ -364,78 +388,106 @@ class DashboardScreen extends ConsumerWidget {
       padding: EdgeInsets.all(
         utils.ResponsiveUtils.getResponsiveCardPadding(context) * 0.85,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              if (trend != null)
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 3,
-                    ),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color:
-                          isAlert
-                              ? theme.colorScheme.error.withValues(alpha: 0.1)
-                              : color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      trend,
+                    child: Icon(icon, color: color, size: 20),
+                  ),
+                  if (trend != null) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                isAlert
+                                    ? theme.colorScheme.error.withValues(alpha: 0.1)
+                                    : color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            trend,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: isAlert ? theme.colorScheme.error : color,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 9,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 6),
+              ResponsiveText.headlineMedium(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                  color:
+                      isAlert
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              ResponsiveText.titleSmall(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+              ResponsiveText.bodySmall(
+                subtitle,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (onTap != null) ...[
+                const Spacer(),
+                Row(
+                  children: [
+                    Text(
+                      'View',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: isAlert ? theme.colorScheme.error : color,
+                        color: color,
                         fontWeight: FontWeight.w600,
                         fontSize: 10,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                    const SizedBox(width: 2),
+                    Icon(Icons.arrow_forward_ios, size: 9, color: color),
+                  ],
                 ),
+              ],
             ],
-          ),
-          const SizedBox(height: 8),
-          ResponsiveText.headlineMedium(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color:
-                  isAlert
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.onSurface,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          ResponsiveText.titleSmall(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          ResponsiveText.bodySmall(
-            subtitle,
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+          );
+        },
       ),
+    ),
     );
   }
 
@@ -542,6 +594,68 @@ class DashboardScreen extends ConsumerWidget {
                 color: isAlert ? theme.colorScheme.error : color,
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCompletionBanner(BuildContext context, List<String> missingItems) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Complete your venue profile',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Missing info may limit your visibility on BottlesUp:',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ...missingItems.map(
+                  (item) => Text(
+                    '• $item',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => context.go('/clubs'),
+                  child: Text(
+                    'Go to Venue Profile →',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
