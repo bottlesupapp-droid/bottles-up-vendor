@@ -17,6 +17,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
   int _currentStep = 0;
   final int _totalSteps = 4; // Basic Info -> Details -> Photos -> Review
   bool _isSubmitting = false;
+  final Set<int> _skippedSteps = {};
 
   // Step 1: Venue Basic Info
   final _venueNameController = TextEditingController();
@@ -86,7 +87,10 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
   void _nextStep() {
     if (_currentStep < _totalSteps - 1) {
       if (_canProceed()) {
-        setState(() => _currentStep++);
+        setState(() {
+          _skippedSteps.remove(_currentStep);
+          _currentStep++;
+        });
         _pageController.nextPage(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -94,6 +98,21 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
       }
     }
   }
+
+  void _skipStep() {
+    if (_currentStep < _totalSteps - 1) {
+      setState(() {
+        _skippedSteps.add(_currentStep);
+        _currentStep++;
+      });
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  bool get _canSkip => _currentStep == 1 || _currentStep == 2;
 
   void _previousStep() {
     if (_currentStep > 0) {
@@ -115,7 +134,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
             _capacityController.text.isNotEmpty;
       case 1: // Venue Details - all optional
         return true;
-      case 2: // Photos - at least banner required
+      case 2: // Photos - banner required unless skipping
         return _bannerPhoto != null;
       case 3: // Review
         return true;
@@ -319,49 +338,69 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
 
           // Navigation Buttons
           Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (_currentStep > 0)
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _previousStep,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('Back'),
-                    ),
-                  ),
-                if (_currentStep > 0) const SizedBox(width: 16),
-                Expanded(
-                  flex: _currentStep == 0 ? 1 : 1,
-                  child: ElevatedButton(
-                    onPressed: (_canProceed() && !_isSubmitting)
-                        ? (_currentStep == _totalSteps - 1
-                            ? _completeOnboarding
-                            : _nextStep)
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            _currentStep == _totalSteps - 1 ? 'Complete' : 'Next',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                Row(
+                  children: [
+                    if (_currentStep > 0)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _previousStep,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                  ),
+                          child: const Text('Back'),
+                        ),
+                      ),
+                    if (_currentStep > 0) const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: (_canProceed() && !_isSubmitting)
+                            ? (_currentStep == _totalSteps - 1
+                                ? _completeOnboarding
+                                : _nextStep)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Text(
+                                _currentStep == _totalSteps - 1 ? 'Complete' : 'Next',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (_canSkip) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: _skipStep,
+                      child: Text(
+                        'Skip for now — complete later',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1015,6 +1054,54 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
           ),
 
           const SizedBox(height: 24),
+
+          // Pending items banner (shown when steps were skipped)
+          if (_skippedSteps.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.orange, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pending info to complete',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (_skippedSteps.contains(1))
+                          Text('• Venue details (type, age limit, music, amenities)',
+                              style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700)),
+                        if (_skippedSteps.contains(2))
+                          Text('• Photos (banner, menu, interior)',
+                              style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700)),
+                        const SizedBox(height: 4),
+                        Text(
+                          'You can complete these from your venue profile after submission.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // Completion Message
           Container(

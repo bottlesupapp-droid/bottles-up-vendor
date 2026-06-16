@@ -8,6 +8,36 @@ import '../../../shared/models/user_model.dart';
 class VenueRequestService {
   final SupabaseClient _client = SupabaseConfig.client;
 
+  /// Get venues owned by a specific vendor
+  Future<List<Venue>> getVenuesByOwner(String ownerId) async {
+    try {
+      final response = await _client
+          .from('clubs')
+          .select()
+          .eq('owner_id', ownerId)
+          .order('created_at', ascending: false);
+
+      if (response.isEmpty) {
+        print('No venues found for owner: $ownerId');
+        return [];
+      }
+
+      return response.map((json) {
+        try {
+          return Venue.fromJson(json);
+        } catch (parseError) {
+          print('Error parsing venue JSON: $parseError');
+          print('Problematic venue data: $json');
+          rethrow;
+        }
+      }).toList();
+    } catch (e, stackTrace) {
+      print('Error getting venues by owner: $e');
+      print('Stack trace: $stackTrace');
+      throw Exception('Failed to load your venues: $e');
+    }
+  }
+
   /// Get all venues (for organizers to browse)
   Future<List<Venue>> getVenues({
     String? city,
@@ -36,9 +66,23 @@ class VenueRequestService {
 
       final response = await query.order('name');
 
-      return (response as List).map((json) => Venue.fromJson(json)).toList();
-    } catch (e) {
+      if (response.isEmpty) {
+        print('No venues found in database');
+        return [];
+      }
+
+      return response.map((json) {
+        try {
+          return Venue.fromJson(json);
+        } catch (parseError) {
+          print('Error parsing venue JSON: $parseError');
+          print('Problematic venue data: $json');
+          rethrow;
+        }
+      }).toList();
+    } catch (e, stackTrace) {
       print('Error getting venues: $e');
+      print('Stack trace: $stackTrace');
       throw Exception('Failed to load venues: $e');
     }
   }
@@ -58,6 +102,34 @@ class VenueRequestService {
     } catch (e) {
       print('Error getting venue: $e');
       throw Exception('Failed to load venue: $e');
+    }
+  }
+
+  /// Update a venue owned by the current user
+  Future<Venue> updateVenue({
+    required String venueId,
+    required Map<String, dynamic> updates,
+  }) async {
+    try {
+      updates['updated_at'] = DateTime.now().toIso8601String();
+      final response = await _client
+          .from('clubs')
+          .update(updates)
+          .eq('id', venueId)
+          .select()
+          .single();
+      return Venue.fromJson(response);
+    } catch (e) {
+      throw Exception('Failed to update venue: $e');
+    }
+  }
+
+  /// Delete a venue owned by the current user
+  Future<void> deleteVenue(String venueId) async {
+    try {
+      await _client.from('clubs').delete().eq('id', venueId);
+    } catch (e) {
+      throw Exception('Failed to delete venue: $e');
     }
   }
 
