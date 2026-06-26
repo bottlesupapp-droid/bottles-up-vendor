@@ -52,19 +52,21 @@ class Event {
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
       id: json['id'],
-      name: json['name'],
+      name: json['name'] ?? '',
       description: json['description'],
-      userId: json['user_id'],
+      userId: json['user_id'] ?? '',
       categoryId: json['category_id'],
       clubId: json['club_id'],
-      zoneId: json['zone_id'],
+      zoneId: json['zone_id'] ?? '',
       images: json['images'] != null ? List<String>.from(json['images']) : null,
-      eventDate: DateTime.parse(json['event_date']),
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-      ticketPrice: json['ticket_price'].toDouble(),
-      maxCapacity: json['max_capacity'],
-      currentBookings: json['current_bookings'] ?? 0,
+      eventDate: json['event_date'] != null
+          ? DateTime.parse(json['event_date'])
+          : DateTime.now(),
+      startTime: json['start_time'] ?? '00:00',
+      endTime: json['end_time'] ?? '00:00',
+      ticketPrice: (json['ticket_price'] as num?)?.toDouble() ?? 0.0,
+      maxCapacity: json['max_capacity'] as int? ?? 0,
+      currentBookings: json['current_bookings'] as int? ?? 0,
       isFeatured: json['is_featured'] ?? false,
       status: json['status'] ?? 'upcoming',
       dressCode: json['dress_code'],
@@ -72,8 +74,12 @@ class Event {
       termsAndConditions: json['terms_and_conditions'],
       specialInstructions: json['special_instructions'],
       isActive: json['is_active'] ?? true,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : DateTime.now(),
     );
   }
 

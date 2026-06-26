@@ -16,7 +16,7 @@ final filteredEventsProvider = FutureProvider.family<List<Map<String, dynamic>>,
 });
 
 // Provider for distinct cities
-final distinctCitiesProvider = FutureProvider<List<String>>((ref) async {
+final distinctCitiesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
   final eventService = ref.watch(eventServiceProvider);
   return await eventService.getDistinctCities();
 });

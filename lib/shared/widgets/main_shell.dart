@@ -76,7 +76,7 @@ class MainShell extends StatelessWidget {
         context.go('/analytics');
         break;
       case 3:
-        context.go('/venues');
+        context.go('/clubs');
         break;
       case 4:
         context.go('/profile');

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/supabase_auth_provider.dart';
+import '../../../core/utils/auth_rate_limiter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -32,6 +33,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   int _remainingSeconds = 60;
   bool _canResend = false;
 
+  // Rate limiting
+  Timer? _lockoutTimer;
+  Duration? _lockoutRemaining;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _passwordController.dispose();
     _phoneController.dispose();
     _timer?.cancel();
+    _lockoutTimer?.cancel();
     for (var controller in _otpControllers) {
       controller.dispose();
     }
@@ -52,6 +58,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       node.dispose();
     }
     super.dispose();
+  }
+
+  void _startLockoutCountdown(String email) {
+    _lockoutTimer?.cancel();
+    _lockoutTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final remaining = AuthRateLimiter.lockoutRemaining(email);
+      setState(() => _lockoutRemaining = remaining);
+      if (remaining == null) _lockoutTimer?.cancel();
+    });
+  }
+
+  String _fmtDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   void _startTimer() {
@@ -73,11 +95,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _signInWithEmail() async {
-    if (_emailFormKey.currentState?.validate() ?? false) {
-      await ref.read(supabaseAuthProvider.notifier).signIn(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+    if (!(_emailFormKey.currentState?.validate() ?? false)) return;
+    final email = _emailController.text.trim().toLowerCase();
+
+    if (AuthRateLimiter.isLocked(email)) {
+      _startLockoutCountdown(email);
+      setState(() => _lockoutRemaining = AuthRateLimiter.lockoutRemaining(email));
+      return;
+    }
+
+    final prevError = ref.read(authErrorProvider);
+    await ref.read(supabaseAuthProvider.notifier).signIn(
+          email: email,
+          password: _passwordController.text,
+        );
+
+    // Check if sign-in produced an error
+    final newError = ref.read(authErrorProvider);
+    if (newError != null && newError != prevError) {
+      AuthRateLimiter.recordFailure(email);
+      final remaining = AuthRateLimiter.attemptsRemaining(email);
+      if (AuthRateLimiter.isLocked(email)) {
+        _startLockoutCountdown(email);
+        setState(() =>
+            _lockoutRemaining = AuthRateLimiter.lockoutRemaining(email));
+      } else if (remaining <= 2) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('$remaining attempt${remaining == 1 ? '' : 's'} remaining before lockout'),
+          backgroundColor: Colors.orange,
+        ));
+      }
+    } else if (newError == null) {
+      AuthRateLimiter.reset(email);
+      if (!mounted) return; // navigation handled by listener
     }
   }
 
@@ -458,11 +508,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
           const SizedBox(height: 16),
 
+          // Lockout warning
+          if (_lockoutRemaining != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.error.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_clock,
+                      size: 16, color: theme.colorScheme.error),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Too many attempts. Try again in ${_fmtDuration(_lockoutRemaining!)}',
+                      style: TextStyle(
+                          fontSize: 13, color: theme.colorScheme.error),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+
           // Login Button
           SizedBox(
             height: 56,
             child: ElevatedButton(
-              onPressed: authState.isLoading ? null : _signInWithEmail,
+              onPressed: (authState.isLoading || _lockoutRemaining != null)
+                  ? null
+                  : _signInWithEmail,
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.onSurface,
                 foregroundColor: theme.colorScheme.surface,
@@ -481,7 +560,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                     )
                   : Text(
-                      'Login',
+                      _lockoutRemaining != null
+                          ? 'Locked — ${_fmtDuration(_lockoutRemaining!)}'
+                          : 'Login',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: theme.colorScheme.surface,
                         fontWeight: FontWeight.w600,

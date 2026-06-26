@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:responsive_builder/responsive_builder.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../../../shared/models/club.dart';
 import '../../../shared/services/club_service.dart';
@@ -34,6 +36,8 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
   List<Map<String, dynamic>> _categories = [];
   bool _isLoading = false;
   bool _isSubmitting = false;
+  File? _coverImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -75,6 +79,26 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
     }
   }
 
+  Future<void> _pickCoverImage() async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        setState(() => _coverImage = File(pickedFile.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _createClub() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -82,7 +106,8 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
 
     try {
       final clubService = ClubService();
-      
+
+      // Create club first, then upload image and update
       final request = CreateClubRequest(
         name: _nameController.text.trim(),
         location: _locationController.text.trim(),
@@ -113,7 +138,18 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
             : _ageRequirementController.text.trim(),
       );
 
-      await clubService.createClub(request);
+      final club = await clubService.createClub(request);
+
+      // Upload cover image after club is created
+      if (_coverImage != null) {
+        try {
+          final bytes = await _coverImage!.readAsBytes();
+          final fileName = 'cover_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          await clubService.uploadClubImage(club.id, bytes, fileName);
+        } catch (_) {
+          // Image upload failure should not block club creation success
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -318,6 +354,49 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
                                 prefix: '\$',
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
+
+                      // Cover Photo Section
+                      _buildSectionHeader(context, 'Cover Photo', Ionicons.image_outline),
+                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
+
+                      ResponsiveContainer(
+                        decoration: AppTheme.darkCardDecoration,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_coverImage != null) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(
+                                  _coverImage!,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
+                            ],
+                            OutlinedButton.icon(
+                              onPressed: _pickCoverImage,
+                              icon: Icon(_coverImage == null ? Ionicons.cloud_upload_outline : Ionicons.refresh_outline),
+                              label: Text(_coverImage == null ? 'Upload Cover Photo' : 'Change Photo'),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 48),
+                              ),
+                            ),
+                            if (_coverImage != null) ...[
+                              SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.5),
+                              TextButton.icon(
+                                onPressed: () => setState(() => _coverImage = null),
+                                icon: const Icon(Ionicons.trash_outline, color: Colors.red),
+                                label: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
                           ],
                         ),
                       ),

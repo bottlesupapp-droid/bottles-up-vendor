@@ -5,8 +5,6 @@ import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import 'manage_ticket_tiers_screen.dart';
-import 'manage_lineup_screen.dart';
 import '../providers/event_details_provider.dart';
 
 class EventDetailsScreen extends ConsumerWidget {
@@ -264,20 +262,14 @@ class EventDetailsScreen extends ConsumerWidget {
               subtitle: 'Manage ticket pricing & capacity',
               color: Colors.teal,
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ManageTicketTiersScreen(
-                      eventId: eventId,
-                      eventName: 'Event', // TODO: Pass actual event name
-                    ),
-                  ),
-                );
+                final name = Uri.encodeComponent(event.name);
+                context.push('/events/$eventId/tiers?name=$name');
               },
             ),
 
             const SizedBox(height: 12),
 
-            // DJ/Lineup Management Button (NEW)
+            // DJ/Lineup Management Button
             _buildActionCard(
               context,
               icon: Ionicons.musical_notes_outline,
@@ -285,14 +277,22 @@ class EventDetailsScreen extends ConsumerWidget {
               subtitle: 'Manage DJs, security & staff',
               color: Colors.purple,
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ManageLineupScreen(
-                      eventId: eventId,
-                      eventName: 'Event', // TODO: Pass actual event name
-                    ),
-                  ),
-                );
+                final name = Uri.encodeComponent(event.name);
+                context.push('/events/$eventId/lineup?name=$name');
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // Table Management Button
+            _buildActionCard(
+              context,
+              icon: Ionicons.grid_outline,
+              title: 'Table Management',
+              subtitle: 'Add & manage VIP tables for booking',
+              color: Colors.orange,
+              onTap: () {
+                context.push('/events/$eventId/tables');
               },
             ),
 
@@ -306,9 +306,7 @@ class EventDetailsScreen extends ConsumerWidget {
               subtitle: 'See all event bookings',
               color: Colors.green,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Bookings View - Coming Soon')),
-                );
+                context.go('/bookings');
               },
             ),
 

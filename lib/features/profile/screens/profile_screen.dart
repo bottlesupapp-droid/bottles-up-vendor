@@ -334,13 +334,14 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Ionicons.card_outline,
                         title: 'Subscription',
                         subtitle: 'Manage your plan & billing',
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const SubscriptionScreen(),
-                            ),
-                          );
-                        },
+                        onTap: () => context.push('/profile/subscription'),
+                      ),
+                      _buildActionTile(
+                        context,
+                        icon: Ionicons.settings_outline,
+                        title: 'Settings',
+                        subtitle: 'App preferences & account settings',
+                        onTap: () => context.push('/profile/settings'),
                       ),
                     ],
                   ),

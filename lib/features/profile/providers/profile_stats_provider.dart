@@ -46,7 +46,7 @@ class ProfileStats {
   }
 }
 
-final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
+final profileStatsProvider = FutureProvider.autoDispose<ProfileStats>((ref) async {
   final supabaseService = ref.read(supabaseServiceProvider);
   final user = ref.watch(currentUserProvider);
 
@@ -78,8 +78,8 @@ final profileStatsProvider = FutureProvider<ProfileStats>((ref) async {
     // Calculate stats
     final now = DateTime.now();
     final activeEvents = events.where((event) {
-      final eventDate = event['date'] != null
-          ? DateTime.parse(event['date'])
+      final eventDate = event['event_date'] != null
+          ? DateTime.parse(event['event_date'])
           : null;
       return eventDate != null && eventDate.isAfter(now);
     }).length;

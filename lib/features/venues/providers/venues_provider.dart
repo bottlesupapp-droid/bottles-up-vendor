@@ -2,13 +2,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/models/venue_model.dart';
 import '../../../shared/models/venue_request_model.dart';
 import '../services/venue_request_service.dart';
+import '../../auth/providers/supabase_auth_provider.dart';
 
 /// Provider for the venue request service
 final venueRequestServiceProvider = Provider<VenueRequestService>((ref) {
   return VenueRequestService();
 });
 
-/// Provider to get list of venues with optional filters
+/// Provider to get venues owned by the current vendor
+final myVenuesProvider = FutureProvider.autoDispose<List<Venue>>(
+  (ref) async {
+    final service = ref.watch(venueRequestServiceProvider);
+    final user = ref.watch(currentVendorUserProvider);
+
+    if (user == null) {
+      return [];
+    }
+
+    return service.getVenuesByOwner(user.id);
+  },
+);
+
+/// Provider to get list of venues with optional filters (for browsing all venues)
 final venuesListProvider = FutureProvider.family.autoDispose<List<Venue>, ({String? city, int? minCapacity})>(
   (ref, params) async {
     final service = ref.watch(venueRequestServiceProvider);

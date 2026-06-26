@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../shared/models/venue_model.dart';
 import '../providers/venues_provider.dart';
 import 'venue_detail_screen.dart';
@@ -12,32 +13,25 @@ class VenueDirectoryScreen extends ConsumerStatefulWidget {
 }
 
 class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
-  String? _selectedCity;
-  int? _minCapacity;
-
   @override
   Widget build(BuildContext context) {
-    final venuesAsync = ref.watch(venuesListProvider((
-      city: _selectedCity,
-      minCapacity: _minCapacity,
-    )));
+    // Get vendor's own venues instead of all venues
+    final venuesAsync = ref.watch(myVenuesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Browse Venues'),
+        title: const Text('My Venues'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilters,
+            icon: const Icon(Icons.add),
+            onPressed: _navigateToCreateVenue,
+            tooltip: 'Create New Venue',
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(venuesListProvider((
-            city: _selectedCity,
-            minCapacity: _minCapacity,
-          )));
+          ref.invalidate(myVenuesProvider);
         },
         child: venuesAsync.when(
           data: (venues) {
@@ -79,31 +73,23 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'No Venues Found',
+            'No Venues Yet',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
           Text(
-            _selectedCity != null || _minCapacity != null
-                ? 'Try adjusting your filters'
-                : 'No active venues available at the moment',
+            'Create your first venue to get started',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
             textAlign: TextAlign.center,
           ),
-          if (_selectedCity != null || _minCapacity != null) ...[
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _selectedCity = null;
-                  _minCapacity = null;
-                });
-              },
-              child: const Text('Clear Filters'),
-            ),
-          ],
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _navigateToCreateVenue,
+            icon: const Icon(Icons.add),
+            label: const Text('Create Venue'),
+          ),
         ],
       ),
     );
@@ -138,10 +124,7 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              ref.invalidate(venuesListProvider((
-                city: _selectedCity,
-                minCapacity: _minCapacity,
-              )));
+              ref.invalidate(myVenuesProvider);
             },
             child: const Text('Retry'),
           ),
@@ -150,22 +133,8 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
     );
   }
 
-  void _showFilters() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _FilterBottomSheet(
-        selectedCity: _selectedCity,
-        minCapacity: _minCapacity,
-        onApply: (city, capacity) {
-          setState(() {
-            _selectedCity = city;
-            _minCapacity = capacity;
-          });
-          Navigator.pop(context);
-        },
-      ),
-    );
+  void _navigateToCreateVenue() {
+    context.push('/onboarding/venue');
   }
 
   void _navigateToVenueDetail(Venue venue) {
@@ -306,121 +275,3 @@ class _VenueCard extends StatelessWidget {
   }
 }
 
-class _FilterBottomSheet extends StatefulWidget {
-  final String? selectedCity;
-  final int? minCapacity;
-  final Function(String?, int?) onApply;
-
-  const _FilterBottomSheet({
-    this.selectedCity,
-    this.minCapacity,
-    required this.onApply,
-  });
-
-  @override
-  State<_FilterBottomSheet> createState() => _FilterBottomSheetState();
-}
-
-class _FilterBottomSheetState extends State<_FilterBottomSheet> {
-  late TextEditingController _cityController;
-  late TextEditingController _capacityController;
-
-  @override
-  void initState() {
-    super.initState();
-    _cityController = TextEditingController(text: widget.selectedCity);
-    _capacityController = TextEditingController(
-      text: widget.minCapacity?.toString() ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _cityController.dispose();
-    _capacityController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Filter Venues',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _cityController,
-              decoration: const InputDecoration(
-                labelText: 'City',
-                hintText: 'Enter city name',
-                prefixIcon: Icon(Icons.location_city),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _capacityController,
-              decoration: const InputDecoration(
-                labelText: 'Minimum Capacity',
-                hintText: 'Enter minimum capacity',
-                prefixIcon: Icon(Icons.people),
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      _cityController.clear();
-                      _capacityController.clear();
-                      widget.onApply(null, null);
-                    },
-                    child: const Text('Clear'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final city = _cityController.text.trim().isEmpty
-                          ? null
-                          : _cityController.text.trim();
-                      final capacity = _capacityController.text.trim().isEmpty
-                          ? null
-                          : int.tryParse(_capacityController.text.trim());
-
-                      widget.onApply(city, capacity);
-                    },
-                    child: const Text('Apply'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

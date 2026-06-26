@@ -21,6 +21,8 @@ import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/clubs/screens/clubs_list_screen.dart';
 import '../../features/clubs/screens/club_details_screen.dart';
 import '../../features/clubs/screens/create_club_screen.dart';
+import '../../features/clubs/screens/edit_venue_screen.dart';
+import '../../shared/models/venue_model.dart';
 import '../../features/events/screens/events_list_screen.dart';
 import '../../features/events/screens/event_details_screen.dart';
 import '../../features/events/screens/simple_create_event_screen.dart';
@@ -28,6 +30,8 @@ import '../../features/events/screens/edit_event_screen.dart';
 import '../../features/events/screens/inventory_screen.dart';
 import '../../features/events/screens/bookings_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/settings_screen.dart';
+import '../../features/profile/screens/subscription_screen.dart';
 import '../../features/earnings/screens/earnings_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/business_details_screen.dart';
@@ -46,6 +50,9 @@ import '../../features/analytics/screens/analytics_dashboard_screen.dart';
 import '../../features/scanner/screens/qr_scanner_screen.dart';
 import '../../features/events/screens/guest_list_screen.dart';
 import '../../features/events/screens/scheduled_releases_screen.dart';
+import '../../features/events/screens/manage_ticket_tiers_screen.dart';
+import '../../features/events/screens/manage_event_tables_screen.dart';
+import '../../features/events/screens/manage_lineup_screen.dart';
 import '../../shared/widgets/main_shell.dart';
 
 // Route names
@@ -81,6 +88,11 @@ class AppRoutes {
   static const String qrScanner = '/events/:eventId/scanner';
   static const String guestList = '/events/:eventId/guests';
   static const String scheduledReleases = '/events/:eventId/releases';
+  static const String manageTicketTiers = '/events/:eventId/tiers';
+  static const String manageEventTables = '/events/:eventId/tables';
+  static const String manageLineup = '/events/:eventId/lineup';
+  static const String settings = '/profile/settings';
+  static const String subscription = '/profile/subscription';
 }
 
 // Custom page transitions using CupertinoPageRoute
@@ -321,6 +333,19 @@ final routerProvider = Provider<GoRouter>((ref) {
                     clubId: state.pathParameters['clubId']!,
                   ),
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    name: 'editVenue',
+                    pageBuilder: (context, state) => CupertinoTransitionPage(
+                      name: 'editVenue',
+                      child: EditVenueScreen(
+                        venueId: state.pathParameters['clubId']!,
+                        initialVenue: state.extra as Venue?,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -368,7 +393,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                     pageBuilder: (context, state) => CupertinoTransitionPage(
                       name: 'qrScanner',
                       child: QRScannerScreen(
-                        eventId: state.pathParameters['eventId']!,
+                        eventId: state.pathParameters['eventId'],
                       ),
                     ),
                   ),
@@ -389,6 +414,38 @@ final routerProvider = Provider<GoRouter>((ref) {
                       name: 'scheduledReleases',
                       child: ScheduledReleasesScreen(
                         eventId: state.pathParameters['eventId']!,
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'tiers',
+                    name: 'manageTicketTiers',
+                    pageBuilder: (context, state) => CupertinoTransitionPage(
+                      name: 'manageTicketTiers',
+                      child: ManageTicketTiersScreen(
+                        eventId: state.pathParameters['eventId']!,
+                        eventName: state.uri.queryParameters['name'] ?? 'Event',
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'tables',
+                    name: 'manageEventTables',
+                    pageBuilder: (context, state) => CupertinoTransitionPage(
+                      name: 'manageEventTables',
+                      child: ManageEventTablesScreen(
+                        eventId: state.pathParameters['eventId']!,
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'lineup',
+                    name: 'manageLineup',
+                    pageBuilder: (context, state) => CupertinoTransitionPage(
+                      name: 'manageLineup',
+                      child: ManageLineupScreen(
+                        eventId: state.pathParameters['eventId']!,
+                        eventName: state.uri.queryParameters['name'] ?? 'Event',
                       ),
                     ),
                   ),
@@ -476,6 +533,22 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) => CupertinoTransitionPage(
                   name: 'notifications',
                   child: const NotificationsScreen(),
+                ),
+              ),
+              GoRoute(
+                path: 'settings',
+                name: 'settings',
+                pageBuilder: (context, state) => CupertinoTransitionPage(
+                  name: 'settings',
+                  child: const SettingsScreen(),
+                ),
+              ),
+              GoRoute(
+                path: 'subscription',
+                name: 'subscription',
+                pageBuilder: (context, state) => CupertinoTransitionPage(
+                  name: 'subscription',
+                  child: const SubscriptionScreen(),
                 ),
               ),
             ],

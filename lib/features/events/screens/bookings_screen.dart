@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/bookings_provider.dart';
+import '../../../shared/services/supabase_service.dart';
 
 class BookingsScreen extends ConsumerWidget {
   const BookingsScreen({super.key});
@@ -8,10 +9,10 @@ class BookingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookingsAsync = ref.watch(bookingsProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bookings Management'),
+        title: const Text('Bookings'),
         elevation: 0,
       ),
       body: bookingsAsync.when(
@@ -24,12 +25,12 @@ class BookingsScreen extends ConsumerWidget {
                   Icon(Icons.event_busy, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
-                    'No bookings found',
+                    'No bookings yet',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Bookings will appear here when customers make reservations',
+                    'Bookings will appear here when customers reserve your events',
                     style: TextStyle(color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
@@ -39,15 +40,15 @@ class BookingsScreen extends ConsumerWidget {
           }
 
           return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(bookingsProvider);
-            },
+            onRefresh: () async => ref.invalidate(bookingsProvider),
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: bookings.length,
               itemBuilder: (context, index) {
-                final booking = bookings[index];
-                return _BookingCard(booking: booking);
+                return _BookingCard(
+                  booking: bookings[index],
+                  onStatusChanged: () => ref.invalidate(bookingsProvider),
+                );
               },
             ),
           );
@@ -73,23 +74,27 @@ class BookingsScreen extends ConsumerWidget {
   }
 }
 
-class _BookingCard extends StatelessWidget {
+class _BookingCard extends ConsumerWidget {
   final Map<String, dynamic> booking;
+  final VoidCallback onStatusChanged;
 
-  const _BookingCard({required this.booking});
+  const _BookingCard({
+    required this.booking,
+    required this.onStatusChanged,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final eventDetails = booking['eventDetails'] as Map<String, dynamic>? ?? {};
     final totalPrice = booking['totalPrice'] as num? ?? 0;
     final numberOfTickets = booking['numberOfTickets'] as int? ?? 0;
-    final status = booking['status'] ?? 'pending';
-    final bookedAt = booking['bookedAt'] != null 
+    final status = booking['status'] as String? ?? 'pending';
+    final bookedAt = booking['bookedAt'] != null
         ? DateTime.parse(booking['bookedAt'].toString())
         : DateTime.now();
 
     final statusColor = _getStatusColor(status);
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -97,18 +102,20 @@ class _BookingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Booking Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Booking #${booking['id']?.toString().substring(0, 8) ?? 'Unknown'}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                Flexible(
+                  child: Text(
+                    'Booking #${booking['id']?.toString().substring(0, 8) ?? 'Unknown'}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
@@ -128,7 +135,6 @@ class _BookingCard extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Event Details
             if (eventDetails['title'] != null) ...[
               Text(
                 eventDetails['title'],
@@ -160,7 +166,8 @@ class _BookingCard extends StatelessWidget {
             if (eventDetails['date'] != null) ...[
               Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                  const Icon(Icons.calendar_today,
+                      size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
                     _formatDate(eventDetails['date']),
@@ -173,65 +180,25 @@ class _BookingCard extends StatelessWidget {
               const SizedBox(height: 12),
             ],
 
-            // Booking Details
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Theme.of(context).dividerColor,
-                ),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Tickets',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        '$numberOfTickets',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
+                  _infoRow(context, 'Tickets', '$numberOfTickets'),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Amount',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        '\$${totalPrice.toStringAsFixed(2)}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                      ),
-                    ],
-                  ),
+                  _infoRow(context, 'Total Amount',
+                      '\$${totalPrice.toStringAsFixed(2)}',
+                      bold: true),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Booked On',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        '${bookedAt.day}/${bookedAt.month}/${bookedAt.year}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
+                  _infoRow(
+                    context,
+                    'Booked On',
+                    '${bookedAt.day}/${bookedAt.month}/${bookedAt.year}',
                   ),
                 ],
               ),
@@ -239,33 +206,82 @@ class _BookingCard extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: View booking details
-                    },
-                    icon: const Icon(Icons.visibility),
-                    label: const Text('View Details'),
+            if (status == 'pending')
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _updateStatus(
+                          context, ref, booking['id'], 'cancelled'),
+                      icon: const Icon(Icons.close, size: 16),
+                      label: const Text('Cancel'),
+                      style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: status == 'confirmed' ? null : () {
-                      // TODO: Confirm booking
-                    },
-                    icon: const Icon(Icons.check),
-                    label: Text(status == 'confirmed' ? 'Confirmed' : 'Confirm'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _updateStatus(
+                          context, ref, booking['id'], 'confirmed'),
+                      icon: const Icon(Icons.check, size: 16),
+                      label: const Text('Confirm'),
+                    ),
                   ),
+                ],
+              ),
+
+            if (status == 'confirmed')
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _updateStatus(
+                      context, ref, booking['id'], 'completed'),
+                  icon: const Icon(Icons.done_all, size: 16),
+                  label: const Text('Mark Completed'),
                 ),
-              ],
-            ),
+              ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _updateStatus(
+    BuildContext context,
+    WidgetRef ref,
+    String? bookingId,
+    String newStatus,
+  ) async {
+    if (bookingId == null) return;
+    final service = ref.read(supabaseServiceProvider);
+    final ok = await service.updateBookingStatus(bookingId, newStatus);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok
+              ? 'Booking $newStatus'
+              : 'Failed to update booking'),
+          backgroundColor: ok ? Colors.green : Colors.red,
+        ),
+      );
+    }
+    if (ok) onStatusChanged();
+  }
+
+  Widget _infoRow(BuildContext context, String label, String value,
+      {bool bold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              ),
+        ),
+      ],
     );
   }
 
@@ -273,6 +289,8 @@ class _BookingCard extends StatelessWidget {
     switch (status.toLowerCase()) {
       case 'confirmed':
         return Colors.green;
+      case 'completed':
+        return Colors.blue;
       case 'pending':
         return Colors.orange;
       case 'cancelled':
@@ -284,10 +302,10 @@ class _BookingCard extends StatelessWidget {
 
   String _formatDate(dynamic date) {
     try {
-      final dateTime = DateTime.parse(date.toString());
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
+      final dt = DateTime.parse(date.toString());
+      return '${dt.day}/${dt.month}/${dt.year} at ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
       return 'Unknown Date';
     }
   }
-} 
+}

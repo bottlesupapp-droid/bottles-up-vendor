@@ -98,7 +98,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
       _selectedCategoryId = event.categoryId;
       _selectedClubId = event.clubId;
-      _selectedZoneId = event.zoneId;
+      _selectedZoneId = event.zoneId.isEmpty ? null : event.zoneId;
       _selectedDate = event.eventDate;
 
       // Parse start and end times
@@ -228,7 +228,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             : _descriptionController.text.trim(),
         categoryId: _selectedCategoryId,
         clubId: _selectedClubId,
-        zoneId: _selectedZoneId!,
+        zoneId: _selectedZoneId, // nullable — only sent if vendor selected one
         images: flyerUrls,
         eventDate: _selectedDate,
         startTime: '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
@@ -429,12 +429,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                             _selectedZoneId = value;
                           });
                         },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Please select a zone';
-                          }
-                          return null;
-                        },
+                        validator: (_) => null, // zone optional — many events created without one
                       ),
                     ],
                   ),

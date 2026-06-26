@@ -8,17 +8,21 @@ class SupabaseService {
   // Get event statistics
   Future<Map<String, dynamic>> getEventStats() async {
     try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return {'total': 0, 'upcoming': 0};
+
       final response = await _client
-          .from('vendor_events')
-          .select('id, date')
+          .from('events')
+          .select('id, event_date')
+          .eq('user_id', userId)
           .order('created_at', ascending: false);
 
       final events = response as List<dynamic>;
       final now = DateTime.now();
-      
+
       final upcomingEvents = events.where((event) {
-        if (event['date'] != null) {
-          final eventDate = DateTime.parse(event['date']);
+        if (event['event_date'] != null) {
+          final eventDate = DateTime.parse(event['event_date']);
           return eventDate.isAfter(now);
         }
         return false;
@@ -36,13 +40,16 @@ class SupabaseService {
   // Get booking statistics
   Future<Map<String, dynamic>> getBookingStats() async {
     try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return {'total': 0, 'revenue': 0.0};
+
       final response = await _client
-          .from('vendor_bookings')
-          .select('id, total_amount')
-          .order('created_at', ascending: false);
+          .from('events_bookings')
+          .select('id, total_amount, events!inner(user_id)')
+          .eq('events.user_id', userId);
 
       final bookings = response as List<dynamic>;
-      
+
       double totalRevenue = 0.0;
       for (final booking in bookings) {
         totalRevenue += (booking['total_amount'] as num?)?.toDouble() ?? 0.0;
@@ -83,34 +90,38 @@ class SupabaseService {
   // Get recent events with booking data
   Future<List<Map<String, dynamic>>> getRecentEvents() async {
     try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return [];
+
       final eventsResponse = await _client
-          .from('vendor_events')
-          .select('id, title, venue, date')
-          .order('date', ascending: false)
+          .from('events')
+          .select('id, name, event_date, clubs(name)')
+          .eq('user_id', userId)
+          .order('event_date', ascending: false)
           .limit(5);
 
       final events = eventsResponse as List<dynamic>;
       final List<Map<String, dynamic>> recentEvents = [];
 
       for (final event in events) {
-        // Get bookings for this event
         final bookingsResponse = await _client
-            .from('vendor_bookings')
+            .from('events_bookings')
             .select('id, total_amount')
             .eq('event_id', event['id']);
 
         final bookings = bookingsResponse as List<dynamic>;
         double eventRevenue = 0.0;
-        
+
         for (final booking in bookings) {
           eventRevenue += (booking['total_amount'] as num?)?.toDouble() ?? 0.0;
         }
 
+        final club = event['clubs'] as Map<String, dynamic>?;
         recentEvents.add({
           'id': event['id'],
-          'title': event['title'] ?? 'Unknown Event',
-          'venue': event['venue'] ?? 'Unknown Venue',
-          'date': event['date'] ?? DateTime.now().toIso8601String(),
+          'title': event['name'] ?? 'Unknown Event',
+          'venue': club?['name'] ?? 'Unknown Venue',
+          'date': event['event_date'] ?? DateTime.now().toIso8601String(),
           'bookings': bookings.length,
           'revenue': eventRevenue,
         });
@@ -142,19 +153,115 @@ class SupabaseService {
     }
   }
 
-  // Get all bookings
+  // Get all bookings for this vendor's events
   Future<List<Map<String, dynamic>>> getAllBookings() async {
     try {
-      final response = await _client
-          .from('vendor_bookings')
-          .select()
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return [];
+
+      // Fetch event ticket bookings for events owned by this vendor
+      final eventBookingsRes = await _client
+          .from('events_bookings')
+          .select('''
+            id,
+            ticket_quantity,
+            total_amount,
+            status,
+            created_at,
+            events!inner(
+              name,
+              event_date,
+              user_id,
+              clubs(name)
+            )
+          ''')
+          .eq('events.user_id', userId)
           .order('created_at', ascending: false);
 
-      return (response as List<dynamic>)
-          .map((booking) => Map<String, dynamic>.from(booking))
-          .toList();
+      final eventBookings = (eventBookingsRes as List<dynamic>).map((booking) {
+        final event = booking['events'] as Map<String, dynamic>? ?? {};
+        final club = event['clubs'] as Map<String, dynamic>?;
+        return {
+          'id': booking['id'],
+          'type': 'event',
+          'eventDetails': {
+            'title': event['name'] ?? 'Unknown Event',
+            'venue': club?['name'] ?? 'Unknown Venue',
+            'date': event['event_date'],
+          },
+          'totalPrice': booking['total_amount'],
+          'numberOfTickets': booking['ticket_quantity'],
+          'status': booking['status'] ?? 'pending',
+          'bookedAt': booking['created_at'],
+        };
+      }).toList();
+
+      // Fetch club table bookings for clubs owned by this vendor
+      List<Map<String, dynamic>> tableBookings = [];
+      try {
+        final tableBookingsRes = await _client
+            .from('table_bookings')
+            .select('''
+              id,
+              guest_count,
+              total_price,
+              status,
+              booking_date,
+              time_slot,
+              created_at,
+              club_tables!inner(
+                name,
+                club_id,
+                clubs!inner(name, owner_id)
+              )
+            ''')
+            .eq('club_tables.clubs.owner_id', userId)
+            .order('created_at', ascending: false);
+
+        tableBookings = (tableBookingsRes as List<dynamic>).map((booking) {
+          final table = booking['club_tables'] as Map<String, dynamic>? ?? {};
+          final club = table['clubs'] as Map<String, dynamic>?;
+          return {
+            'id': booking['id'],
+            'type': 'table',
+            'eventDetails': {
+              'title': 'Table: ${table['name'] ?? 'Unknown Table'}',
+              'venue': club?['name'] ?? 'Unknown Venue',
+              'date': booking['booking_date'],
+              'timeSlot': booking['time_slot'],
+            },
+            'totalPrice': booking['total_price'],
+            'numberOfTickets': booking['guest_count'],
+            'status': booking['status'] ?? 'pending',
+            'bookedAt': booking['created_at'],
+          };
+        }).toList();
+      } catch (_) {
+        // Table bookings unavailable — return event bookings only
+      }
+
+      final all = [...eventBookings, ...tableBookings];
+      all.sort((a, b) {
+        final aDate = DateTime.tryParse(a['bookedAt'] as String? ?? '') ?? DateTime(0);
+        final bDate = DateTime.tryParse(b['bookedAt'] as String? ?? '') ?? DateTime(0);
+        return bDate.compareTo(aDate);
+      });
+      return all;
     } catch (e) {
       return [];
+    }
+  }
+
+  // Update booking status
+  Future<bool> updateBookingStatus(String bookingId, String status) async {
+    try {
+      await _client
+          .from('events_bookings')
+          .update({'status': status, 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', bookingId);
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 

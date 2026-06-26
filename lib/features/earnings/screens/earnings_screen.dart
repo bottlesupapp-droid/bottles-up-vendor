@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/services/earnings_service.dart';
+import '../../../shared/services/vendor_details_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class EarningsScreen extends ConsumerStatefulWidget {
@@ -95,10 +96,15 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen> {
         ),
       );
 
+      final vendorDetails = await VendorDetailsService().getVendorDetails();
+      final businessName = vendorDetails?.businessName.isNotEmpty == true
+          ? vendorDetails!.businessName
+          : email;
+
       final result = await _earningsService.setupStripeConnect(
         vendorId: userId,
         email: email,
-        businessName: 'Vendor Business', // TODO: Get from vendor profile
+        businessName: businessName,
       );
 
       if (mounted) {

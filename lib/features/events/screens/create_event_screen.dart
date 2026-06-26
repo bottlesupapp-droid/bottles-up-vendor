@@ -11,6 +11,7 @@ import '../../../shared/services/event_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/responsive_wrapper.dart';
 import '../../../core/utils/responsive_utils.dart' as utils;
+import '../../venues/providers/venues_provider.dart';
 
 class CreateEventScreen extends ConsumerStatefulWidget {
   const CreateEventScreen({super.key});
@@ -68,24 +69,70 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     setState(() => _isLoading = true);
     try {
       final eventService = EventService();
-      
-      final futures = await Future.wait([
-        eventService.getCategories(),
-        eventService.getClubs(),
-        eventService.getZones(),
-      ]);
+      final categories = await eventService.getCategories();
 
       setState(() {
-        _categories = futures[0];
-        _clubs = futures[1];
-        _zones = futures[2];
+        _categories = categories;
         _isLoading = false;
       });
+
+      // Load venues after initial data is loaded
+      _loadVenues();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load data: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadZonesForClub(String clubId) async {
+    try {
+      final eventService = EventService();
+      final zones = await eventService.getZonesForClub(clubId);
+      setState(() {
+        _zones = zones;
+        _selectedZoneId = null; // reset stale selection
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load zones: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadVenues() async {
+    try {
+      // Get venues from provider after widget is built
+      final venuesAsync = ref.read(myVenuesProvider);
+      venuesAsync.when(
+        data: (venues) {
+          if (mounted) {
+            setState(() {
+              _clubs = venues.map((venue) => {
+                'id': venue.id,
+                'name': venue.name,
+              }).toList();
+            });
+          }
+        },
+        loading: () {},
+        error: (error, _) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to load venues: $error')),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load venues: $e')),
         );
       }
     }
@@ -332,57 +379,63 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                       SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
 
                       // Venue Section
-                      _buildSectionHeader(context, 'Venue & Zone', Ionicons.location_outline),
+                      _buildSectionHeader(context, 'Venue', Ionicons.business_outline),
                       SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
 
                       ResponsiveContainer(
                         decoration: AppTheme.darkCardDecoration,
-                        child: Column(
-                          children: [
-                            _buildDropdownField(
-                              label: 'Club (Optional)',
-                              value: _selectedClubId,
-                              items: [
-                                const DropdownMenuItem<String>(
-                                  value: null,
-                                  child: Text('Select a club (optional)'),
-                                ),
-                                ..._clubs.map((club) {
-                                  return DropdownMenuItem<String>(
-                                    value: club['id'],
-                                    child: Text(club['name']),
-                                  );
-                                }),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedClubId = value;
-                                });
-                              },
-                            ),
-                            SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
-                            _buildDropdownField(
-                              label: 'Zone *',
-                              value: _selectedZoneId,
-                              items: _zones.map((zone) {
-                                return DropdownMenuItem<String>(
-                                  value: zone['id'],
-                                  child: Text('${zone['name']} (${zone['capacity']} capacity)'),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedZoneId = value;
-                                });
-                              },
-                              validator: (value) {
-                                if (value == null) {
-                                  return 'Please select a zone';
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
+                        child: _buildDropdownField(
+                          label: 'Venue *',
+                          value: _selectedClubId,
+                          items: _clubs.map((club) {
+                            return DropdownMenuItem<String>(
+                              value: club['id'],
+                              child: Text(club['name']),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedClubId = value;
+                            });
+                            if (value != null) _loadZonesForClub(value);
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a venue';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+
+                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
+
+                      // Zone Section
+                      _buildSectionHeader(context, 'Zone', Ionicons.location_outline),
+                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
+
+                      ResponsiveContainer(
+                        decoration: AppTheme.darkCardDecoration,
+                        child: _buildDropdownField(
+                          label: 'Zone *',
+                          value: _selectedZoneId,
+                          items: _zones.map((zone) {
+                            return DropdownMenuItem<String>(
+                              value: zone['id'],
+                              child: Text('${zone['name']} (${zone['capacity']} capacity)'),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedZoneId = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Please select a zone';
+                            }
+                            return null;
+                          },
                         ),
                       ),
 

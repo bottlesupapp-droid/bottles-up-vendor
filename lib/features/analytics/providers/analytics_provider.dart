@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/models/analytics_models.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 
-final organizerAnalyticsProvider = FutureProvider<OrganizerAnalytics>((ref) async {
+final organizerAnalyticsProvider = FutureProvider.autoDispose<OrganizerAnalytics>((ref) async {
   final user = ref.watch(currentVendorUserProvider);
 
   if (user == null) {
@@ -104,7 +104,7 @@ final organizerAnalyticsProvider = FutureProvider<OrganizerAnalytics>((ref) asyn
   );
 });
 
-final revenueBreakdownProvider = FutureProvider<RevenueBreakdown>((ref) async {
+final revenueBreakdownProvider = FutureProvider.autoDispose<RevenueBreakdown>((ref) async {
   final user = ref.watch(currentVendorUserProvider);
 
   if (user == null) {
@@ -188,7 +188,7 @@ final revenueBreakdownProvider = FutureProvider<RevenueBreakdown>((ref) async {
   );
 });
 
-final eventPerformanceInsightsProvider = FutureProvider<List<EventPerformanceInsights>>((ref) async {
+final eventPerformanceInsightsProvider = FutureProvider.autoDispose<List<EventPerformanceInsights>>((ref) async {
   final user = ref.watch(currentVendorUserProvider);
 
   if (user == null) {

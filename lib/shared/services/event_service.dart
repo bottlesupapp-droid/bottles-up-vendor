@@ -100,7 +100,7 @@ class EventService {
     }
   }
 
-  // Get zones for events
+  // Get zones for events (all active zones — unscoped fallback)
   Future<List<Map<String, dynamic>>> getZones() async {
     try {
       final response = await _supabase
@@ -112,6 +112,22 @@ class EventService {
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       throw Exception('Failed to fetch zones: $e');
+    }
+  }
+
+  // Get zones scoped to a specific club/venue
+  Future<List<Map<String, dynamic>>> getZonesForClub(String clubId) async {
+    try {
+      final response = await _supabase
+          .from('zones')
+          .select('id, name, description, capacity, ticket_price, zone_type')
+          .eq('club_id', clubId)
+          .eq('is_active', true)
+          .order('name');
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      throw Exception('Failed to fetch zones for club: $e');
     }
   }
 
@@ -189,17 +205,20 @@ class EventService {
       var query = _supabase.from('events').select().eq('user_id', userId);
 
       // Apply tab filter
-      final now = DateTime.now().toIso8601String();
+      // Use date-only string: event_date is a DATE column; comparing against a
+      // full ISO timestamp (with time) causes PostgreSQL to cast the date to
+      // midnight, making today's events fail the >=now check.
+      final nowDate = DateTime.now().toIso8601String().split('T')[0]; // 'YYYY-MM-DD'
       if (tab == 'active') {
-        // Show all future events that are not drafts, completed, or cancelled
+        // Show all future (or today's) events that are not drafts / past
         query = query
             .not('status', 'in', '(draft,completed,cancelled)')
-            .gte('event_date', now);
+            .gte('event_date', nowDate);
       } else if (tab == 'draft') {
         query = query.eq('status', 'draft');
       } else if (tab == 'past') {
-        // Show completed and cancelled events, OR past events regardless of status
-        query = query.or('status.in.(completed,cancelled),event_date.lt.$now');
+        // Completed / cancelled, OR any event whose date has passed
+        query = query.or('status.in.(completed,cancelled),event_date.lt.$nowDate');
       }
 
       // Apply additional filters if filter object has properties
