@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
-import 'dart:io';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../shared/services/check_in_service.dart';
 import '../providers/scanner_provider.dart';
@@ -19,31 +18,28 @@ class QRScannerScreen extends ConsumerStatefulWidget {
 }
 
 class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  QRViewController? controller;
+  final MobileScannerController controller = MobileScannerController(
+    torchEnabled: false,
+    detectionSpeed: DetectionSpeed.normal,
+    detectionTimeoutMs: 1000,
+    formats: const [BarcodeFormat.qrCode],
+  );
   bool isProcessing = false;
   bool flashOn = false;
 
   @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) controller?.pauseCamera();
-    controller?.resumeCamera();
-  }
-
-  @override
   void dispose() {
-    controller?.dispose();
+    controller.dispose();
     super.dispose();
   }
 
-  void _onQRViewCreated(QRViewController ctrl) {
-    controller = ctrl;
-    ctrl.scannedDataStream.listen((scan) {
-      if (!isProcessing && scan.code != null) {
-        _processTicket(scan.code!);
+  void _onDetect(BarcodeCapture capture) {
+    final List<Barcode> barcodes = capture.barcodes;
+    for (final barcode in barcodes) {
+      if (!isProcessing && barcode.rawValue != null) {
+        _processTicket(barcode.rawValue!);
       }
-    });
+    }
   }
 
   Future<void> _processTicket(String ticketCode) async {
@@ -51,7 +47,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
     setState(() => isProcessing = true);
 
     try {
-      controller?.pauseCamera();
+      await controller.stop();
       final ticket = await ref.read(scannerProvider.notifier).checkInTicket(
             ticketCode,
             eventId: widget.eventId,
@@ -62,7 +58,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
     } finally {
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) setState(() => isProcessing = false);
-      controller?.resumeCamera();
+      await controller.start();
     }
   }
 
@@ -99,39 +95,6 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
             if (ticket.guestPhone != null) _row('Phone', ticket.guestPhone!),
             _row('Guests / Qty', ticket.quantity.toString()),
             _row('Code', ticket.ticketCode),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAlreadyCheckedIn(UnifiedTicket ticket) {
-    final theme = Theme.of(context);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Ionicons.warning, color: Colors.orange, size: 32),
-            SizedBox(width: 12),
-            Text('Already Checked In', style: TextStyle(fontSize: 17)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _row('Booking', ticket.title),
-            if (ticket.checkedInAt != null)
-              _row('Time', _fmt(ticket.checkedInAt!)),
           ],
         ),
         actions: [
@@ -209,12 +172,8 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
         ),
       );
 
-  String _fmt(DateTime dt) =>
-      '${dt.day}/${dt.month}/${dt.year} '
-      '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-
   void _toggleFlash() async {
-    await controller?.toggleFlash();
+    await controller.toggleTorch();
     setState(() => flashOn = !flashOn);
   }
 
@@ -222,6 +181,11 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isEventScoped = widget.eventId != null;
+    final scanWindow = Rect.fromCenter(
+      center: MediaQuery.sizeOf(context).center(Offset.zero),
+      width: MediaQuery.sizeOf(context).width * 0.7,
+      height: MediaQuery.sizeOf(context).width * 0.7,
+    );
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -261,17 +225,25 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
           Expanded(
             flex: 4,
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                QRView(
-                  key: qrKey,
-                  onQRViewCreated: _onQRViewCreated,
-                  overlay: QrScannerOverlayShape(
-                    borderColor: const Color(0xFFFF6B35),
-                    borderRadius: 12,
-                    borderLength: 40,
-                    borderWidth: 8,
-                    cutOutSize: MediaQuery.of(context).size.width * 0.7,
+                MobileScanner(
+                  controller: controller,
+                  scanWindow: scanWindow,
+                  onDetect: _onDetect,
+                  errorBuilder: (context, error) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                        const SizedBox(height: 16),
+                        Text('Scanner error: $error', style: const TextStyle(color: Colors.white)),
+                      ],
+                    ),
                   ),
+                ),
+                CustomPaint(
+                  painter: ScannerOverlay(scanWindow: scanWindow),
                 ),
                 if (isProcessing)
                   Container(
@@ -333,4 +305,99 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
           Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
         ],
       );
+}
+
+class ScannerOverlay extends CustomPainter {
+  const ScannerOverlay({
+    required this.scanWindow,
+    this.borderColor = const Color(0xFFFF6B35),
+  });
+
+  final Rect scanWindow;
+  final Color borderColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final backgroundPaint = Paint()
+      ..color = Colors.black54
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8;
+
+    final cutoutPath = Path()..addRect(scanWindow);
+    final backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path = Path.combine(PathOperation.difference, backgroundPath, cutoutPath);
+    canvas.drawPath(path, backgroundPaint);
+
+    // Draw the border with rounded corners
+    final borderRadius = BorderRadius.circular(12);
+    final borderRect = RRect.fromRectAndRadius(scanWindow, borderRadius.topLeft);
+    canvas.drawRRect(borderRect, borderPaint);
+
+    // Draw corner markers
+    final cornerSize = 40.0;
+    final cornerPaint = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
+
+    // Top left
+    canvas.drawLine(
+      scanWindow.topLeft + Offset(cornerSize, 0),
+      scanWindow.topLeft,
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.topLeft,
+      scanWindow.topLeft + Offset(0, cornerSize),
+      cornerPaint,
+    );
+
+    // Top right
+    canvas.drawLine(
+      scanWindow.topRight - Offset(cornerSize, 0),
+      scanWindow.topRight,
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.topRight,
+      scanWindow.topRight + Offset(0, cornerSize),
+      cornerPaint,
+    );
+
+    // Bottom left
+    canvas.drawLine(
+      scanWindow.bottomLeft + Offset(cornerSize, 0),
+      scanWindow.bottomLeft,
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.bottomLeft,
+      scanWindow.bottomLeft - Offset(0, cornerSize),
+      cornerPaint,
+    );
+
+    // Bottom right
+    canvas.drawLine(
+      scanWindow.bottomRight - Offset(cornerSize, 0),
+      scanWindow.bottomRight,
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.bottomRight,
+      scanWindow.bottomRight - Offset(0, cornerSize),
+      cornerPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant ScannerOverlay oldDelegate) =>
+      oldDelegate.scanWindow != scanWindow ||
+      oldDelegate.borderColor != borderColor;
 }

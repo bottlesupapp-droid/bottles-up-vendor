@@ -32,7 +32,7 @@ android {
     defaultConfig {
         applicationId = "com.bottlesup.vendor"
         // minSdk 21 required for modern Android features and Firebase
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
