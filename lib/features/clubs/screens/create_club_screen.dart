@@ -184,7 +184,12 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
           ? const Center(child: CircularProgressIndicator())
           : ResponsiveWrapper(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+                padding: EdgeInsets.fromLTRB(
+                  utils.ResponsiveUtils.getResponsivePadding(context),
+                  utils.ResponsiveUtils.getResponsivePadding(context),
+                  utils.ResponsiveUtils.getResponsivePadding(context),
+                  utils.ResponsiveUtils.getResponsivePadding(context) + MediaQuery.of(context).padding.bottom + 80,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(

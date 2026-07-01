@@ -188,12 +188,12 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
 
       // Generate unique filename with timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${currentUser.id}/${category}_$timestamp.$extension';
+      final fileName = 'venues/${currentUser.id}/${category}_$timestamp.$extension';
 
       // Upload to Supabase Storage
       final supabase = SupabaseConfig.client;
       await supabase.storage
-          .from('venue-gallery')
+          .from('media')
           .uploadBinary(
             fileName,
             bytes,
@@ -205,7 +205,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
 
       // Get public URL
       final publicUrl = supabase.storage
-          .from('venue-gallery')
+          .from('media')
           .getPublicUrl(fileName);
 
       if (mounted) {

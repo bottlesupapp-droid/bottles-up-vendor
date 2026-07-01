@@ -205,13 +205,13 @@ class SupabaseAuthService {
     }
   }
 
-  // Update vendor user data
+  // Update vendor user data — upsert so onboarding works even when the
+  // vendors row doesn't exist yet (avoids PostgREST 404 on .update()).
   Future<void> updateVendorUser(VendorUser user) async {
     try {
       await _client
           .from('vendors')
-          .update(user.toMap())
-          .eq('id', user.id);
+          .upsert(user.toMap());
     } catch (e) {
       throw Exception('Failed to update vendor user: $e');
     }

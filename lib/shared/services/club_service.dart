@@ -95,16 +95,17 @@ class ClubService {
   // Upload club image
   Future<String> uploadClubImage(String clubId, Uint8List imageBytes, String originalFileName) async {
     try {
-      final fileExt = originalFileName.split('.').last;
-      final fileName = '$clubId-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-      
-      await _supabase.storage
-          .from('club-images')
-          .uploadBinary(fileName, imageBytes);
+      final userId = _supabase.auth.currentUser?.id ?? clubId;
+      final fileExt = originalFileName.split('.').last.toLowerCase();
+      final fileName = 'clubs/$userId/${clubId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
 
-      final imageUrl = _supabase.storage
-          .from('club-images')
-          .getPublicUrl(fileName);
+      await _supabase.storage.from('media').uploadBinary(
+            fileName,
+            imageBytes,
+            fileOptions: FileOptions(contentType: 'image/$fileExt'),
+          );
+
+      final imageUrl = _supabase.storage.from('media').getPublicUrl(fileName);
 
       return imageUrl;
     } catch (e) {

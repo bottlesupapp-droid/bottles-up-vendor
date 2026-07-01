@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../../auth/services/supabase_auth_service.dart';
@@ -19,6 +21,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   bool _isLoading = false;
+  bool _isUploadingPhoto = false;
+  String? _logoUrl;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -28,6 +33,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _businessNameController = TextEditingController(text: user?.businessName ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
+    _logoUrl = user?.logoUrl;
   }
 
   @override
@@ -37,6 +43,52 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (pickedFile == null) return;
+
+      final currentUser = ref.read(currentVendorUserProvider);
+      if (currentUser == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+
+      final bytes = await pickedFile.readAsBytes();
+      final fileExt = pickedFile.path.split('.').last.toLowerCase();
+      final fileName = 'vendors/${currentUser.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+      await Supabase.instance.client.storage.from('media').uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: FileOptions(contentType: 'image/$fileExt'),
+          );
+
+      final photoUrl = Supabase.instance.client.storage.from('media').getPublicUrl(fileName);
+
+      setState(() {
+        _logoUrl = photoUrl;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -54,6 +106,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final updatedUser = currentUser.copyWith(
         businessName: _businessNameController.text.trim(),
         phone: _phoneController.text.trim(),
+        logoUrl: _logoUrl,
         updatedAt: DateTime.now(),
       );
 
@@ -103,7 +156,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom + 80),
         child: Form(
           key: _formKey,
           child: Column(
@@ -111,21 +164,60 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             children: [
               // Profile Photo Section
               Center(
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(60),
-                    border: Border.all(
-                      color: theme.colorScheme.primary,
-                      width: 3,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(60),
+                        border: Border.all(
+                          color: theme.colorScheme.primary,
+                          width: 3,
+                        ),
+                        image: _logoUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(_logoUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: _isUploadingPhoto
+                          ? const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : _logoUrl == null
+                              ? Icon(
+                                  Ionicons.person,
+                                  size: 60,
+                                  color: theme.colorScheme.primary,
+                                )
+                              : null,
                     ),
-                  ),
-                  child: Icon(
-                    Ionicons.person,
-                    size: 60,
-                    color: theme.colorScheme.primary,
-                  ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.scaffoldBackgroundColor,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Ionicons.camera,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 

@@ -142,18 +142,28 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
 
       final supabase = SupabaseConfig.client;
 
-      // Save staff profile to staff_profiles table
-      await supabase.from('staff_profiles').upsert({
-        'vendor_id': currentUser.id,
-        'phone_number': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-        'profile_photo_url': _photoUrl,
-        'roles': _selectedRoles.toList(),
-        'id_document_url': _idDocumentUrl,
-        'is_available': true,
-      });
+      // Attempt to save extended staff data. The staff_profiles table is
+      // optional — if it doesn't exist yet in the project, skip silently.
+      try {
+        await supabase.from('staff_profiles').upsert({
+          'vendor_id': currentUser.id,
+          'phone_number': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+          'profile_photo_url': _photoUrl,
+          'roles': _selectedRoles.toList(),
+          'id_document_url': _idDocumentUrl,
+          'is_available': true,
+        });
+      } catch (staffProfileError) {
+        // Non-fatal: staff_profiles table may not exist yet.
+        // The essential data (roles, phone) is also stored on the vendors row.
+        debugPrint('⚠️ staff_profiles upsert skipped: $staffProfileError');
+      }
 
-      // Update vendor onboarding_completed flag
-      final updatedUser = currentUser.copyWith(onboardingCompleted: true);
+      // Update vendor row (upsert handles the case where the row is new).
+      final updatedUser = currentUser.copyWith(
+        onboardingCompleted: true,
+        phone: _phoneController.text.trim().isEmpty ? currentUser.phone : _phoneController.text.trim(),
+      );
       await ref.read(supabaseAuthProvider.notifier).updateVendorUser(updatedUser);
 
       if (mounted) {
@@ -171,11 +181,20 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
     } catch (e) {
       if (mounted) {
         // Show error dialog
+        String errorMessage = 'Something went wrong. Please check your connection and try again.';
+        final raw = e.toString();
+        if (raw.contains('No user logged in')) {
+          errorMessage = 'Your session has expired. Please sign in again.';
+        } else if (raw.contains('network') || raw.contains('socket') || raw.contains('timeout')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (raw.contains('permission') || raw.contains('policy') || raw.contains('RLS')) {
+          errorMessage = 'Permission denied. Please contact support if this persists.';
+        }
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to save profile: ${e.toString()}'),
+            title: const Text('Could not save profile'),
+            content: Text(errorMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),

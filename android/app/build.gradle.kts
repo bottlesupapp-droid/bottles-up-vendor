@@ -66,7 +66,7 @@ android {
         }
         debug {
             // Debug builds don't need signing config
-            applicationIdSuffix = ".debug"
+            // Removed applicationIdSuffix to use same Firebase config as release
             versionNameSuffix = "-DEBUG"
         }
     }

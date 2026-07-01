@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/event.dart';
 
@@ -149,18 +150,28 @@ class EventService {
   // Upload event images
   Future<List<String>> uploadEventImages(String eventId, List<Uint8List> imageBytes, List<String> fileNames) async {
     try {
+      // Must be authenticated to upload
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) throw Exception('Not authenticated');
+
       final List<String> imageUrls = [];
-      
+
       for (int i = 0; i < imageBytes.length; i++) {
-        final fileExt = fileNames[i].split('.').last;
-        final fileName = '$eventId-${DateTime.now().millisecondsSinceEpoch}-$i.$fileExt';
-        
-        await _supabase.storage
-            .from('event-images')
-            .uploadBinary(fileName, imageBytes[i]);
+        final fileExt = fileNames[i].split('.').last.toLowerCase();
+        // Path must be under the authenticated user's folder so that the
+        // Storage RLS policy `(auth.uid() = owner)` or `objects.name LIKE
+        // 'flyers/{uid}/%'` is satisfied. Flat paths are rejected with 403.
+        final fileName =
+            'flyers/$userId/${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
+
+        await _supabase.storage.from('media').uploadBinary(
+              fileName,
+              imageBytes[i],
+              fileOptions: FileOptions(contentType: 'image/$fileExt'),
+            );
 
         final imageUrl = _supabase.storage
-            .from('event-images')
+            .from('media')
             .getPublicUrl(fileName);
 
         imageUrls.add(imageUrl);
@@ -168,6 +179,8 @@ class EventService {
 
       return imageUrls;
     } catch (e) {
+      // Log full error so we can see the exact Supabase StorageException detail
+      debugPrint('❌ [EventService] uploadEventImages error: $e');
       throw Exception('Failed to upload images: $e');
     }
   }

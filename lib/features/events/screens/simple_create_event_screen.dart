@@ -136,14 +136,14 @@ class _SimpleCreateEventScreenState
       final fileName =
           'flyers/$userId/${DateTime.now().millisecondsSinceEpoch}.$ext';
 
-      await SupabaseConfig.client.storage.from('event-images').uploadBinary(
+      await SupabaseConfig.client.storage.from('media').uploadBinary(
             fileName,
             bytes,
             fileOptions: FileOptions(contentType: 'image/$ext'),
           );
 
       final url = SupabaseConfig.client.storage
-          .from('event-images')
+          .from('media')
           .getPublicUrl(fileName);
 
       if (mounted) setState(() => _flyerImageUrl = url);
@@ -335,7 +335,7 @@ class _SimpleCreateEventScreenState
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).padding.bottom + 80),
         children: [
           // ── Event Info ──────────────────────────────────────────────────
           _sectionTitle(theme, 'Event Info'),

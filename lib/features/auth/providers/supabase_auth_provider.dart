@@ -193,6 +193,7 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
       state = state.copyWith(vendorUser: user);
     } catch (e) {
       state = state.copyWith(error: e.toString());
+      rethrow;
     }
   }
 

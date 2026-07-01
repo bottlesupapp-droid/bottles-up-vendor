@@ -8,21 +8,21 @@ import 'core/router/app_router.dart';
 import 'core/config/supabase_config.dart';
 import 'core/utils/error_handler.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Supabase
-  await SupabaseConfig.initialize();
-
-  // Global error boundary for uncaught errors
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    _logError(details.exception, details.stack);
-  };
-
-  // Catch errors from async gaps
+void main() {
+  // Catch errors from async gaps - must wrap everything including initialization
   runZonedGuarded(
-    () {
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      // Initialize Supabase
+      await SupabaseConfig.initialize();
+
+      // Global error boundary for uncaught errors
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        _logError(details.exception, details.stack);
+      };
+
       runApp(
         const ProviderScope(
           child: BottlesUpVendorApp(),

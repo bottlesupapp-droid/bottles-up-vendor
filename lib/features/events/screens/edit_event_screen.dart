@@ -51,6 +51,17 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
   Event? _originalEvent;
 
+  // Editing is locked when fewer than 72 hours remain before the event
+  bool get _isLocked {
+    if (_originalEvent == null) return false;
+    final eventDateTime = DateTime(
+      _originalEvent!.eventDate.year,
+      _originalEvent!.eventDate.month,
+      _originalEvent!.eventDate.day,
+    );
+    return eventDateTime.difference(DateTime.now()).inHours < 72;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -200,6 +211,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   }
 
   Future<void> _updateEvent() async {
+    if (_isLocked) return; // safety guard — UI should already prevent this
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
@@ -296,7 +308,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       ),
       body: ResponsiveWrapper(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+          padding: EdgeInsets.fromLTRB(
+            utils.ResponsiveUtils.getResponsivePadding(context),
+            utils.ResponsiveUtils.getResponsivePadding(context),
+            utils.ResponsiveUtils.getResponsivePadding(context),
+            utils.ResponsiveUtils.getResponsivePadding(context) +
+                MediaQuery.of(context).padding.bottom +
+                80, // clear floating nav bar
+          ),
           child: Form(
             key: _formKey,
             child: Column(
@@ -336,6 +355,50 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                 ),
 
                 SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
+
+                // 72-hour lock banner
+                if (_isLocked)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    margin: EdgeInsets.only(
+                        bottom: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.12),
+                      border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Ionicons.lock_closed_outline,
+                            color: Colors.orange, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Editing locked — event is within 72 hours',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'To protect attendees, event details cannot be changed within 72 hours of the start time.',
+                                style: TextStyle(
+                                  color: Colors.orange.withValues(alpha: 0.8),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // Basic Information Section
                 _buildSectionHeader(context, 'Event Information', Ionicons.information_circle_outline),
@@ -569,7 +632,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                         SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context)),
                       ],
                       OutlinedButton.icon(
-                        onPressed: _pickFlyerImage,
+                        onPressed: _isLocked ? null : _pickFlyerImage,
                         icon: Icon(_newFlyerImage == null && _existingFlyerUrl == null
                             ? Ionicons.cloud_upload_outline
                             : Ionicons.refresh_outline),
@@ -583,12 +646,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       if (_newFlyerImage != null || _existingFlyerUrl != null) ...[
                         SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.5),
                         TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _newFlyerImage = null;
-                              _existingFlyerUrl = null;
-                            });
-                          },
+                          onPressed: _isLocked
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _newFlyerImage = null;
+                                    _existingFlyerUrl = null;
+                                  });
+                                },
                           icon: const Icon(Ionicons.trash_outline, color: Colors.red),
                           label: const Text('Remove Flyer', style: TextStyle(color: Colors.red)),
                         ),
@@ -652,7 +717,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: _isSubmitting ? null : _updateEvent,
+                    onPressed: (_isSubmitting || _isLocked) ? null : _updateEvent,
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
@@ -708,6 +773,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
+      enabled: !_isLocked,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -727,7 +793,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     return DropdownButtonFormField<String>(
       value: value,
       items: items,
-      onChanged: onChanged,
+      onChanged: _isLocked ? null : onChanged,
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
@@ -742,7 +808,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: _isLocked ? null : onTap,
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
@@ -763,7 +829,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: _isLocked ? null : onTap,
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,

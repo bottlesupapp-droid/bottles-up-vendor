@@ -163,16 +163,16 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
       final bytes = await image.readAsBytes();
       final ext = image.path.split('.').last.toLowerCase();
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${currentUser.id}/${category}_$ts.$ext';
+      final fileName = 'venues/${currentUser.id}/${category}_$ts.$ext';
 
-      await SupabaseConfig.client.storage.from('venue-gallery').uploadBinary(
+      await SupabaseConfig.client.storage.from('media').uploadBinary(
             fileName,
             bytes,
             fileOptions: FileOptions(contentType: 'image/$ext', upsert: false),
           );
 
       final url = SupabaseConfig.client.storage
-          .from('venue-gallery')
+          .from('media')
           .getPublicUrl(fileName);
 
       if (mounted) {
@@ -371,7 +371,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).padding.bottom + 80),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

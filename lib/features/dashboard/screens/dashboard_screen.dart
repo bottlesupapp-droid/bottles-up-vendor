@@ -6,6 +6,7 @@ import 'package:responsive_builder/responsive_builder.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/glass_kit.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../shared/widgets/responsive_wrapper.dart';
 import '../../../core/utils/responsive_utils.dart' as utils;
@@ -18,16 +19,11 @@ class DashboardScreen extends ConsumerWidget {
     final dashboardData = ref.watch(dashboardProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: ResponsiveText.titleLarge(
-          'Dashboard',
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
+    return AmbientGlowBackground(
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: GlassAppBar(
+        title: 'Dashboard',
         actions: [
           IconButton(
             onPressed: () {
@@ -45,6 +41,7 @@ class DashboardScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => _buildErrorState(context, error, ref),
       ),
+    ),
     );
   }
 
@@ -370,124 +367,15 @@ class DashboardScreen extends ConsumerWidget {
     bool isAlert = false,
     VoidCallback? onTap,
   }) {
-    final theme = Theme.of(context);
-
-    return InkWell(
+    return GlassMetricCard(
+      icon: icon,
+      title: title,
+      value: value,
+      subtitle: subtitle,
+      color: isAlert ? Theme.of(context).colorScheme.error : color,
+      trend: trend,
+      isAlert: isAlert,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: ResponsiveContainer(
-      decoration: AppTheme.darkCardDecoration.copyWith(
-        border:
-            isAlert
-                ? Border.all(
-                  color: theme.colorScheme.error.withValues(alpha: 0.3),
-                  width: 1,
-                )
-                : null,
-      ),
-      padding: EdgeInsets.all(
-        utils.ResponsiveUtils.getResponsiveCardPadding(context) * 0.85,
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: color, size: 20),
-                  ),
-                  if (trend != null) ...[
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                isAlert
-                                    ? theme.colorScheme.error.withValues(alpha: 0.1)
-                                    : color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            trend,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: isAlert ? theme.colorScheme.error : color,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 9,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 6),
-              ResponsiveText.headlineMedium(
-                value,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
-                  color:
-                      isAlert
-                          ? theme.colorScheme.error
-                          : theme.colorScheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              ResponsiveText.titleSmall(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 1),
-              ResponsiveText.bodySmall(
-                subtitle,
-                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (onTap != null) ...[
-                const Spacer(),
-                Row(
-                  children: [
-                    Text(
-                      'View',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Icon(Icons.arrow_forward_ios, size: 9, color: color),
-                  ],
-                ),
-              ],
-            ],
-          );
-        },
-      ),
-    ),
     );
   }
 

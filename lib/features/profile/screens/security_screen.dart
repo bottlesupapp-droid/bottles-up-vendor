@@ -23,7 +23,7 @@ class SecurityScreen extends ConsumerWidget {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom + 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

@@ -69,7 +69,7 @@ class ManageEventTablesScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(eventTablesProvider(eventId)),
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom + 80),
               itemCount: tables.length,
               itemBuilder: (context, index) =>
                   _TableCard(table: tables[index], eventId: eventId),
