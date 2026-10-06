@@ -48,6 +48,12 @@ import '../../features/events/screens/manage_ticket_tiers_screen.dart';
 import '../../features/events/screens/manage_event_tables_screen.dart';
 import '../../features/events/screens/manage_lineup_screen.dart';
 import '../../shared/widgets/main_shell.dart';
+import '../../features/workspace/logic/workspace_routing.dart';
+import '../../features/workspace/providers/workspace_providers.dart';
+import '../../features/workspace/screens/accept_invitation_screen.dart';
+import '../../features/workspace/screens/workspace_section_screen.dart';
+import '../../features/workspace/screens/workspace_selector_screen.dart';
+import '../../features/workspace/widgets/workspace_shell.dart';
 
 // Route names
 class AppRoutes {
@@ -122,6 +128,7 @@ class CupertinoTransitionPage extends CustomTransitionPage<void> {
 final routerProvider = Provider<GoRouter>((ref) {
   final isAuthenticated = ref.watch(isAuthenticatedProvider);
   final vendorUser = ref.watch(currentVendorUserProvider);
+  final workspaceSnapshot = ref.watch(workspaceStateProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.login,
@@ -143,6 +150,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                                 currentPath == AppRoutes.onboardingOrganizer ||
                                 currentPath == AppRoutes.onboardingPromoter ||
                                 currentPath == AppRoutes.onboardingStaff;
+
+      // Workspace layer (memberships and invitations). It only takes over for people
+      // who have a workspace or a pending invitation; everyone else falls through to
+      // the vendor rules below, unchanged.
+      if (!isLoggedIn && currentPath == WorkspaceRoutes.acceptInvite) {
+        pendingInviteToken.value = state.uri.queryParameters['token'];
+      }
+      final workspaceDecision = decideWorkspaceRedirect(
+        isLoggedIn: isLoggedIn,
+        path: currentPath,
+        snapshot: workspaceSnapshot,
+        pendingToken: pendingInviteToken.value,
+      );
+      if (workspaceDecision.isFinal) return workspaceDecision.location;
 
       // If not logged in and not on auth route, redirect to login
       if (!isLoggedIn && !isAuthRoute) {
@@ -270,6 +291,36 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Main shell with bottom navigation
+      // Workspaces: pick one, accept an invitation, work inside a role's shell.
+      GoRoute(
+        path: WorkspaceRoutes.workspaces,
+        name: 'workspaces',
+        builder: (context, state) => const WorkspaceSelectorScreen(),
+      ),
+      GoRoute(
+        path: WorkspaceRoutes.acceptInvite,
+        name: 'acceptInvite',
+        builder: (context, state) => AcceptInvitationScreen(token: state.uri.queryParameters['token']),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => WorkspaceShell(
+          membershipId: state.uri.pathSegments.length > 1 ? state.uri.pathSegments[1] : '',
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: '/w/:membershipId/:section',
+            name: 'workspaceSection',
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: WorkspaceSectionScreen(
+                membershipId: state.pathParameters['membershipId']!,
+                sectionId: state.pathParameters['section']!,
+              ),
+            ),
+          ),
+        ],
+      ),
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
         routes: [
