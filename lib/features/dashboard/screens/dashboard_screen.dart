@@ -137,7 +137,7 @@ class DashboardScreen extends ConsumerWidget {
 
         ResponsiveGrid(
           children: [
-            // Sales — monthly revenue, taps to earnings
+            // Sales — monthly revenue
             _buildMetricCard(
               context,
               icon: Ionicons.cash_outline,
@@ -146,7 +146,6 @@ class DashboardScreen extends ConsumerWidget {
               subtitle: 'This month',
               color: Colors.green,
               trend: data.monthlyRevenue > 0 ? 'This month' : null,
-              onTap: () => context.go('/earnings'),
             ),
             // Events — active events, upcoming count, taps to events
             _buildMetricCard(
@@ -161,7 +160,7 @@ class DashboardScreen extends ConsumerWidget {
                   : null,
               onTap: () => context.go('/events'),
             ),
-            // Payouts — estimated (85% of all-time revenue), taps to earnings
+            // Payouts — estimated (85% of all-time revenue)
             _buildMetricCard(
               context,
               icon: Ionicons.wallet_outline,
@@ -170,7 +169,6 @@ class DashboardScreen extends ConsumerWidget {
               subtitle: 'Est. earnings',
               color: Colors.blue,
               trend: data.confirmedRevenue > 0 ? '85% rate' : null,
-              onTap: () => context.go('/earnings'),
             ),
             // Bookings — total, confirmed count, taps to bookings
             _buildMetricCard(
