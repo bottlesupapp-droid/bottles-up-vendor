@@ -124,51 +124,77 @@ void main() {
     });
 
     group('BookingModel', () {
-      test('BookingModel can be created', () {
-        final booking = BookingModel(
-          id: 'booking-123',
+      BookingModel make({
+        String id = 'booking-123',
+        BookingStatus status = BookingStatus.confirmed,
+        BookingType type = BookingType.ticket,
+        DateTime? created,
+      }) {
+        final at = created ?? DateTime.utc(2024, 3, 15, 20);
+        return BookingModel(
+          id: id,
           userId: 'user-123',
           eventId: 'event-123',
           customerName: 'John Doe',
           customerEmail: 'john@example.com',
+          bookingType: type,
+          status: status,
+          quantity: 2,
           totalAmount: 100.0,
-          status: 'confirmed',
-          createdAt: DateTime.now(),
+          paidAmount: 40.0,
+          createdAt: at,
+          updatedAt: at,
         );
+      }
+
+      test('BookingModel can be created', () {
+        final booking = make();
 
         expect(booking.id, 'booking-123');
         expect(booking.customerName, 'John Doe');
         expect(booking.totalAmount, 100.0);
-        expect(booking.status, 'confirmed');
+        expect(booking.status, BookingStatus.confirmed);
+        expect(booking.checkedIn, isFalse);
       });
 
-      test('BookingModel toJson and fromJson works', () {
-        final originalBooking = BookingModel(
+      test('BookingModel toJson and fromJson round-trips every field', () {
+        final original = make(
           id: 'booking-456',
-          userId: 'user-456',
-          eventId: 'event-456',
-          customerName: 'Jane Smith',
-          customerEmail: 'jane@example.com',
-          totalAmount: 150.0,
-          status: 'pending',
-          createdAt: DateTime(2024, 3, 15),
+          status: BookingStatus.checkedIn,
+          type: BookingType.table,
         );
 
-        // Serialize to JSON
-        final json = originalBooking.toJson();
+        final json = original.toJson();
 
-        // Verify JSON structure
         expect(json['id'], 'booking-456');
-        expect(json['customer_name'], 'Jane Smith');
-        expect(json['total_amount'], 150.0);
+        expect(json['customer_name'], 'John Doe');
+        expect(json['total_amount'], 100.0);
+        expect(json['paid_amount'], 40.0);
+        expect(json['status'], 'checkedIn');
+        expect(json['booking_type'], 'table');
+        expect(json['quantity'], 2);
 
-        // Deserialize from JSON
-        final deserializedBooking = BookingModel.fromJson(json);
+        final restored = BookingModel.fromJson(json);
 
-        // Verify deserialized object matches original
-        expect(deserializedBooking.id, originalBooking.id);
-        expect(deserializedBooking.customerName, originalBooking.customerName);
-        expect(deserializedBooking.totalAmount, originalBooking.totalAmount);
+        expect(restored.id, original.id);
+        expect(restored.customerName, original.customerName);
+        expect(restored.totalAmount, original.totalAmount);
+        expect(restored.paidAmount, original.paidAmount);
+        expect(restored.status, BookingStatus.checkedIn);
+        expect(restored.bookingType, BookingType.table);
+        expect(restored.quantity, 2);
+        expect(restored.createdAt, original.createdAt);
+      });
+
+      test('fromJson falls back safely on missing or unknown enum values', () {
+        final json = make().toJson()
+          ..['status'] = 'something_new'
+          ..['booking_type'] = null;
+
+        final restored = BookingModel.fromJson(json);
+
+        expect(restored.status, BookingStatus.pending);
+        expect(restored.bookingType, BookingType.ticket);
       });
     });
   });

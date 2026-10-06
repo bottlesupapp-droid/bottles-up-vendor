@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/config/supabase_config.dart';
+import 'core/startup/startup_error_app.dart';
 import 'core/utils/error_handler.dart';
 
 void main() {
@@ -14,24 +15,36 @@ void main() {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
-      // Initialize Supabase
-      await SupabaseConfig.initialize();
-
-      // Global error boundary for uncaught errors
+      // Global error boundary for uncaught errors. Set before start-up so errors
+      // raised while initializing are logged too.
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.presentError(details);
         _logError(details.exception, details.stack);
       };
 
-      runApp(
-        const ProviderScope(
-          child: BottlesUpVendorApp(),
-        ),
-      );
+      await _start();
     },
     (error, stack) {
       _logError(error, stack);
     },
+  );
+}
+
+/// Initializes the backend and launches the app. If initialization fails the user
+/// gets a retry screen rather than a blank one.
+Future<void> _start() async {
+  try {
+    await SupabaseConfig.initialize();
+  } catch (error, stack) {
+    _logError(error, stack);
+    runApp(StartupErrorApp(onRetry: _start));
+    return;
+  }
+
+  runApp(
+    const ProviderScope(
+      child: BottlesUpVendorApp(),
+    ),
   );
 }
 

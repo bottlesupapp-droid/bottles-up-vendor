@@ -365,7 +365,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             keyboardType: TextInputType.emailAddress,
             style: theme.textTheme.bodyLarge,
             decoration: InputDecoration(
-              hintText: 'veronika.kalgushkinaa@gmail.com',
+              hintText: 'you@example.com',
               hintStyle: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),

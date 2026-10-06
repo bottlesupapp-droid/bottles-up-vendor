@@ -33,3 +33,7 @@
 
 # Keep custom model classes (adjust package name as needed)
 -keep class com.bottlesup.vendor.** { *; }
+
+# Flutter's embedding references Play Core (deferred components / split install), which this app
+# does not use or bundle. Without this, R8 aborts the release build with "Missing classes".
+-dontwarn com.google.android.play.core.**
