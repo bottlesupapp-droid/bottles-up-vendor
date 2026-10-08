@@ -56,6 +56,29 @@ tenancy tables in the website repo (`supabase/migrations/20261006120000_tenancy_
 belong to several workspaces and chooses one after sign-in (`/workspaces`); invitations are accepted at
 `/accept-invite`. Role to navigation mapping is in `models/role_navigation.dart`.
 
+### Door scanner (first screens on the website's functions)
+
+`lib/features/door/` is the door role's **Scan** and **Guests** tabs, built on the website's database functions instead of the
+legacy tables: `door_events`, `door_scan_ticket`, `door_verify_ticket_code`, `door_guests` (defined in the website repo's
+`supabase/migrations/20261009100000_door_scanner.sql`). They check in the database that the signed-in person holds a door
+role for the event, so the app decides nothing about who may admit whom. Only the door role gets them
+(`builtSectionFor` in `workspace_section_screen.dart`); a server's Scan tab is for table bookings and stays a placeholder, and Door
+Sales is not built.
+
+- `logic/door_rules.dart`: pure rules (what each answer means and its wording, when a camera read is acted on, reading rows).
+  The wording is the website's, word for word; a test compares them when the website repo is checked out next to this one.
+- `services/door_service.dart`: the calls. A scan never throws: a failure becomes an outcome ("access ended", "scan failed").
+  Loading events or guests throws `DoorLoadException`, with "not set up on this server yet" when the migration is missing.
+- Only "Admit" is green. The camera keeps running while an answer shows (the screen just stops acting on it); the same ticket
+  held up again within five seconds is not counted twice; typing a code is always checked. After an admission the count of
+  guests in is read again from the database.
+- **Needs the website migrations applied to the Supabase project.** Until then the tabs say "not set up on this server yet".
+  This was not run against a real database (there is no staging); behaviour is covered by tests with a fake backend and was
+  looked at on a throwaway web build. **Try the camera on a real phone before relying on it at a door**: the test browser
+  blocks it, so only the "camera unavailable, type the code" path has been exercised.
+- The old scanner (`features/scanner`, `shared/services/check_in_service.dart`) still reads the legacy tables for the classic
+  vendor dashboard and is untouched.
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:
