@@ -79,6 +79,26 @@ Sales is not built.
 - The old scanner (`features/scanner`, `shared/services/check_in_service.dart`) still reads the legacy tables for the classic
   vendor dashboard and is untouched.
 
+### Manager Floor (bookings on the website's functions)
+
+`lib/features/floor/` is the manager's **Floor** tab: the reservations of the manager's own club, night by night, read only, from
+the website's `list_venue_bookings(p_venue, p_from, p_to)` (website repo, `20261011100000_venue_bookings.sql`). The database
+checks the person owns or manages THAT venue, decides which business night each booking belongs to (a slot before 06:00 is the
+night before), and answers for at most 93 nights and 1000 rows; the app only shows it.
+
+- `logic/bookings_rules.dart` ports the website's `bookingsView.ts`: what each stored status means (an unknown status is never
+  "confirmed"), grouping by night, the counts, the ready-made ranges (Tonight, Next 7, Next 30, Last 7) in business nights, range
+  validation. Night arithmetic uses calendar dates, not "minus 24 hours", so clock-change days are right. Tests compare the
+  cutoff, limits, status wording and messages with the website repo when it is checked out beside this one.
+- Amounts are **what was booked, not what was collected** (the deposit and total on the booking). Money received, cancellation
+  detail and bottle orders live in production-only columns that no committed migration defines, so they are not shown until
+  `supabase db pull` brings them into the website repo. The screen says so.
+- Not here yet: walk-ins, guest allowances, table assignment, table check-in, bottle orders (the manager's **Orders** tab).
+- **Needs the website migrations applied** (tenancy for the manager's workspace, then the venue bookings one). Until then it says
+  "not set up on this server yet". Not run against a real database: there is no staging.
+- Run the tests under a timezone with daylight saving at least once (`TZ=America/Toronto flutter test test/floor`): a machine in a
+  zone without it cannot show the clock-change mistakes the night arithmetic guards against.
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:

@@ -1,5 +1,6 @@
 import 'package:bottles_up_vendor/features/door/screens/door_guests_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_scan_screen.dart';
+import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/role_navigation.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
@@ -27,13 +28,34 @@ void main() {
       expect((guests as DoorGuestsScreen).membershipId, 'm-door');
     });
 
+    test('the manager\'s Floor shows the bookings of the manager\'s own club', () {
+      final floor = builtSectionFor(as(WorkspaceRole.manager), 'floor');
+      expect(floor, isA<FloorScreen>());
+      expect((floor as FloorScreen).venueId, 'v1');
+      expect(floor.venueName, 'Club A');
+    });
+
+    test('an owner\'s workspace is not tied to a club, so a Floor opened for one has nothing to fetch', () {
+      const owner = Workspace(membershipId: 'm-o', orgId: 'o', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.owner);
+      expect(builtSectionFor(owner, 'floor'), isNull, reason: 'the owner has no Floor tab');
+      const manager = Workspace(membershipId: 'm-m', orgId: 'o', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.manager);
+      expect((builtSectionFor(manager, 'floor') as FloorScreen).venueId, isNull);
+    });
+
     test('no other section of any role is built yet: they all say so, honestly', () {
       for (final role in WorkspaceRole.values) {
         for (final section in navigationFor(role).sections) {
           final built = builtSectionFor(as(role), section.id);
           final isDoorScreen = role == WorkspaceRole.door && (section.id == 'scan' || section.id == 'guests');
-          expect(built != null, isDoorScreen, reason: '${role.name}/${section.id}');
+          final isFloor = role == WorkspaceRole.manager && section.id == 'floor';
+          expect(built != null, isDoorScreen || isFloor, reason: '${role.name}/${section.id}');
         }
+      }
+    });
+
+    test('a manager\'s other tabs are still placeholders: Orders needs bottle orders, which are not shown yet', () {
+      for (final id in ['tonight', 'orders', 'team', 'more']) {
+        expect(builtSectionFor(as(WorkspaceRole.manager), id), isNull, reason: id);
       }
     });
 
