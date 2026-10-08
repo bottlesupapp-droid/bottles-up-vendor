@@ -48,7 +48,8 @@ void main() {
           final built = builtSectionFor(as(role), section.id);
           final isDoorScreen = role == WorkspaceRole.door && (section.id == 'scan' || section.id == 'guests');
           final isFloor = role == WorkspaceRole.manager && section.id == 'floor';
-          expect(built != null, isDoorScreen || isFloor, reason: '${role.name}/${section.id}');
+          final isOwnerScreen = role == WorkspaceRole.owner && (section.id == 'home' || section.id == 'venues');
+          expect(built != null, isDoorScreen || isFloor || isOwnerScreen, reason: '${role.name}/${section.id}');
         }
       }
     });

@@ -3,10 +3,9 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/workspace/providers/workspace_providers.dart';
 import 'package:bottles_up_vendor/features/workspace/screens/accept_invitation_screen.dart';
-import 'package:bottles_up_vendor/features/workspace/screens/workspace_section_screen.dart';
+import 'package:bottles_up_vendor/features/workspace/workspace_routes.dart';
 import 'package:bottles_up_vendor/features/workspace/screens/workspace_selector_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/services/workspace_service.dart';
-import 'package:bottles_up_vendor/features/workspace/widgets/workspace_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,21 +29,7 @@ Widget harness(WorkspaceSnapshot snapshot, {String start = '/workspaces', Worksp
     GoRoute(path: '/workspaces', builder: (_, __) => const WorkspaceSelectorScreen()),
     GoRoute(path: '/accept-invite', builder: (_, s) => AcceptInvitationScreen(token: s.uri.queryParameters['token'])),
     GoRoute(path: '/dashboard', builder: (_, __) => const Scaffold(body: Text('classic dashboard'))),
-    ShellRoute(
-      builder: (_, s, child) => WorkspaceShell(
-        membershipId: s.uri.pathSegments.length > 1 ? s.uri.pathSegments[1] : '',
-        child: child,
-      ),
-      routes: [
-        GoRoute(
-          path: '/w/:membershipId/:section',
-          builder: (_, s) => WorkspaceSectionScreen(
-            membershipId: s.pathParameters['membershipId']!,
-            sectionId: s.pathParameters['section']!,
-          ),
-        ),
-      ],
-    ),
+    workspaceShellRoute(),
   ]);
   // A new key each time: pumping a second harness into the same scope would reuse the first one's cached providers.
   return ProviderScope(

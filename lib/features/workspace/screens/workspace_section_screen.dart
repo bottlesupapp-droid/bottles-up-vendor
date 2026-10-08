@@ -4,12 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../door/screens/door_guests_screen.dart';
 import '../../door/screens/door_scan_screen.dart';
 import '../../floor/screens/floor_screen.dart';
+import '../../owner/screens/owner_home_screen.dart';
+import '../../owner/screens/owner_venues_screen.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
 import '../models/workspace_role.dart';
 import '../providers/workspace_providers.dart';
 
 /// The sections that are built, keyed by role and section id. Everything else shows the honest "not built yet" card.
+///
+/// An owner's Home shows tonight across every venue of the business, and Venues lists the venues with their setup (each opens its
+/// bookings, setup checklist and booking link). Money, reports and the rest of the owner's tabs wait for the production-only
+/// definitions of payments.
 ///
 /// A manager's Floor shows the bookings of their own club (read only). The rest of the manager's tabs, Orders in particular, wait
 /// for bottle orders, whose cancelled lines and service state live in production-only columns.
@@ -24,6 +30,14 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
         return DoorScanScreen(membershipId: workspace.membershipId);
       case 'guests':
         return DoorGuestsScreen(membershipId: workspace.membershipId);
+    }
+  }
+  if (workspace.role == WorkspaceRole.owner) {
+    switch (sectionId) {
+      case 'home':
+        return OwnerHomeScreen(workspace: workspace);
+      case 'venues':
+        return OwnerVenuesScreen(workspace: workspace);
     }
   }
   if (workspace.role == WorkspaceRole.manager && sectionId == 'floor') {

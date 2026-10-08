@@ -33,6 +33,7 @@ class FloorScreen extends ConsumerStatefulWidget {
     this.clock = DateTime.now,
     this.pickNight = _defaultPicker,
     this.contact = _defaultContact,
+    this.showHeading = true,
   });
 
   /// The club this workspace is limited to. Null means the workspace is not tied to a club, and there is nothing to show.
@@ -43,6 +44,9 @@ class FloorScreen extends ConsumerStatefulWidget {
   final DateTime Function() clock;
   final NightPicker pickNight;
   final Future<void> Function(Uri uri) contact;
+
+  /// The "Bookings" heading and venue name. Off when the screen sits under a venue's own header.
+  final bool showHeading;
 
   @override
   ConsumerState<FloorScreen> createState() => _FloorScreenState();
@@ -105,9 +109,11 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
         children: [
-          Text('Bookings', style: theme.textTheme.headlineSmall),
-          if (widget.venueName != null) Text(widget.venueName!, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 16),
+          if (widget.showHeading) ...[
+            Text('Bookings', style: theme.textTheme.headlineSmall),
+            if (widget.venueName != null) Text(widget.venueName!, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 16),
+          ],
           Wrap(
             key: const Key('floor-presets'),
             spacing: 8,

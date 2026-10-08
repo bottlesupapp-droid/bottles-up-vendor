@@ -99,6 +99,27 @@ night before), and answers for at most 93 nights and 1000 rows; the app only sho
 - Run the tests under a timezone with daylight saving at least once (`TZ=America/Toronto flutter test test/floor`): a machine in a
   zone without it cannot show the clock-change mistakes the night arithmetic guards against.
 
+### Owner Home and Venues (venues on the website's functions)
+
+`lib/features/owner/` is the owner's **Home** and **Venues** tabs, plus a page for one venue. They read the website's
+`my_venues()`, `venue_setup_status(p_venue)` and `create_org_venue(p_org, p_name)`, and the venue's name/slug/address from
+`site_venues` (row level security limits that to venues the person can reach). Nothing here decides who may see or do what.
+
+- **Home:** tonight across every venue of the business (confirmed bookings, guests expected, arrived, awaiting payment), by the
+  business night, from the same `list_venue_bookings` read as the manager's Floor. A venue that cannot be read is said so and the totals
+  are marked incomplete. Sales, collections, balances and events are not available and the screen says so.
+- **Venues:** each venue with Live or Draft and how far it is set up (the database's checklist; only required steps count), and
+  "Add a venue". Tapping one pushes `/w/{membership}/venues/{venueId}` (defined once in `workspace/workspace_routes.dart`, used by the
+  app's router and by the tests): tabs **Bookings** (the Floor screen for that venue), **Setup** (the checklist) and **Link** (the
+  booking address, Copy, Preview for a live venue, and a QR code).
+- Rules are ports of the website's `venueSetup.ts` and `bookingLink.ts`; tests compare labels, order, the default site, the slug rule and
+  the function and argument names with the website repo when it is checked out beside this app. `--dart-define=SITE_URL=https://...`
+  points booking links elsewhere (only a plain https address is accepted; anything else is ignored).
+- **Not here yet:** editing floor plans, tables, the bottle menu and booking times (done on the website for now), claiming an existing
+  venue, taking a venue live, the owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked at, not scanned.
+- **Needs the website migrations applied** (tenancy, onboarding, venue bookings). Until then each screen says "not set up on this server
+  yet". Not run against a real database: there is no staging.
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:
