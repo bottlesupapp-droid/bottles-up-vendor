@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../workspace/services/workspace_service.dart' show RpcCaller;
 import '../logic/owner_rules.dart';
+import 'db_errors.dart';
 
 /// Loading venues or their setup failed. Carries what the screen needs to say, not a stack trace.
 class OwnerLoadException implements Exception {
@@ -33,14 +34,6 @@ class OwnerActionException implements Exception {
 /// limits to venues the person can reach; replaced in tests.
 typedef VenueRowsLoader = Future<List<Map<String, dynamic>>> Function(List<String> ids);
 
-String _messageOf(Object error) => error is PostgrestException ? error.message : error.toString();
-
-bool _isMissingFunction(Object error) =>
-    error is PostgrestException && (error.code == '42883' || error.code == 'PGRST202' || error.code == '42P01');
-
-bool _isNoAccess(Object error) =>
-    RegExp(r'not authori[sz]ed|not allowed|access has ended|signed out|not authenticated', caseSensitive: false).hasMatch(_messageOf(error));
-
 /// The owner's calls to the website's database functions: my_venues(), venue_setup_status(p_venue) and create_org_venue(p_org,
 /// p_name). They check in the database what this person may see and do; nothing here decides that.
 class OwnerService {
@@ -70,7 +63,7 @@ class OwnerService {
   List<Map<String, dynamic>> _rows(dynamic data) =>
       data is List ? [for (final r in data) if (r is Map) Map<String, dynamic>.from(r)] : const [];
 
-  OwnerLoadException _loadFailure(Object error) => OwnerLoadException(unavailable: _isMissingFunction(error), accessEnded: _isNoAccess(error));
+  OwnerLoadException _loadFailure(Object error) => OwnerLoadException(unavailable: isMissingFunction(error), accessEnded: isNoAccess(error));
 
   /// The venues of one business, with each one's booking-address name and status. A person can hold roles in several businesses,
   /// so only the ones belonging to [orgId] are returned. If the details cannot be read the venues still come back, without a
@@ -122,7 +115,7 @@ class OwnerService {
     } on OwnerActionException {
       rethrow;
     } catch (error) {
-      if (_isNoAccess(error)) throw const OwnerActionException("You don't have access to do that.");
+      if (isNoAccess(error)) throw const OwnerActionException("You don't have access to do that.");
       throw const OwnerActionException('The venue could not be added. Try again.');
     }
   }
