@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/date_time_picker.dart';
 import '../../owner/logic/owner_rules.dart' show OrgVenue, siteUrl;
 import '../../owner/widgets/setup_common.dart' show ProblemsBox;
 import '../../workspace/models/workspace.dart';
@@ -10,21 +11,7 @@ import '../providers/team_providers.dart';
 import '../services/team_service.dart';
 import '../widgets/invite_result_card.dart';
 
-/// Picks a date and time. Replaced in tests; in the app it is Flutter's date picker followed by its time picker.
-typedef DateTimePicker = Future<DateTime?> Function(BuildContext context, DateTime initial);
-
-Future<DateTime?> pickDateAndTime(BuildContext context, DateTime initial) async {
-  final date = await showDatePicker(
-    context: context,
-    initialDate: initial,
-    firstDate: DateTime.now().subtract(const Duration(days: 1)),
-    lastDate: DateTime.now().add(const Duration(days: 730)),
-  );
-  if (date == null || !context.mounted) return null;
-  final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(initial));
-  if (time == null) return null;
-  return DateTime(date.year, date.month, date.day, time.hour, time.minute);
-}
+export '../../../core/utils/date_time_picker.dart' show DateTimePicker, pickDateAndTime;
 
 /// Invite someone to a club. The roles offered come from the database (invitable_roles), so a manager is never shown "Manager" and
 /// nobody is offered something the server would refuse. Access can be ongoing or temporary, and can be tied to a shift. Pops the
