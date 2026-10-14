@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../door/screens/door_guests_screen.dart';
 import '../../door/screens/door_scan_screen.dart';
+import '../../floor/screens/floor_screen.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
 import '../models/workspace_role.dart';
 import '../providers/workspace_providers.dart';
 
 /// The sections that are built, keyed by role and section id. Everything else shows the honest "not built yet" card.
+///
+/// A manager's Floor shows the bookings of their own club (read only). The rest of the manager's tabs, Orders in particular, wait
+/// for bottle orders, whose cancelled lines and service state live in production-only columns.
 ///
 /// Only the DOOR role gets the ticket scanner. A server also has a Scan tab, but that one is for table bookings and stays a
 /// placeholder: scanning a ticket there would be the wrong tool, and the functions behind table check-in exist only in
@@ -21,6 +25,10 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
       case 'guests':
         return DoorGuestsScreen(membershipId: workspace.membershipId);
     }
+  }
+  if (workspace.role == WorkspaceRole.manager && sectionId == 'floor') {
+    // The manager's club comes from the workspace itself; the database re-checks that they manage it.
+    return FloorScreen(venueId: workspace.venueId, venueName: workspace.venueName);
   }
   return null;
 }
