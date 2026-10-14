@@ -115,10 +115,30 @@ night before), and answers for at most 93 nights and 1000 rows; the app only sho
 - Rules are ports of the website's `venueSetup.ts` and `bookingLink.ts`; tests compare labels, order, the default site, the slug rule and
   the function and argument names with the website repo when it is checked out beside this app. `--dart-define=SITE_URL=https://...`
   points booking links elsewhere (only a plain https address is accepted; anything else is ignored).
-- **Not here yet:** editing floor plans, tables, the bottle menu and booking times (done on the website for now), claiming an existing
-  venue, taking a venue live, the owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked at, not scanned.
+- **Not here yet:** editing floor plans and photos (done on the website for now), claiming an existing venue, taking a venue live, the
+  owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked at, not scanned.
 - **Needs the website migrations applied** (tenancy, onboarding, venue bookings). Until then each screen says "not set up on this server
   yet". Not run against a real database: there is no staging.
+
+#### Setup editors (tables, bottle menu, booking times)
+
+On a venue's **Setup** tab, the `tables`, `bottles` and `booking_rules` steps open an editor (the others stay on the website). They call
+the website's `list_/add_/save_/remove_venue_*` functions (`20261010100000_venue_setup.sql`), which check in the database that the
+person owns or manages THAT venue and refuse any field they do not know.
+
+- `logic/setup_forms.dart` ports `venueSetupForms.ts`: money typed in dollars and kept in whole cents by parsing digits (never floating
+  point), the checks and wording of each form, and the payloads. Tests read the website's migration (when it is checked out beside this
+  app) and fail if a form sends a field the database does not accept, or a limit differs.
+- `services/venue_setup_service.dart` is the calls; a refusal comes back as `SetupEditException` carrying the database's own sentence
+  (`raise exception`, code P0001), anything else as a generic one (`services/db_errors.dart`).
+- **Photos are not edited here.** The payloads never contain `image_url`; the server only changes keys that are sent, so editing a
+  table or bottle keeps its photo. `sort_order` is not sent either. Floor plans (image upload) are the next piece.
+- Quick switches on the bottle menu (On menu, Sold out) send only that one field. A table type or time with bookings cannot be removed
+  (the screen says so; the database refuses regardless). After any change the checklist is read again, so a step turns Done at once.
+- Several days can be added to one arrival time at once; each day is its own call and its outcome is reported (added, already there,
+  failed) without one failure stopping the rest.
+- Looked at on a throwaway web build and covered by tests with a fake database (`test/owner/fake_setup_backend.dart`); not run against
+  a real database.
 
 ### Archived code
 
