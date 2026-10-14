@@ -163,6 +163,30 @@ offers a role the database would refuse; nothing here grants access.
 - **Needs the website migrations applied** (tenancy, team invitations). Until then the tab says "The team is not set up on this server
   yet". Not run against a real database: there is no staging.
 
+### Organizer events (Home and Events)
+
+`lib/features/organizer_events/` is the organizer's **Home** and **Events** tabs: the business's events, with a way to create one, change
+or remove a draft, and a plain "Contact BottlesUp" on a published one. It calls the website's `list_org_events`, `save_org_event` and
+`remove_org_event` (website repo, `20261013100000_organizer_events.sql`, website PR #3). The database checks the person is an organizer of
+THAT business, looks the event up inside it, and writes only whitelisted fields; the screen decides nothing about who may do what.
+
+- **An organizer cannot publish.** Events are created as drafts; the payload never carries `status`, `org_id` or `slug` (the database
+  refuses them). A draft is private until the BottlesUp team publishes it in the CMS, which also sets up its ticket tiers. A published
+  event cannot be changed or removed here; the card says to contact BottlesUp.
+- `logic/organizer_events_rules.dart` ports the website's `organizerEvents.ts`: the limits, the form's checks and their wording, the
+  payload, grouping (drafts, upcoming, past; an event with no end lasts 12 hours), and how a time reads. Tests compare the limits, wording
+  and field list with the website repo (SQL and TypeScript) when it is checked out beside this app.
+- **The cover photo is not part of this version, and the payload leaves `cover_image_url` out** (the website sends it, because it edits it).
+  The database changes only the fields sent, so editing here keeps whatever photo the event has. Photos wait for image upload (floor plans
+  need it too).
+- Times are picked on the device and sent as UTC instants (the database refuses a time without a zone); they are shown back in the
+  device's zone, and the form says which. Opening a draft and saving it unchanged sends the same instants back.
+- Not here yet: ticket tiers, linking an event to a venue and its agreement, publishing by the organizer, the other event states from the
+  brief (these are client decisions or later parts of section 7), and an organizer's team and guests.
+- The classic vendor dashboard's own event wizard (`features/events`, legacy tables) is untouched and unrelated.
+- **Needs the website migration applied** (organizer events, after tenancy and onboarding). Until then the tab says "Events are not set up on
+  this server yet". Not run against a real database: there is no staging.
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:

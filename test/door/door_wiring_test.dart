@@ -1,6 +1,7 @@
 import 'package:bottles_up_vendor/features/door/screens/door_guests_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_scan_screen.dart';
 import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
+import 'package:bottles_up_vendor/features/organizer_events/screens/organizer_events_screen.dart';
 import 'package:bottles_up_vendor/features/team/screens/team_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/role_navigation.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
@@ -51,7 +52,8 @@ void main() {
           final isFloor = role == WorkspaceRole.manager && section.id == 'floor';
           final isOwnerScreen = role == WorkspaceRole.owner && (section.id == 'home' || section.id == 'venues');
           final isTeam = (role == WorkspaceRole.owner || role == WorkspaceRole.manager) && section.id == 'team';
-          expect(built != null, isDoorScreen || isFloor || isOwnerScreen || isTeam, reason: '${role.name}/${section.id}');
+          final isOrganizerEvents = role == WorkspaceRole.organizer && (section.id == 'home' || section.id == 'events');
+          expect(built != null, isDoorScreen || isFloor || isOwnerScreen || isTeam || isOrganizerEvents, reason: '${role.name}/${section.id}');
         }
       }
     });
@@ -76,6 +78,18 @@ void main() {
 
     test('a server\'s Scan is not the ticket scanner: it is for table bookings, which are not built here', () {
       expect(builtSectionFor(as(WorkspaceRole.server), 'scan'), isNull);
+    });
+
+    test('the organizer\'s Home and Events are the business\'s events; nobody else gets them', () {
+      for (final id in ['home', 'events']) {
+        final screen = builtSectionFor(as(WorkspaceRole.organizer), id);
+        expect(screen, isA<OrganizerEventsScreen>(), reason: id);
+        expect((screen as OrganizerEventsScreen).workspace.role, WorkspaceRole.organizer);
+      }
+      for (final role in WorkspaceRole.values.where((r) => r != WorkspaceRole.organizer)) {
+        expect(builtSectionFor(as(role), 'events'), isNull, reason: '${role.name} has no Events screen of the organizer\'s kind');
+      }
+      expect(builtSectionFor(as(WorkspaceRole.owner), 'home'), isNot(isA<OrganizerEventsScreen>()));
     });
 
     test('an organizer\'s Guests is not the door guest list', () {

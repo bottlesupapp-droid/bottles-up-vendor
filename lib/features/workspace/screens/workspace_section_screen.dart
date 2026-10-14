@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../door/screens/door_guests_screen.dart';
 import '../../door/screens/door_scan_screen.dart';
 import '../../floor/screens/floor_screen.dart';
+import '../../organizer_events/screens/organizer_events_screen.dart';
 import '../../owner/screens/owner_home_screen.dart';
 import '../../owner/screens/owner_venues_screen.dart';
 import '../../team/screens/team_screen.dart';
@@ -40,6 +41,10 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
       case 'venues':
         return OwnerVenuesScreen(workspace: workspace);
     }
+  }
+  // An organizer's Home and Events: the business's own events, created as private drafts that the BottlesUp team publishes.
+  if (workspace.role == WorkspaceRole.organizer && (sectionId == 'home' || sectionId == 'events')) {
+    return OrganizerEventsScreen(workspace: workspace);
   }
   // Team: an owner invites and manages everyone in the business, a manager the staff of their own club. The database decides who
   // sees whom and which roles may be appointed; the screen only shows it.
