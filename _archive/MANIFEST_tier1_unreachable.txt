@@ -1,0 +1,12 @@
+lib/core/utils/database_setup.dart
+lib/features/events/models/event_template.dart
+lib/features/events/models/event_wizard_state.dart
+lib/features/events/providers/events_provider.dart
+lib/features/events/screens/create_event_screen.dart
+lib/features/events/services/events_service.dart
+lib/shared/models/club_model.dart
+lib/shared/models/onboarding_profiles_model.dart
+lib/shared/models/stripe_account.dart
+lib/shared/models/venue_details_model.dart
+lib/shared/services/booking_service.dart
+lib/shared/services/team_service.dart

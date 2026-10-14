@@ -1,1 +1,6 @@
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    # Code removed from the live app but kept for later. See _archive/README.md.
+    - _archive/**

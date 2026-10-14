@@ -80,7 +80,12 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     ref.listen<String?>(authErrorProvider, (previous, next) {
       if (next != null) {
         if (next == 'DATABASE_SETUP_REQUIRED') {
-          context.go('/database-setup');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Registration is temporarily unavailable. Please contact support.'),
+              backgroundColor: theme.colorScheme.error,
+            ),
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

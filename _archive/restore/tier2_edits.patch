@@ -1,0 +1,208 @@
+diff --git a/lib/core/router/app_router.dart b/lib/core/router/app_router.dart
+index d962d39..5729fcb 100644
+--- a/lib/core/router/app_router.dart
++++ b/lib/core/router/app_router.dart
+@@ -9,8 +9,6 @@ import '../../features/auth/screens/register_screen.dart';
+ import '../../features/auth/screens/forgot_password_screen.dart';
+ import '../../features/auth/screens/phone_login_screen.dart';
+ import '../../features/auth/screens/otp_verification_screen.dart';
+-import '../../features/auth/screens/database_setup_screen.dart';
+-import '../../features/auth/screens/debug_screen.dart';
+ import '../../features/auth/screens/role_selection_screen.dart';
+ import '../../features/auth/screens/onboarding/venue_onboarding_screen.dart';
+ import '../../features/auth/screens/onboarding/organizer_onboarding_screen.dart';
+@@ -31,8 +29,6 @@ import '../../features/events/screens/inventory_screen.dart';
+ import '../../features/events/screens/bookings_screen.dart';
+ import '../../features/profile/screens/profile_screen.dart';
+ import '../../features/profile/screens/settings_screen.dart';
+-import '../../features/profile/screens/subscription_screen.dart';
+-import '../../features/earnings/screens/earnings_screen.dart';
+ import '../../features/profile/screens/edit_profile_screen.dart';
+ import '../../features/profile/screens/business_details_screen.dart';
+ import '../../features/profile/screens/security_screen.dart';
+@@ -44,8 +40,6 @@ import '../../features/profile/screens/privacy_policy_screen.dart';
+ import '../../features/profile/screens/about_screen.dart';
+ import '../../features/venues/screens/venue_directory_screen.dart';
+ import '../../features/venues/screens/venue_detail_screen.dart';
+-import '../../features/venues/screens/venue_owner_requests_screen.dart';
+-import '../../features/venues/screens/venue_boost_screen.dart';
+ import '../../features/analytics/screens/analytics_dashboard_screen.dart';
+ import '../../features/scanner/screens/qr_scanner_screen.dart';
+ import '../../features/events/screens/guest_list_screen.dart';
+@@ -142,8 +136,6 @@ final routerProvider = Provider<GoRouter>((ref) {
+                           currentPath == AppRoutes.forgotPassword ||
+                           currentPath == AppRoutes.phoneLogin ||
+                           currentPath == AppRoutes.verifyOtp ||
+-                          currentPath == AppRoutes.databaseSetup ||
+-                          currentPath == AppRoutes.debug ||
+                           currentPath == AppRoutes.roleSelection;
+ 
+       // Define onboarding routes
+@@ -231,22 +223,6 @@ final routerProvider = Provider<GoRouter>((ref) {
+           );
+         },
+       ),
+-      GoRoute(
+-        path: AppRoutes.databaseSetup,
+-        name: 'databaseSetup',
+-        pageBuilder: (context, state) => CupertinoTransitionPage(
+-          name: 'databaseSetup',
+-          child: const DatabaseSetupScreen(),
+-        ),
+-      ),
+-      GoRoute(
+-        path: AppRoutes.debug,
+-        name: 'debug',
+-        pageBuilder: (context, state) => CupertinoTransitionPage(
+-          name: 'debug',
+-          child: const DebugScreen(),
+-        ),
+-      ),
+       GoRoute(
+         path: AppRoutes.roleSelection,
+         name: 'roleSelection',
+@@ -484,15 +460,6 @@ final routerProvider = Provider<GoRouter>((ref) {
+             ),
+           ),
+ 
+-          // Earnings
+-          GoRoute(
+-            path: AppRoutes.earnings,
+-            name: 'earnings',
+-            pageBuilder: (context, state) => CupertinoTransitionPage(
+-              name: 'earnings',
+-              child: const EarningsScreen(),
+-            ),
+-          ),
+ 
+           // Profile
+           GoRoute(
+@@ -543,14 +510,6 @@ final routerProvider = Provider<GoRouter>((ref) {
+                   child: const SettingsScreen(),
+                 ),
+               ),
+-              GoRoute(
+-                path: 'subscription',
+-                name: 'subscription',
+-                pageBuilder: (context, state) => CupertinoTransitionPage(
+-                  name: 'subscription',
+-                  child: const SubscriptionScreen(),
+-                ),
+-              ),
+             ],
+           ),
+ 
+@@ -576,31 +535,10 @@ final routerProvider = Provider<GoRouter>((ref) {
+                     ),
+                   );
+                 },
+-                routes: [
+-                  GoRoute(
+-                    path: 'boost',
+-                    name: 'venueBoost',
+-                    pageBuilder: (context, state) => CupertinoTransitionPage(
+-                      name: 'venueBoost',
+-                      child: VenueBoostScreen(
+-                        venueId: state.pathParameters['venueId']!,
+-                      ),
+-                    ),
+-                  ),
+-                ],
+               ),
+             ],
+           ),
+ 
+-          // Venue Requests (for venue owners to manage requests)
+-          GoRoute(
+-            path: AppRoutes.venueRequests,
+-            name: 'venueRequests',
+-            pageBuilder: (context, state) => CupertinoTransitionPage(
+-              name: 'venueRequests',
+-              child: const VenueOwnerRequestsScreen(),
+-            ),
+-          ),
+         ],
+       ),
+ 
+diff --git a/lib/features/auth/screens/role_selection_screen.dart b/lib/features/auth/screens/role_selection_screen.dart
+index b896a51..47d7052 100644
+--- a/lib/features/auth/screens/role_selection_screen.dart
++++ b/lib/features/auth/screens/role_selection_screen.dart
+@@ -80,7 +80,12 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
+     ref.listen<String?>(authErrorProvider, (previous, next) {
+       if (next != null) {
+         if (next == 'DATABASE_SETUP_REQUIRED') {
+-          context.go('/database-setup');
++          ScaffoldMessenger.of(context).showSnackBar(
++            SnackBar(
++              content: const Text('Registration is temporarily unavailable. Please contact support.'),
++              backgroundColor: theme.colorScheme.error,
++            ),
++          );
+         } else {
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(
+diff --git a/lib/features/dashboard/screens/dashboard_screen.dart b/lib/features/dashboard/screens/dashboard_screen.dart
+index 5c85501..9fa0efc 100644
+--- a/lib/features/dashboard/screens/dashboard_screen.dart
++++ b/lib/features/dashboard/screens/dashboard_screen.dart
+@@ -137,7 +137,7 @@ class DashboardScreen extends ConsumerWidget {
+ 
+         ResponsiveGrid(
+           children: [
+-            // Sales — monthly revenue, taps to earnings
++            // Sales — monthly revenue
+             _buildMetricCard(
+               context,
+               icon: Ionicons.cash_outline,
+@@ -146,7 +146,6 @@ class DashboardScreen extends ConsumerWidget {
+               subtitle: 'This month',
+               color: Colors.green,
+               trend: data.monthlyRevenue > 0 ? 'This month' : null,
+-              onTap: () => context.go('/earnings'),
+             ),
+             // Events — active events, upcoming count, taps to events
+             _buildMetricCard(
+@@ -161,7 +160,7 @@ class DashboardScreen extends ConsumerWidget {
+                   : null,
+               onTap: () => context.go('/events'),
+             ),
+-            // Payouts — estimated (85% of all-time revenue), taps to earnings
++            // Payouts — estimated (85% of all-time revenue)
+             _buildMetricCard(
+               context,
+               icon: Ionicons.wallet_outline,
+@@ -170,7 +169,6 @@ class DashboardScreen extends ConsumerWidget {
+               subtitle: 'Est. earnings',
+               color: Colors.blue,
+               trend: data.confirmedRevenue > 0 ? '85% rate' : null,
+-              onTap: () => context.go('/earnings'),
+             ),
+             // Bookings — total, confirmed count, taps to bookings
+             _buildMetricCard(
+diff --git a/lib/features/profile/screens/profile_screen.dart b/lib/features/profile/screens/profile_screen.dart
+index b0fb6e9..cd580fd 100644
+--- a/lib/features/profile/screens/profile_screen.dart
++++ b/lib/features/profile/screens/profile_screen.dart
+@@ -7,7 +7,6 @@ import '../../../shared/models/user_model.dart';
+ import '../../auth/providers/supabase_auth_provider.dart';
+ import '../../auth/services/supabase_auth_service.dart';
+ import '../providers/profile_stats_provider.dart';
+-import 'subscription_screen.dart';
+ 
+ class ProfileScreen extends ConsumerWidget {
+   const ProfileScreen({super.key});
+@@ -329,13 +328,6 @@ class ProfileScreen extends ConsumerWidget {
+                           context.push('/bookings');
+                         },
+                       ),
+-                      _buildActionTile(
+-                        context,
+-                        icon: Ionicons.card_outline,
+-                        title: 'Subscription',
+-                        subtitle: 'Manage your plan & billing',
+-                        onTap: () => context.push('/profile/subscription'),
+-                      ),
+                       _buildActionTile(
+                         context,
+                         icon: Ionicons.settings_outline,

@@ -9,8 +9,6 @@ import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/phone_login_screen.dart';
 import '../../features/auth/screens/otp_verification_screen.dart';
-import '../../features/auth/screens/database_setup_screen.dart';
-import '../../features/auth/screens/debug_screen.dart';
 import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/onboarding/venue_onboarding_screen.dart';
 import '../../features/auth/screens/onboarding/organizer_onboarding_screen.dart';
@@ -31,8 +29,6 @@ import '../../features/events/screens/inventory_screen.dart';
 import '../../features/events/screens/bookings_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
-import '../../features/profile/screens/subscription_screen.dart';
-import '../../features/earnings/screens/earnings_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/business_details_screen.dart';
 import '../../features/profile/screens/security_screen.dart';
@@ -44,8 +40,6 @@ import '../../features/profile/screens/privacy_policy_screen.dart';
 import '../../features/profile/screens/about_screen.dart';
 import '../../features/venues/screens/venue_directory_screen.dart';
 import '../../features/venues/screens/venue_detail_screen.dart';
-import '../../features/venues/screens/venue_owner_requests_screen.dart';
-import '../../features/venues/screens/venue_boost_screen.dart';
 import '../../features/analytics/screens/analytics_dashboard_screen.dart';
 import '../../features/scanner/screens/qr_scanner_screen.dart';
 import '../../features/events/screens/guest_list_screen.dart';
@@ -142,8 +136,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                           currentPath == AppRoutes.forgotPassword ||
                           currentPath == AppRoutes.phoneLogin ||
                           currentPath == AppRoutes.verifyOtp ||
-                          currentPath == AppRoutes.databaseSetup ||
-                          currentPath == AppRoutes.debug ||
                           currentPath == AppRoutes.roleSelection;
 
       // Define onboarding routes
@@ -230,22 +222,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: OtpVerificationScreen(phoneNumber: phoneNumber),
           );
         },
-      ),
-      GoRoute(
-        path: AppRoutes.databaseSetup,
-        name: 'databaseSetup',
-        pageBuilder: (context, state) => CupertinoTransitionPage(
-          name: 'databaseSetup',
-          child: const DatabaseSetupScreen(),
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.debug,
-        name: 'debug',
-        pageBuilder: (context, state) => CupertinoTransitionPage(
-          name: 'debug',
-          child: const DebugScreen(),
-        ),
       ),
       GoRoute(
         path: AppRoutes.roleSelection,
@@ -484,15 +460,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
 
-          // Earnings
-          GoRoute(
-            path: AppRoutes.earnings,
-            name: 'earnings',
-            pageBuilder: (context, state) => CupertinoTransitionPage(
-              name: 'earnings',
-              child: const EarningsScreen(),
-            ),
-          ),
 
           // Profile
           GoRoute(
@@ -543,14 +510,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                   child: const SettingsScreen(),
                 ),
               ),
-              GoRoute(
-                path: 'subscription',
-                name: 'subscription',
-                pageBuilder: (context, state) => CupertinoTransitionPage(
-                  name: 'subscription',
-                  child: const SubscriptionScreen(),
-                ),
-              ),
             ],
           ),
 
@@ -576,31 +535,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   );
                 },
-                routes: [
-                  GoRoute(
-                    path: 'boost',
-                    name: 'venueBoost',
-                    pageBuilder: (context, state) => CupertinoTransitionPage(
-                      name: 'venueBoost',
-                      child: VenueBoostScreen(
-                        venueId: state.pathParameters['venueId']!,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
 
-          // Venue Requests (for venue owners to manage requests)
-          GoRoute(
-            path: AppRoutes.venueRequests,
-            name: 'venueRequests',
-            pageBuilder: (context, state) => CupertinoTransitionPage(
-              name: 'venueRequests',
-              child: const VenueOwnerRequestsScreen(),
-            ),
-          ),
         ],
       ),
 
