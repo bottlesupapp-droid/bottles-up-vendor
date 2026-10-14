@@ -1,6 +1,8 @@
 import 'package:bottles_up_vendor/features/door/screens/door_guests_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_scan_screen.dart';
 import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
+import 'package:bottles_up_vendor/features/server_desk/screens/my_tables_screen.dart';
+import 'package:bottles_up_vendor/features/server_desk/screens/service_requests_screen.dart';
 import 'package:bottles_up_vendor/features/organizer_events/screens/organizer_events_screen.dart';
 import 'package:bottles_up_vendor/features/team/screens/team_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/role_navigation.dart';
@@ -53,9 +55,23 @@ void main() {
           final isOwnerScreen = role == WorkspaceRole.owner && (section.id == 'home' || section.id == 'venues');
           final isTeam = (role == WorkspaceRole.owner || role == WorkspaceRole.manager) && section.id == 'team';
           final isOrganizerEvents = role == WorkspaceRole.organizer && (section.id == 'home' || section.id == 'events');
-          expect(built != null, isDoorScreen || isFloor || isOwnerScreen || isTeam || isOrganizerEvents, reason: '${role.name}/${section.id}');
+          final isServerDesk = role == WorkspaceRole.server && (section.id == 'tables' || section.id == 'requests');
+          expect(built != null, isDoorScreen || isFloor || isOwnerScreen || isTeam || isOrganizerEvents || isServerDesk, reason: '${role.name}/${section.id}');
         }
       }
+    });
+
+    test('a server gets My Tables and Requests; Orders and Scan wait for functions that exist only in production, and Chat for chat', () {
+      expect(builtSectionFor(as(WorkspaceRole.server), 'tables'), isA<MyTablesScreen>());
+      expect(builtSectionFor(as(WorkspaceRole.server), 'requests'), isA<ServiceRequestsScreen>());
+      for (final id in ['orders', 'scan', 'chat']) {
+        expect(builtSectionFor(as(WorkspaceRole.server), id), isNull, reason: id);
+      }
+    });
+
+    test('a manager\'s Floor can give a booking to a server: it is given the business', () {
+      const manager = Workspace(membershipId: 'm-m', orgId: 'o9', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.manager, venueId: 'v1', venueName: 'Club A');
+      expect((builtSectionFor(manager, 'floor') as FloorScreen).orgId, 'o9');
     });
 
     test('a manager\'s other tabs are still placeholders: Orders needs bottle orders, which are not shown yet', () {

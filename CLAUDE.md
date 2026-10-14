@@ -209,6 +209,22 @@ The Setup list's **Venue profile** and **Rooms and floor plan** steps open edito
   them is covered by tests with fakes. Try a real photo, including an iPhone one, before relying on it.
 - Not here yet: the gallery, deleting old files, reordering floors. (Table, bottle and event photos use the same `PhotoField`.)
 
+### Server desk (My Tables, Requests, and giving a booking to a server)
+
+`lib/features/server_desk/` is a server's **My Tables** and **Requests** tabs, plus the manager's and owner's "Server" line on each confirmed
+booking of the Floor / venue Bookings list. It calls the website's `my_assigned_tables`, `list_service_requests`, `create_service_request`,
+`update_service_request`, `list_venue_booking_servers`, `assign_booking_server`, `unassign_booking_server` (website repo,
+`20261014100000_table_servers.sql` and `20261014110000_service_requests.sql`, on branch `feat/server-desk-foundation`). The database decides who may
+do what; the buttons only offer moves it would accept (a test runs every offered button against a model of the SQL).
+
+- A booking has one server. Individual tables do not exist yet, so what is given out is the booking (the client brief says "tables": to confirm).
+- First to acknowledge owns a request; a colleague is told so. Asking twice for the same thing is one request. Escalating and cancelling need a reason.
+- A server's table list carries no guest email or phone and no money. What was paid and bottle orders live in production-only columns: the
+  server's Orders and Scan tabs stay placeholders until `supabase db pull` (or `supabase/audit/06_server_desk_definitions.sql`) brings them in.
+- The old staff functions (`list_my_tables` etc.) authorize through the global `door_staff` table, which an invited server is not in; this does not use them.
+- Not here: requests made by the guest, a manager's requests tab, handing a request on (the database supports it), shifts.
+- **Needs both website migrations applied.** Not run against a real database. Mutation-checked: rules, service, screens and the Floor row (the last 20 Floor/picker mutants were not run).
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:

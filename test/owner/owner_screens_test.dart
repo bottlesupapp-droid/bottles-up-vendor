@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:bottles_up_vendor/features/floor/providers/floor_providers.dart';
+import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
 import 'package:bottles_up_vendor/features/owner/logic/owner_rules.dart';
 import 'package:bottles_up_vendor/features/owner/providers/owner_providers.dart';
 import 'package:bottles_up_vendor/features/owner/screens/owner_home_screen.dart';
@@ -323,6 +324,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('venue-v1')), findsOneWidget, reason: 'the list again');
       expect(find.byKey(const Key('venue-title')), findsNothing);
+    });
+
+    testWidgets('Bookings is given the business, so the owner can give a booking to a server', (tester) async {
+      await open(tester, at('/w/m-o/venues/v1'));
+      final screen = tester.widget<FloorScreen>(find.byType(FloorScreen));
+      expect(screen.orgId, ownerWs.orgId);
+      expect(screen.venueId, 'v1');
     });
 
     testWidgets('Bookings: this venue\'s bookings for tonight, with no second "Bookings" heading', (tester) async {

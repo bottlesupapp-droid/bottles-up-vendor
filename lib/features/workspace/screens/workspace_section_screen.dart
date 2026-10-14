@@ -7,6 +7,8 @@ import '../../floor/screens/floor_screen.dart';
 import '../../organizer_events/screens/organizer_events_screen.dart';
 import '../../owner/screens/owner_home_screen.dart';
 import '../../owner/screens/owner_venues_screen.dart';
+import '../../server_desk/screens/my_tables_screen.dart';
+import '../../server_desk/screens/service_requests_screen.dart';
 import '../../team/screens/team_screen.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
@@ -22,9 +24,10 @@ import '../providers/workspace_providers.dart';
 /// A manager's Floor shows the bookings of their own club (read only). The rest of the manager's tabs, Orders in particular, wait
 /// for bottle orders, whose cancelled lines and service state live in production-only columns.
 ///
-/// Only the DOOR role gets the ticket scanner. A server also has a Scan tab, but that one is for table bookings and stays a
-/// placeholder: scanning a ticket there would be the wrong tool, and the functions behind table check-in exist only in
-/// production, so they cannot be built or tested from this repository yet.
+/// A server's My Tables (the tables the manager has given them for the night) and Requests (what those tables have asked for) are
+/// built on the website's `my_assigned_tables` and service-request functions. Their Orders and Scan tabs stay placeholders: bottle
+/// orders and table check-in live in functions and columns that exist only in production, so they cannot be built or tested from this
+/// repository yet. Only the DOOR role gets the ticket scanner: scanning a ticket on a server's Scan tab would be the wrong tool.
 Widget? builtSectionFor(Workspace workspace, String sectionId) {
   if (workspace.role == WorkspaceRole.door) {
     switch (sectionId) {
@@ -32,6 +35,14 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
         return DoorScanScreen(membershipId: workspace.membershipId);
       case 'guests':
         return DoorGuestsScreen(membershipId: workspace.membershipId);
+    }
+  }
+  if (workspace.role == WorkspaceRole.server) {
+    switch (sectionId) {
+      case 'tables':
+        return MyTablesScreen(workspace: workspace);
+      case 'requests':
+        return ServiceRequestsScreen(workspace: workspace);
     }
   }
   if (workspace.role == WorkspaceRole.owner) {
@@ -53,7 +64,7 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
   }
   if (workspace.role == WorkspaceRole.manager && sectionId == 'floor') {
     // The manager's club comes from the workspace itself; the database re-checks that they manage it.
-    return FloorScreen(venueId: workspace.venueId, venueName: workspace.venueName);
+    return FloorScreen(venueId: workspace.venueId, venueName: workspace.venueName, orgId: workspace.orgId);
   }
   return null;
 }
