@@ -105,13 +105,17 @@ void main() {
       expect([saved.typeId, saved.name, saved.minSpendCents, saved.depositCents, saved.inventoryCount], [id, 'Booth', 150000, 50000, 2]);
     });
 
-    test('changing a table leaves its photo alone: the photo is never sent, so the server keeps it', () async {
+    test('changing a table keeps its photo (the form sends the address back as it was); replacing it sends the new one; clearing it sends none', () async {
       db.tables.add(tableRowJson('t1', 'VIP booth'));
-      final form = tableTypeFormFrom((await db.service.tableTypes('v1')).single).copyWith(name: 'Renamed');
-      await db.service.saveTableType('v1', 't1', tableTypePayload(form));
+      final form = tableTypeFormFrom((await db.service.tableTypes('v1')).single);
+      await db.service.saveTableType('v1', 't1', tableTypePayload(form.copyWith(name: 'Renamed')));
       expect(db.tables.single['name'], 'Renamed');
       expect(db.tables.single['image_url'], 'https://img.example/t1.jpg');
-      expect((db.paramsOf('save_venue_table_type').single!['p_details'] as Map).containsKey('image_url'), isFalse);
+      expect((db.paramsOf('save_venue_table_type').single!['p_details'] as Map)['image_url'], 'https://img.example/t1.jpg');
+      await db.service.saveTableType('v1', 't1', tableTypePayload(form.copyWith(imageUrl: 'https://img.example/new.jpg')));
+      expect(db.tables.single['image_url'], 'https://img.example/new.jpg');
+      await db.service.saveTableType('v1', 't1', tableTypePayload(form.copyWith(imageUrl: '')));
+      expect(db.tables.single['image_url'], isNull);
     });
 
     test('a table that is not this venue\'s is refused in the database\'s words', () async {
@@ -146,9 +150,14 @@ void main() {
 
     test('changing a bottle leaves its photo alone', () async {
       db.bottles.add(bottleRowJson('b1', 'Vodka'));
-      await db.service.saveBottle('v1', 'b1', bottlePayload(bottleFormFrom((await db.service.bottles('v1')).single).copyWith(price: '200')));
+      final form = bottleFormFrom((await db.service.bottles('v1')).single);
+      await db.service.saveBottle('v1', 'b1', bottlePayload(form.copyWith(price: '200')));
       expect(db.bottles.single['price_cents'], 20000);
       expect(db.bottles.single['image_url'], 'https://img.example/b1.jpg');
+      await db.service.saveBottle('v1', 'b1', bottlePayload(form.copyWith(imageUrl: 'https://img.example/new.jpg')));
+      expect(db.bottles.single['image_url'], 'https://img.example/new.jpg');
+      await db.service.saveBottle('v1', 'b1', bottlePayload(form.copyWith(imageUrl: '')));
+      expect(db.bottles.single['image_url'], isNull);
     });
 
     test('a bottle that is not this venue\'s is refused in the database\'s words, and removing works', () async {

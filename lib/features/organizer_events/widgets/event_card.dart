@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../owner/widgets/photo_field.dart';
 import '../logic/organizer_events_rules.dart';
 
 /// One event: what a guest would see (title, when, where, capacity), its state, and, for a draft only, Edit and Remove.
@@ -22,6 +23,7 @@ class EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (event.coverImageUrl != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: PhotoThumb(key: Key('thumb-${event.eventId}'), url: event.coverImageUrl!)),
             Row(
               children: [
                 Expanded(child: Text(event.title, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis)),

@@ -4,14 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
+import '../../widgets/photo_field.dart';
 import '../../widgets/setup_common.dart';
 
 /// Add or edit one bottle. Pops true once it is saved. Each problem is said before anything is sent; a refusal from the database
 /// is shown here, in the form, so nothing typed is lost.
 class BottleFormScreen extends ConsumerStatefulWidget {
-  const BottleFormScreen({super.key, required this.venueId, this.row});
+  const BottleFormScreen({super.key, required this.venueId, required this.orgId, this.row});
 
   final String venueId;
+
+  /// The business the venue belongs to: the photo is uploaded into its folder.
+  final String orgId;
 
   /// The bottle being edited; null adds a new one.
   final BottleRow? row;
@@ -31,8 +35,10 @@ class _BottleFormScreenState extends ConsumerState<BottleFormScreen> {
   late final _stock = TextEditingController(text: _initial.stock);
   late bool _available = _initial.isAvailable;
   late bool _soldOut = _initial.isSoldOut;
+  late String _image = _initial.imageUrl;
   List<String> _problems = const [];
   bool _saving = false;
+  bool _uploading = false;
 
   @override
   void dispose() {
@@ -49,6 +55,7 @@ class _BottleFormScreenState extends ConsumerState<BottleFormScreen> {
     description: _description.text,
     price: _price.text,
     stock: _stock.text,
+    imageUrl: _image,
     isAvailable: _available,
     isSoldOut: _soldOut,
   );
@@ -168,6 +175,15 @@ class _BottleFormScreenState extends ConsumerState<BottleFormScreen> {
             'Leave stock empty if you do not count bottles. Guests cannot order more than you have.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          PhotoField(
+            key: const Key('bottle-photo'),
+            orgId: widget.orgId,
+            label: 'Photo (optional)',
+            value: _image,
+            hint: 'Guests see it on the menu. JPEG, PNG or WebP, up to 5 MB.',
+            onChanged: (url) => setState(() => _image = url),
+            onBusyChanged: (busy) => setState(() => _uploading = busy),
+          ),
           SwitchListTile(
             key: const Key('switch-available'),
             title: const Text('On the menu'),
@@ -185,13 +201,8 @@ class _BottleFormScreenState extends ConsumerState<BottleFormScreen> {
           const SizedBox(height: 12),
           FilledButton(
             key: const Key('save-bottle'),
-            onPressed: _saving ? null : _save,
+            onPressed: _saving || _uploading ? null : _save,
             child: Text(_saving ? 'Saving…' : 'Save bottle'),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Photos are added on the website for now; editing here never removes one.',
-            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),

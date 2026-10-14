@@ -59,8 +59,8 @@ class VenueSetupList extends ConsumerWidget {
   Widget? _editorFor(String step) => switch (step) {
         'profile' => VenueProfileEditor(venueId: venueId, orgId: orgId),
         'floor_plan' => FloorsEditor(venueId: venueId, orgId: orgId),
-        'tables' => TableTypesEditor(venueId: venueId),
-        'bottles' => BottleMenuEditor(venueId: venueId),
+        'tables' => TableTypesEditor(venueId: venueId, orgId: orgId),
+        'bottles' => BottleMenuEditor(venueId: venueId, orgId: orgId),
         'booking_rules' => BookingTimesEditor(venueId: venueId),
         _ => null,
       };

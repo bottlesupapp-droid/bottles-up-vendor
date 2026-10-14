@@ -60,13 +60,17 @@ void main() {
       expect(db.events.single['status'], 'draft');
     });
 
-    test('changing a draft names it, and leaves its cover photo alone because the photo is never sent', () async {
+    test('changing a draft keeps its cover photo (the form sends the address back as it was); replacing it sends the new one; clearing it sends none', () async {
       db.events.add(eventRow('e1', 'Party', cover: 'https://img.example/a.jpg'));
       final form = eventFormFrom((await db.service.events('o1')).single);
-      await db.service.save('o1', 'e1', eventPayload(EventForm(title: 'Renamed', description: form.description, venueName: form.venueName, starts: form.starts)));
+      EventForm withCover(String url) => EventForm(title: 'Renamed', description: form.description, venueName: form.venueName, starts: form.starts, coverImageUrl: url);
+      await db.service.save('o1', 'e1', eventPayload(withCover(form.coverImageUrl)));
       expect(db.events.single['title'], 'Renamed');
       expect(db.events.single['cover_image_url'], 'https://img.example/a.jpg');
-      expect((db.paramsOf('save_org_event').single!['p_details'] as Map).containsKey('cover_image_url'), isFalse);
+      await db.service.save('o1', 'e1', eventPayload(withCover('https://img.example/b.jpg')));
+      expect(db.events.single['cover_image_url'], 'https://img.example/b.jpg');
+      await db.service.save('o1', 'e1', eventPayload(withCover('')));
+      expect(db.events.single['cover_image_url'], isNull);
     });
 
     test('a field the database does not know is refused (this is what the drift guard protects)', () async {
@@ -152,7 +156,7 @@ void main() {
     test('what is sent can never publish', () async {
       await submitEventForm(good(), 'o1', null, db.service);
       final keys = (db.paramsOf('save_org_event').single!['p_details'] as Map).keys;
-      for (final k in ['status', 'org_id', 'slug', 'cover_image_url']) {
+      for (final k in ['status', 'org_id', 'slug']) {
         expect(keys, isNot(contains(k)));
       }
     });

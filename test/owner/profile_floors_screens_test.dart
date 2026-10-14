@@ -416,6 +416,25 @@ void main() {
       expect(owner.count('venue_setup_status'), greaterThan(reads));
     });
 
+    testWidgets('a table photo and a bottle photo chosen from the checklist go into the business\'s folder', (tester) async {
+      await open(tester, list());
+      await tapKey(tester, 'step-tables');
+      await tapKey(tester, 'add-table');
+      picks = [jpegBytes()];
+      await tapKey(tester, 'photo-choose');
+      expect(media.uploads.last.$1, startsWith('o1/'));
+      await tester.tap(find.byType(CloseButton)); // the form is a full-screen dialog
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tapKey(tester, 'step-bottles');
+      await tapKey(tester, 'add-bottle');
+      picks = [pngBytes()];
+      await tapKey(tester, 'photo-choose');
+      expect(media.uploads, hasLength(2));
+      expect(media.uploads.last.$1, startsWith('o1/'));
+    });
+
     testWidgets('a floor image chosen from the checklist goes into the business\'s folder', (tester) async {
       await open(tester, list());
       await tapKey(tester, 'step-floor_plan');

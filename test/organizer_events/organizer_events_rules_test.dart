@@ -108,8 +108,14 @@ void main() {
       final start = DateTime(2031, 10, 24, 22);
       expect(eventPayload(good(starts: start)), {
         'title': 'Party', 'description': 'Fun', 'venue_name': 'The Roof', 'address': null, 'start_date': start.toUtc().toIso8601String(), 'end_date': null,
-        'category': null, 'capacity': null,
+        'category': null, 'capacity': null, 'cover_image_url': null,
       });
+    });
+
+    test('the cover photo is sent as its address, trimmed; none is sent as "none", so it can be cleared', () {
+      final withCover = EventForm(title: 't', description: 'd', venueName: 'v', starts: DateTime(2031, 10, 24, 22), coverImageUrl: ' https://img.example/c.jpg ');
+      expect(eventPayload(withCover)['cover_image_url'], 'https://img.example/c.jpg');
+      expect(eventPayload(EventForm(title: 't', description: 'd', venueName: 'v', starts: DateTime(2031, 10, 24, 22), coverImageUrl: '  '))['cover_image_url'], isNull);
     });
 
     test('text is trimmed and a blank optional field is sent as null so it can be cleared', () {
@@ -124,9 +130,9 @@ void main() {
       expect(DateTime.parse(p['start_date'] as String).isAtSameMomentAs(DateTime(2031, 10, 24, 22)), isTrue);
     });
 
-    test('never carries a status, a business, a slug, an organizer block, or the cover photo', () {
+    test('never carries a status, a business, a slug or an organizer block', () {
       final keys = eventPayload(good()).keys;
-      for (final forbidden in ['status', 'org_id', 'slug', 'organizer_name', 'organizer_verified', 'venue_id', 'banner_image_url', 'gallery', 'lineup', 'cover_image_url']) {
+      for (final forbidden in ['status', 'org_id', 'slug', 'organizer_name', 'organizer_verified', 'venue_id', 'banner_image_url', 'gallery', 'lineup']) {
         expect(keys, isNot(contains(forbidden)), reason: forbidden);
       }
     });
@@ -227,11 +233,11 @@ void main() {
       expect(allowedKeys().length, greaterThan(5));
     }, skip: present ? false : why);
 
-    test('every field the form sends is one the database accepts; the only one it does not send is the cover photo', () {
+    test('every field the form sends is one the database accepts, and every field the database accepts is sent', () {
       final sent = eventPayload(good()).keys.toList();
       final allowed = allowedKeys();
       expect(allowed, containsAll(sent));
-      expect(allowed.where((k) => !sent.contains(k)).toSet(), {'cover_image_url'});
+      expect(allowed.where((k) => !sent.contains(k)).toSet(), isEmpty);
     }, skip: present ? false : why);
 
     test('the limits on the form are the database limits', () {

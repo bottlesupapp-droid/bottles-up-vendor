@@ -4,6 +4,7 @@ import 'package:bottles_up_vendor/features/owner/logic/setup_forms.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 TableTypeRow tableRow({
+  String? image,
   PricingMode mode = PricingMode.flat,
   int? rate,
   int? hours,
@@ -16,7 +17,7 @@ TableTypeRow tableRow({
 }) =>
     TableTypeRow(
       typeId: 't1', name: 'VIP booth', description: description, maxGuests: 6, minGuests: minGuests, minSpendCents: spend, depositCents: deposit,
-      inventoryCount: 3, badgeLabel: badge, isFeatured: featured, pricingMode: mode, hourlyRateCents: rate, minHours: hours,
+      inventoryCount: 3, badgeLabel: badge, isFeatured: featured, pricingMode: mode, hourlyRateCents: rate, minHours: hours, imageUrl: image,
     );
 
 TableTypeForm goodTable({String? name, String? max, String? count, String? min, String? spend, String? deposit, PricingMode? mode, String? rate, String? hours, String? badge, String? description}) =>
@@ -147,12 +148,21 @@ void main() {
       expect(validateTableTypeForm(const TableTypeForm()), ['Give the table a name.', 'Maximum guests must be a whole number from 1 to 100.']);
     });
 
-    test('the smallest valid form needs only a name, a capacity and a count; this is what is sent (no photo, no floor position)', () {
+    test('the smallest valid form needs only a name, a capacity and a count; this is what is sent (no photo, and no floor position)', () {
       expect(validateTableTypeForm(goodTable()), isEmpty);
       expect(tableTypePayload(goodTable()), {
         'name': 'Booth', 'description': null, 'max_guests': 6, 'min_guests': null, 'inventory_count': 1, 'min_spend_cents': 0, 'deposit_cents': 0,
-        'pricing_mode': 'flat', 'hourly_rate_cents': null, 'min_hours': null, 'badge_label': null, 'is_featured': false,
+        'pricing_mode': 'flat', 'hourly_rate_cents': null, 'min_hours': null, 'badge_label': null, 'image_url': null, 'is_featured': false,
       });
+    });
+
+    test('the photo is sent as its address, trimmed; none is sent as "none", so it can be cleared; the position on a floor plan never is', () {
+      expect(tableTypePayload(goodTable().copyWith(imageUrl: ' https://img.example/t.jpg '))['image_url'], 'https://img.example/t.jpg');
+      expect(tableTypePayload(goodTable().copyWith(imageUrl: '   '))['image_url'], isNull);
+      final keys = tableTypePayload(goodTable()).keys;
+      for (final k in ['floor_id', 'pos_x', 'pos_y', 'width', 'height', 'sort_order']) {
+        expect(keys, isNot(contains(k)), reason: k);
+      }
     });
 
     test('every refusal, in plain words', () {
@@ -206,12 +216,12 @@ void main() {
     });
 
     test('opening a saved table and saving it unchanged sends the same values back', () {
-      final row = tableRow(description: 'By the DJ', minGuests: 2, badge: 'Popular', featured: true, mode: PricingMode.hourly, rate: 20050, hours: 2);
+      final row = tableRow(description: 'By the DJ', minGuests: 2, badge: 'Popular', featured: true, mode: PricingMode.hourly, rate: 20050, hours: 2, image: 'https://img.example/t1.jpg');
       final form = tableTypeFormFrom(row);
       expect(validateTableTypeForm(form), isEmpty);
       expect(tableTypePayload(form), {
         'name': 'VIP booth', 'description': 'By the DJ', 'max_guests': 6, 'min_guests': 2, 'inventory_count': 3, 'min_spend_cents': 150000, 'deposit_cents': 50000,
-        'pricing_mode': 'hourly', 'hourly_rate_cents': 20050, 'min_hours': 2, 'badge_label': 'Popular', 'is_featured': true,
+        'pricing_mode': 'hourly', 'hourly_rate_cents': 20050, 'min_hours': 2, 'badge_label': 'Popular', 'image_url': 'https://img.example/t1.jpg', 'is_featured': true,
       });
     });
 
@@ -230,7 +240,10 @@ void main() {
       final r = parseTableType({
         'type_id': 't1', 'name': 'VIP', 'max_guests': 6, 'min_guests': null, 'min_spend_cents': 150000, 'deposit_cents': 0, 'inventory_count': 3,
         'is_featured': true, 'pricing_mode': 'hourly', 'hourly_rate_cents': 20000, 'min_hours': 2, 'floor_id': 'f1', 'booking_count': 4,
+        'image_url': 'https://img.example/t.jpg',
       })!;
+      expect(r.imageUrl, 'https://img.example/t.jpg');
+      expect(parseTableType({'type_id': 't', 'name': 'VIP', 'max_guests': 6, 'image_url': ''})!.imageUrl, isNull);
       expect([r.typeId, r.name, r.maxGuests, r.minGuests, r.isFeatured, r.pricingMode, r.hourlyRateCents, r.floorId, r.bookingCount], ['t1', 'VIP', 6, null, true, PricingMode.hourly, 20000, 'f1', 4]);
       expect(parseTableType({'name': 'VIP', 'max_guests': 6}), isNull);
       expect(parseTableType({'type_id': 't', 'max_guests': 6}), isNull);
@@ -272,9 +285,14 @@ void main() {
     test('what is sent: trimmed, blanks cleared, an empty stock meaning "not tracked"', () {
       expect(bottlePayload(good.copyWith(size: ' 750ml ', category: '', stock: '')), {
         'name': 'Grey Goose', 'size': '750ml', 'category': null, 'description': null, 'price_cents': 19500, 'stock_quantity': null,
-        'is_available': true, 'is_sold_out': false,
+        'image_url': null, 'is_available': true, 'is_sold_out': false,
       });
       expect(bottlePayload(good.copyWith(stock: '0'))['stock_quantity'], 0);
+    });
+
+    test('the photo is sent as its address, trimmed; none is sent as "none", so it can be cleared', () {
+      expect(bottlePayload(good.copyWith(imageUrl: ' https://img.example/b.jpg '))['image_url'], 'https://img.example/b.jpg');
+      expect(bottlePayload(good.copyWith(imageUrl: ''))['image_url'], isNull);
     });
 
     test('a blank size is sent as "none", so it can be cleared', () {
@@ -283,12 +301,12 @@ void main() {
     });
 
     test('opening a saved bottle and saving it unchanged sends the same values back', () {
-      const row = BottleRow(bottleId: 'b1', name: 'Don Julio', size: '750ml', description: 'Tequila', priceCents: 62050, category: 'Tequila', isAvailable: true, isSoldOut: true, stockQuantity: 4);
+      const row = BottleRow(bottleId: 'b1', name: 'Don Julio', size: '750ml', description: 'Tequila', priceCents: 62050, category: 'Tequila', isAvailable: true, isSoldOut: true, stockQuantity: 4, imageUrl: 'https://img.example/b1.jpg');
       final form = bottleFormFrom(row);
       expect(validateBottleForm(form), isEmpty);
       expect(bottlePayload(form), {
         'name': 'Don Julio', 'size': '750ml', 'category': 'Tequila', 'description': 'Tequila', 'price_cents': 62050, 'stock_quantity': 4,
-        'is_available': true, 'is_sold_out': true,
+        'image_url': 'https://img.example/b1.jpg', 'is_available': true, 'is_sold_out': true,
       });
     });
 
@@ -302,7 +320,8 @@ void main() {
 
     test('a list_venue_bottles row is read; missing availability means on the menu, never sold out', () {
       final b = parseBottle({'bottle_id': 'b1', 'name': 'Vodka', 'price_cents': 9000})!;
-      expect([b.isAvailable, b.isSoldOut, b.stockQuantity, b.size], [true, false, null, null]);
+      expect([b.isAvailable, b.isSoldOut, b.stockQuantity, b.size, b.imageUrl], [true, false, null, null, null]);
+      expect(parseBottle({'bottle_id': 'b1', 'name': 'Vodka', 'price_cents': 9000, 'image_url': 'https://img.example/b.jpg'})!.imageUrl, 'https://img.example/b.jpg');
       expect(parseBottle({'name': 'Vodka', 'price_cents': 9000}), isNull);
       expect(parseBottle({'bottle_id': 'b', 'price_cents': 9000}), isNull);
       expect(parseBottle({'bottle_id': 'b', 'name': 'Vodka'}), isNull);
@@ -326,18 +345,18 @@ void main() {
       expect(allowedKeys('save_venue_bottle').length, greaterThan(8));
     }, skip: sql.existsSync() ? false : why);
 
-    test('every table type field the form sends is one the database accepts; the rest are the photo and the order', () {
+    test('every table type field the form sends is one the database accepts; the only one it does not send is the order', () {
       final sent = tableTypePayload(goodTable()).keys.toList();
       final allowed = allowedKeys('save_venue_table_type');
       expect(allowed, containsAll(sent));
-      expect(allowed.where((k) => !sent.contains(k)).toSet(), {'image_url', 'sort_order'});
+      expect(allowed.where((k) => !sent.contains(k)).toSet(), {'sort_order'});
     }, skip: sql.existsSync() ? false : why);
 
-    test('every bottle field the form sends is one the database accepts; the rest are the photo and the order', () {
+    test('every bottle field the form sends is one the database accepts; the only one it does not send is the order', () {
       final sent = bottlePayload(const BottleForm(name: 'x', price: '1')).keys.toList();
       final allowed = allowedKeys('save_venue_bottle');
       expect(allowed, containsAll(sent));
-      expect(allowed.where((k) => !sent.contains(k)).toSet(), {'image_url', 'sort_order'});
+      expect(allowed.where((k) => !sent.contains(k)).toSet(), {'sort_order'});
     }, skip: sql.existsSync() ? false : why);
 
     test('the function and argument names the service uses are the ones the database defines', () {
