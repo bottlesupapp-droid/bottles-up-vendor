@@ -140,6 +140,29 @@ person owns or manages THAT venue and refuse any field they do not know.
 - Looked at on a throwaway web build and covered by tests with a fake database (`test/owner/fake_setup_backend.dart`); not run against
   a real database.
 
+### Team (owner and manager)
+
+`lib/features/team/` is the **Team** tab of the owner's and the manager's workspace: who works for the business, who has been invited and
+in what state, and the actions to invite, send a new link, cancel an invitation and remove access. It calls the website's `list_team`,
+`list_team_invitations`, `list_shifts`, `invitable_roles`, `invite_member`, `resend_invitation`, `revoke_invitation` and
+`revoke_membership` (website repo, `20261006120000_tenancy_foundation.sql` and `20261008100000_team_invitations.sql`). The database decides
+who sees whom (an owner sees everyone, a manager only the staff of their own club) and which roles may be appointed, so the screen never
+offers a role the database would refuse; nothing here grants access.
+
+- `logic/team_rules.dart` ports the website's `team.ts`: the states and their wording, the invite form's checks, the payload, the
+  link, the `mailto:` fallback and the email-outcome messages. A test compares the labels, wording and rules with the website repo when it
+  is checked out beside this app, and `invite_member`'s parameters with the SQL.
+- An owner invites to any venue of the business (the club picker); a manager only to their own club (taken from the workspace).
+- **The link exists only once.** The database keeps a hash of the token, so the link is shown right after an invitation or a new link
+  is created (Copy, and "Open in your email app" when the server could not send the email) and cannot be shown again.
+  The email itself is the website's `send-team-invitation` edge function, called as the signed-in person; it can only email the
+  address stored on the invitation. If it is not deployed the invitation still exists and the link is shown.
+- Owners and organizers cannot be removed from here (the database refuses it too). Invitations are for a club, never for an event; event
+  staff are invited from an organizer's event (not built).
+- Not here yet: creating a shift (the picker lists shifts that exist), changing an existing member's role or window, an organizer's team.
+- **Needs the website migrations applied** (tenancy, team invitations). Until then the tab says "The team is not set up on this server
+  yet". Not run against a real database: there is no staging.
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:

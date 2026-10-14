@@ -9,6 +9,8 @@ Future<bool> confirmRemove(
   BuildContext context, {
   required String title,
   required String body,
+  String confirmLabel = 'Remove',
+  String keepLabel = 'Keep it',
 }) async {
   final yes = await showDialog<bool>(
     context: context,
@@ -20,7 +22,7 @@ Future<bool> confirmRemove(
             TextButton(
               key: const Key('keep'),
               onPressed: () => Navigator.of(c).pop(false),
-              child: const Text('Keep it'),
+              child: Text(keepLabel),
             ),
             FilledButton(
               key: const Key('confirm-remove'),
@@ -28,7 +30,7 @@ Future<bool> confirmRemove(
                 backgroundColor: const Color(0xFFC62828),
               ),
               onPressed: () => Navigator.of(c).pop(true),
-              child: const Text('Remove'),
+              child: Text(confirmLabel),
             ),
           ],
         ),

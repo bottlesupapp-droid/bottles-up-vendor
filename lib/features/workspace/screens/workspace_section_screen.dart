@@ -6,6 +6,7 @@ import '../../door/screens/door_scan_screen.dart';
 import '../../floor/screens/floor_screen.dart';
 import '../../owner/screens/owner_home_screen.dart';
 import '../../owner/screens/owner_venues_screen.dart';
+import '../../team/screens/team_screen.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
 import '../models/workspace_role.dart';
@@ -39,6 +40,11 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
       case 'venues':
         return OwnerVenuesScreen(workspace: workspace);
     }
+  }
+  // Team: an owner invites and manages everyone in the business, a manager the staff of their own club. The database decides who
+  // sees whom and which roles may be appointed; the screen only shows it.
+  if ((workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager) && sectionId == 'team') {
+    return TeamScreen(workspace: workspace);
   }
   if (workspace.role == WorkspaceRole.manager && sectionId == 'floor') {
     // The manager's club comes from the workspace itself; the database re-checks that they manage it.
