@@ -56,6 +56,90 @@ tenancy tables in the website repo (`supabase/migrations/20261006120000_tenancy_
 belong to several workspaces and chooses one after sign-in (`/workspaces`); invitations are accepted at
 `/accept-invite`. Role to navigation mapping is in `models/role_navigation.dart`.
 
+### Door scanner (first screens on the website's functions)
+
+`lib/features/door/` is the door role's **Scan** and **Guests** tabs, built on the website's database functions instead of the
+legacy tables: `door_events`, `door_scan_ticket`, `door_verify_ticket_code`, `door_guests` (defined in the website repo's
+`supabase/migrations/20261009100000_door_scanner.sql`). They check in the database that the signed-in person holds a door
+role for the event, so the app decides nothing about who may admit whom. Only the door role gets them
+(`builtSectionFor` in `workspace_section_screen.dart`); a server's Scan tab is for table bookings and stays a placeholder, and Door
+Sales is not built.
+
+- `logic/door_rules.dart`: pure rules (what each answer means and its wording, when a camera read is acted on, reading rows).
+  The wording is the website's, word for word; a test compares them when the website repo is checked out next to this one.
+- `services/door_service.dart`: the calls. A scan never throws: a failure becomes an outcome ("access ended", "scan failed").
+  Loading events or guests throws `DoorLoadException`, with "not set up on this server yet" when the migration is missing.
+- Only "Admit" is green. The camera keeps running while an answer shows (the screen just stops acting on it); the same ticket
+  held up again within five seconds is not counted twice; typing a code is always checked. After an admission the count of
+  guests in is read again from the database.
+- **Needs the website migrations applied to the Supabase project.** Until then the tabs say "not set up on this server yet".
+  This was not run against a real database (there is no staging); behaviour is covered by tests with a fake backend and was
+  looked at on a throwaway web build. **Try the camera on a real phone before relying on it at a door**: the test browser
+  blocks it, so only the "camera unavailable, type the code" path has been exercised.
+- The old scanner (`features/scanner`, `shared/services/check_in_service.dart`) still reads the legacy tables for the classic
+  vendor dashboard and is untouched.
+
+### Manager Floor (bookings on the website's functions)
+
+`lib/features/floor/` is the manager's **Floor** tab: the reservations of the manager's own club, night by night, read only, from
+the website's `list_venue_bookings(p_venue, p_from, p_to)` (website repo, `20261011100000_venue_bookings.sql`). The database
+checks the person owns or manages THAT venue, decides which business night each booking belongs to (a slot before 06:00 is the
+night before), and answers for at most 93 nights and 1000 rows; the app only shows it.
+
+- `logic/bookings_rules.dart` ports the website's `bookingsView.ts`: what each stored status means (an unknown status is never
+  "confirmed"), grouping by night, the counts, the ready-made ranges (Tonight, Next 7, Next 30, Last 7) in business nights, range
+  validation. Night arithmetic uses calendar dates, not "minus 24 hours", so clock-change days are right. Tests compare the
+  cutoff, limits, status wording and messages with the website repo when it is checked out beside this one.
+- Amounts are **what was booked, not what was collected** (the deposit and total on the booking). Money received, cancellation
+  detail and bottle orders live in production-only columns that no committed migration defines, so they are not shown until
+  `supabase db pull` brings them into the website repo. The screen says so.
+- Not here yet: walk-ins, guest allowances, table assignment, table check-in, bottle orders (the manager's **Orders** tab).
+- **Needs the website migrations applied** (tenancy for the manager's workspace, then the venue bookings one). Until then it says
+  "not set up on this server yet". Not run against a real database: there is no staging.
+- Run the tests under a timezone with daylight saving at least once (`TZ=America/Toronto flutter test test/floor`): a machine in a
+  zone without it cannot show the clock-change mistakes the night arithmetic guards against.
+
+### Owner Home and Venues (venues on the website's functions)
+
+`lib/features/owner/` is the owner's **Home** and **Venues** tabs, plus a page for one venue. They read the website's
+`my_venues()`, `venue_setup_status(p_venue)` and `create_org_venue(p_org, p_name)`, and the venue's name/slug/address from
+`site_venues` (row level security limits that to venues the person can reach). Nothing here decides who may see or do what.
+
+- **Home:** tonight across every venue of the business (confirmed bookings, guests expected, arrived, awaiting payment), by the
+  business night, from the same `list_venue_bookings` read as the manager's Floor. A venue that cannot be read is said so and the totals
+  are marked incomplete. Sales, collections, balances and events are not available and the screen says so.
+- **Venues:** each venue with Live or Draft and how far it is set up (the database's checklist; only required steps count), and
+  "Add a venue". Tapping one pushes `/w/{membership}/venues/{venueId}` (defined once in `workspace/workspace_routes.dart`, used by the
+  app's router and by the tests): tabs **Bookings** (the Floor screen for that venue), **Setup** (the checklist) and **Link** (the
+  booking address, Copy, Preview for a live venue, and a QR code).
+- Rules are ports of the website's `venueSetup.ts` and `bookingLink.ts`; tests compare labels, order, the default site, the slug rule and
+  the function and argument names with the website repo when it is checked out beside this app. `--dart-define=SITE_URL=https://...`
+  points booking links elsewhere (only a plain https address is accepted; anything else is ignored).
+- **Not here yet:** editing floor plans and photos (done on the website for now), claiming an existing venue, taking a venue live, the
+  owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked at, not scanned.
+- **Needs the website migrations applied** (tenancy, onboarding, venue bookings). Until then each screen says "not set up on this server
+  yet". Not run against a real database: there is no staging.
+
+#### Setup editors (tables, bottle menu, booking times)
+
+On a venue's **Setup** tab, the `tables`, `bottles` and `booking_rules` steps open an editor (the others stay on the website). They call
+the website's `list_/add_/save_/remove_venue_*` functions (`20261010100000_venue_setup.sql`), which check in the database that the
+person owns or manages THAT venue and refuse any field they do not know.
+
+- `logic/setup_forms.dart` ports `venueSetupForms.ts`: money typed in dollars and kept in whole cents by parsing digits (never floating
+  point), the checks and wording of each form, and the payloads. Tests read the website's migration (when it is checked out beside this
+  app) and fail if a form sends a field the database does not accept, or a limit differs.
+- `services/venue_setup_service.dart` is the calls; a refusal comes back as `SetupEditException` carrying the database's own sentence
+  (`raise exception`, code P0001), anything else as a generic one (`services/db_errors.dart`).
+- **Photos are not edited here.** The payloads never contain `image_url`; the server only changes keys that are sent, so editing a
+  table or bottle keeps its photo. `sort_order` is not sent either. Floor plans (image upload) are the next piece.
+- Quick switches on the bottle menu (On menu, Sold out) send only that one field. A table type or time with bookings cannot be removed
+  (the screen says so; the database refuses regardless). After any change the checklist is read again, so a step turns Done at once.
+- Several days can be added to one arrival time at once; each day is its own call and its outcome is reported (added, already there,
+  failed) without one failure stopping the rest.
+- Looked at on a throwaway web build and covered by tests with a fake database (`test/owner/fake_setup_backend.dart`); not run against
+  a real database.
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:

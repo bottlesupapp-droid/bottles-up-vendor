@@ -51,9 +51,8 @@ import '../../shared/widgets/main_shell.dart';
 import '../../features/workspace/logic/workspace_routing.dart';
 import '../../features/workspace/providers/workspace_providers.dart';
 import '../../features/workspace/screens/accept_invitation_screen.dart';
-import '../../features/workspace/screens/workspace_section_screen.dart';
+import '../../features/workspace/workspace_routes.dart';
 import '../../features/workspace/screens/workspace_selector_screen.dart';
-import '../../features/workspace/widgets/workspace_shell.dart';
 
 // Route names
 class AppRoutes {
@@ -302,25 +301,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'acceptInvite',
         builder: (context, state) => AcceptInvitationScreen(token: state.uri.queryParameters['token']),
       ),
-      ShellRoute(
-        builder: (context, state, child) => WorkspaceShell(
-          membershipId: state.uri.pathSegments.length > 1 ? state.uri.pathSegments[1] : '',
-          child: child,
-        ),
-        routes: [
-          GoRoute(
-            path: '/w/:membershipId/:section',
-            name: 'workspaceSection',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: WorkspaceSectionScreen(
-                membershipId: state.pathParameters['membershipId']!,
-                sectionId: state.pathParameters['section']!,
-              ),
-            ),
-          ),
-        ],
-      ),
+      workspaceShellRoute(),
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
         routes: [
