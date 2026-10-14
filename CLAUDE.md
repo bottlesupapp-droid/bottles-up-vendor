@@ -1,123 +1,79 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for working in this repository (Bottles Up **Vendor** app).
 
-## Development Commands
+## What this app is
 
-### Essential Commands
-- `flutter pub get` - Install dependencies after pubspec.yaml changes
-- `flutter run` - Start development server (hot reload enabled)
-- `flutter build apk` - Build Android APK for testing
-- `flutter build appbundle` - Build Android App Bundle for Play Store
-- `flutter build ios` - Build iOS app (requires macOS/Xcode)
-- `flutter build web` - Build web application
-- `flutter clean` - Clean build artifacts (run before `flutter pub get` when troubleshooting)
+Flutter app for venue owners, managers, organizers, door/server staff and similar roles. It shares one
+Supabase project with the Bottles Up website and the customer app, so the **website's `site_*` schema and
+edge functions are the source of truth**. Do not add a second source of truth for bookings or payments here.
 
-### Code Generation
-- `dart run build_runner build` - Generate code (models, providers, etc.)
-- `dart run build_runner build --delete-conflicting-outputs` - Force regenerate all generated files
-- `dart run build_runner watch` - Watch for changes and auto-generate code
+- Bundle / application ID: `com.bottlesup.vendor` (iOS and Android must stay identical).
+- Backend: **Supabase** (Auth, Postgres with RLS, Edge Functions). There is no Firebase in this app.
+- Shared code lives in `../../packages/shared` (Supabase config, shared models).
 
-### Testing & Quality
-- `flutter test` - Run unit tests
-- `flutter analyze` - Static analysis (check for lint errors)
-- `dart format .` - Format code according to Dart style guidelines
+## Commands
 
-### Firebase & Deployment
-- `firebase deploy --only hosting` - Deploy web version to Firebase Hosting
-- `flutterfire configure` - Configure Firebase for Flutter (run when adding new Firebase services)
+- `flutter pub get` after changing `pubspec.yaml`
+- `flutter run` (debug, hot reload)
+- `flutter test`: unit and widget tests (should be all green)
+- `flutter analyze`: should report no errors; known warnings are unused imports
+- `dart format .`
+- `flutter build ios --simulator --debug` / `flutter build apk --release`
 
-## Architecture Overview
+### Pointing a build at another Supabase project (e.g. staging)
 
-### State Management
-- **Riverpod 2.x** with code generation (`riverpod_generator`) for all state management
-- Providers are defined using `@riverpod` annotations in `/providers/` directories
-- Authentication state managed through `AuthProvider` in `features/auth/providers/`
+```
+flutter run \
+  --dart-define=SUPABASE_URL=https://<ref>.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=<anon key>
+```
 
-### Navigation & Routing
-- **GoRouter** with declarative routing configuration in `core/router/app_router.dart`
-- Shell routing used for main navigation with persistent bottom navigation bar
-- Custom page transitions (slide/fade) defined in router
-- Auth guard redirects unauthenticated users to login
+With no defines the production project is used. Only ever put the **anon** key in the app, never `service_role`.
 
-### Project Structure
+## Architecture
+
+- **State:** `flutter_riverpod` with plain hand-written providers. `riverpod_annotation`, `riverpod_generator`
+  and `freezed` are listed in `pubspec.yaml` but **nothing uses them**; do not assume generated code exists.
+- **Models:** plain Dart classes with hand-written `fromJson` / `toJson` in `lib/shared/models/`.
+- **Navigation:** `go_router` in `lib/core/router/app_router.dart`. Redirect order: auth, then the workspace
+  layer (`features/workspace/logic/workspace_routing.dart`), then the legacy vendor rules.
+- **Start-up:** `lib/main.dart` initialises Supabase; if that fails the user sees `StartupErrorApp`
+  (retry screen), never a blank screen.
+- **Theme:** dark only, orange primary, `flex_color_scheme` + Google Fonts (`lib/core/theme`).
+
 ```
 lib/
-├── core/                    # Core app configuration
-│   ├── router/             # GoRouter configuration
-│   ├── theme/              # App theming (dark theme with orange accents)
-│   └── utils/              # Utility functions
-├── features/               # Feature-based architecture
-│   ├── auth/               # Authentication (login, register, forgot password)
-│   ├── dashboard/          # Main dashboard with analytics
-│   ├── clubs/              # Club management
-│   ├── events/             # Event management, inventory, bookings
-│   └── profile/            # User profile management
-├── shared/                 # Shared components
-│   ├── models/             # Data models (Freezed classes)
-│   ├── services/           # Firebase and other services
-│   └── widgets/            # Reusable widgets
-└── main.dart               # App entry point
+├── core/        config, router, startup, theme, ui kit, utils
+├── features/    analytics, auth, clubs, dashboard, events, profile, scanner, venues, workspace
+└── shared/      models, services, widgets
 ```
 
-### Data Layer
-- **Firebase** as backend (Firestore, Auth, Storage)
-- **Freezed** for immutable data classes with JSON serialization
-- Models in `shared/models/` with `.g.dart` and `.freezed.dart` generated files
-- Firebase configuration in `firebase_options.dart` (auto-generated)
+### Workspaces (multi-role foundation)
 
-### UI/UX Architecture
-- **Material Design 3** with custom dark theme
-- **Flex Color Scheme** for consistent theming
-- **Google Fonts** (Inter font family)
-- Orange primary color (#FF6B35) with ultra-dark backgrounds
-- Custom card decorations and zero elevations for flat design
-- Reactive forms using `reactive_forms` package
+`lib/features/workspace/` implements organizations, memberships and per-role navigation on top of the
+tenancy tables in the website repo (`supabase/migrations/20261006120000_tenancy_foundation.sql`). A user can
+belong to several workspaces and chooses one after sign-in (`/workspaces`); invitations are accepted at
+`/accept-invite`. Role to navigation mapping is in `models/role_navigation.dart`.
 
-### Key Features
-- Vendor authentication system
-- Dashboard with real-time analytics
-- Event management with booking tracking
-- Bottle inventory management
-- Club/venue management
-- Profile management with settings
+### Archived code
 
-## Firebase Integration
+Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:
+`_archive/restore.sh <path-prefix> [--dry-run]`. Read `_archive/README.md` first.
 
-### Current Setup
-- Project ID: `bottles-up-2d907` (production)
-- Services: Authentication, Firestore, Storage
-- Security rules defined in `firestore.rules`
-- Indexes configured in `firestore.indexes.json`
+## Release checklist
 
-### Collections Structure
-- `vendors/` - Vendor user profiles
-- `events/` - Event information and details
-- `bookings/` - Customer booking records
-- `inventory/` - Bottle inventory data
+- **Android signing:** release builds require `android/key.properties` (copy `android/key.properties.example`).
+  Without it the build fails on purpose. For a throwaway local build set `ORG_GRADLE_PROJECT_allowUnsignedRelease=true`.
+- **iOS signing:** the App ID `com.bottlesup.vendor` must be registered in the Apple Developer account.
+- **Android permissions:** `INTERNET` is declared in the main manifest. Flutter only adds it to debug/profile
+  builds on its own, so removing it breaks release builds completely.
+- **Crash reporting:** not wired up yet (`_logError` in `main.dart` only prints). Add Sentry or similar before launch.
+- **Privacy policy:** the in-app screen (`features/profile/screens/privacy_policy_screen.dart`) is generic
+  boilerplate with placeholder company details; it needs real legal text before store submission.
 
-## Development Guidelines
+## Stale files
 
-### Code Generation Workflow
-When modifying models or providers:
-1. Make changes to the Dart files
-2. Run `dart run build_runner build --delete-conflicting-outputs`
-3. Commit both source and generated files
-
-### State Management Pattern
-- Use `@riverpod` annotation for providers
-- Keep providers close to features (in feature's `providers/` folder)
-- Use `AsyncValue<T>` for async data loading states
-- Implement proper error handling in providers
-
-### Navigation Pattern
-- Use named routes defined in `AppRoutes` class
-- Access router via `context.go()`, `context.push()`, etc.
-- Pass parameters through route parameters or state objects
-- Shell routing maintains bottom navigation across feature screens
-
-### Firebase Development
-- Use Firebase Local Emulator Suite for local development when needed
-- All Firestore operations should handle offline scenarios
-- Implement proper security rules before production deployment
-- Use Firebase Analytics for tracking user engagement
+The repo root holds many old status notes (`*_SUMMARY.md`, `*_FIX*.md`, `PRODUCTION_READY*.md`) and unused
+Firebase config (`firebase.json`, `firestore.rules`, `.firebaserc`). They describe earlier work, not the current
+state. Trust the code and this file.

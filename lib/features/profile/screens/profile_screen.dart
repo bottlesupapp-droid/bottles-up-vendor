@@ -127,7 +127,7 @@ class ProfileScreen extends ConsumerWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Profile data is being synchronized from Firebase Auth',
+                              'Profile data is being synchronized',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.primary,
                               ),
