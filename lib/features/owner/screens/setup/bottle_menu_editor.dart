@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
+import '../../widgets/photo_field.dart';
 import '../../widgets/setup_common.dart';
 import 'bottle_form_screen.dart';
 
@@ -11,9 +12,12 @@ import 'bottle_form_screen.dart';
 /// the form; those taps send only that one field. Removing a bottle never changes a past order, which keeps its own copy of the
 /// name and price.
 class BottleMenuEditor extends ConsumerStatefulWidget {
-  const BottleMenuEditor({super.key, required this.venueId});
+  const BottleMenuEditor({super.key, required this.venueId, required this.orgId});
 
   final String venueId;
+
+  /// The business the venue belongs to: photos are uploaded into its folder.
+  final String orgId;
 
   @override
   ConsumerState<BottleMenuEditor> createState() => _BottleMenuEditorState();
@@ -47,7 +51,7 @@ class _BottleMenuEditorState extends ConsumerState<BottleMenuEditor> {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => BottleFormScreen(venueId: widget.venueId, row: row),
+        builder: (_) => BottleFormScreen(venueId: widget.venueId, orgId: widget.orgId, row: row),
       ),
     );
     if (saved == true && mounted) {
@@ -142,6 +146,7 @@ class _BottleMenuEditorState extends ConsumerState<BottleMenuEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (b.imageUrl != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: PhotoThumb(key: Key('thumb-${b.bottleId}'), url: b.imageUrl!, height: 100)),
             Row(
               children: [
                 Expanded(

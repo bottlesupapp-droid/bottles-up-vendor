@@ -119,3 +119,21 @@ class _PhotoFieldState extends ConsumerState<PhotoField> {
     );
   }
 }
+
+/// A photo shown small, on a list card. A photo that cannot be loaded (offline, removed) shows a placeholder instead of an error.
+class PhotoThumb extends StatelessWidget {
+  const PhotoThumb({super.key, required this.url, this.height = 120});
+
+  final String url;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          height: height,
+          width: double.infinity,
+          child: Image.network(url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined))),
+        ),
+      );
+}

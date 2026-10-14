@@ -235,7 +235,7 @@ void main() {
   });
 
   group('tables', () {
-    Widget editor() => host(const TableTypesEditor(venueId: 'v1'));
+    Widget editor() => host(const TableTypesEditor(venueId: 'v1', orgId: 'o1'));
 
     testWidgets('says plainly when there are no tables yet', (tester) async {
       tall(tester);
@@ -272,7 +272,7 @@ void main() {
       expect(setup.count('save_venue_table_type'), 0);
     });
 
-    testWidgets('adds a table: dollars typed become cents, no photo is sent, the list shows it, the checklist is read again', (tester) async {
+    testWidgets('adds a table: dollars typed become cents, no photo is sent as none, the list shows it, the checklist is read again', (tester) async {
       tall(tester);
       await open(tester, editor());
       await tapKey(tester, 'add-table');
@@ -287,7 +287,7 @@ void main() {
       expect([call['p_venue'], call['p_type']], ['v1', null]);
       final d = call['p_details'] as Map;
       expect([d['name'], d['max_guests'], d['inventory_count'], d['min_spend_cents'], d['deposit_cents'], d['pricing_mode']], ['Booth', 8, 2, 150050, 50000, 'flat']);
-      expect(d.containsKey('image_url'), isFalse);
+      expect(d['image_url'], isNull, reason: 'no photo was chosen');
       expect(find.text('Table added.'), findsOneWidget);
       expect(find.text('Booth'), findsOneWidget);
       expect(find.text('min spend \$1,500.50 · deposit \$500.00'), findsOneWidget);
@@ -376,7 +376,7 @@ void main() {
     testWidgets('a refusal from the database is shown in the form and nothing typed is lost', (tester) async {
       tall(tester);
       setup.failAll = const PostgrestException(message: 'a venue can have 50 table types at most', code: 'P0001');
-      await open(tester, host(const TableTypesEditor(venueId: 'v1')));
+      await open(tester, host(const TableTypesEditor(venueId: 'v1', orgId: 'o1')));
       setup.failAll = null;
       await tapKey(tester, 'add-table');
       await type(tester, 'field-name', 'Booth');
@@ -433,7 +433,7 @@ void main() {
   });
 
   group('bottle menu', () {
-    Widget editor() => host(const BottleMenuEditor(venueId: 'v1'));
+    Widget editor() => host(const BottleMenuEditor(venueId: 'v1', orgId: 'o1'));
 
     testWidgets('says plainly when the menu is empty', (tester) async {
       tall(tester);
@@ -492,7 +492,7 @@ void main() {
       expect(setup.count('save_venue_bottle'), 0);
     });
 
-    testWidgets('adds a bottle: the price becomes cents, an empty stock means not counted, no photo is sent', (tester) async {
+    testWidgets('adds a bottle: the price becomes cents, an empty stock means not counted, no photo is sent as none', (tester) async {
       tall(tester);
       await open(tester, editor());
       await tapKey(tester, 'add-bottle');
@@ -502,7 +502,7 @@ void main() {
       await tapKey(tester, 'save-bottle');
       final d = setup.paramsOf('save_venue_bottle').single!['p_details'] as Map;
       expect([d['name'], d['price_cents'], d['size'], d['stock_quantity'], d['is_available'], d['is_sold_out']], ['Grey Goose', 19550, '750ml', null, true, false]);
-      expect(d.containsKey('image_url'), isFalse);
+      expect(d['image_url'], isNull, reason: 'no photo was chosen');
       expect(find.text('Bottle added.'), findsOneWidget);
       expect(find.text('Grey Goose  750ml'), findsOneWidget);
     });

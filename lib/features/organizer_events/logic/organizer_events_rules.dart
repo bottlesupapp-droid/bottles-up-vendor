@@ -8,8 +8,8 @@
 // change or remove a published event (tickets may have been sold), or touch another business's events. The form has no status field
 // for that reason, and the payload never carries one.
 //
-// The cover photo is not part of this version. The database changes only the fields that are sent, so the payload leaves
-// `cover_image_url` out: editing an event here never touches a photo it already has (the website sends it, because it edits it).
+// The cover photo is one field like any other: the form holds the address of the photo (uploaded when it is chosen) and sends it as
+// `cover_image_url`; empty is sent as "none", so it can be cleared.
 
 import 'package:intl/intl.dart';
 
@@ -114,6 +114,7 @@ class EventForm {
     this.ends,
     this.category = '',
     this.capacity = '',
+    this.coverImageUrl = '',
   });
 
   final String title;
@@ -124,6 +125,7 @@ class EventForm {
   final DateTime? ends;
   final String category;
   final String capacity;
+  final String coverImageUrl;
 }
 
 EventForm eventFormFrom(OrgEvent e) => EventForm(
@@ -135,6 +137,7 @@ EventForm eventFormFrom(OrgEvent e) => EventForm(
       ends: e.endDate?.toLocal(),
       category: e.category ?? '',
       capacity: e.capacity == null ? '' : '${e.capacity}',
+      coverImageUrl: e.coverImageUrl ?? '',
     );
 
 /// Plain-language problems with the form; an empty list means it can be sent.
@@ -177,8 +180,8 @@ List<String> validateEventForm(EventForm f) {
   return p;
 }
 
-/// What is sent: every field the form shows, and nothing it does not. In particular never a status, a business, a slug, or the
-/// cover photo (see the top of this file). Times go as UTC instants, which carry their time zone (the database refuses one without,
+/// What is sent: every field the form shows (the cover photo is one of them), and nothing it does not. In particular never a status, a
+/// business or a slug. Times go as UTC instants, which carry their time zone (the database refuses one without,
 /// because it would guess). Only call this when [validateEventForm] returned nothing.
 Map<String, dynamic> eventPayload(EventForm f) {
   String? opt(String s) => s.trim().isEmpty ? null : s.trim();
@@ -191,6 +194,7 @@ Map<String, dynamic> eventPayload(EventForm f) {
     'end_date': f.ends?.toUtc().toIso8601String(),
     'category': opt(f.category),
     'capacity': f.capacity.trim().isEmpty ? null : int.parse(f.capacity.trim()),
+    'cover_image_url': opt(f.coverImageUrl),
   };
 }
 

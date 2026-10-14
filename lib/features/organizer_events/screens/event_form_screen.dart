@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/utils/date_time_picker.dart';
+import '../../owner/widgets/photo_field.dart';
 import '../../owner/widgets/setup_common.dart' show ProblemsBox;
 import '../logic/organizer_events_rules.dart';
 import '../providers/organizer_events_providers.dart';
 import '../services/organizer_events_service.dart';
 
 /// Create or change a draft. Pops true once it is saved. Each problem is said before anything is sent; a refusal from the database
-/// is shown here, in the form, so nothing typed is lost. The cover photo is not touched by an edit.
+/// is shown here, in the form, so nothing typed is lost. The cover photo is uploaded as soon as it is chosen and saved with the draft.
 class EventFormScreen extends ConsumerStatefulWidget {
   const EventFormScreen({super.key, required this.orgId, this.event, this.pickDateTime = pickDateAndTime, this.clock = DateTime.now});
 
@@ -34,8 +35,10 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   late final _capacity = TextEditingController(text: _initial.capacity);
   late DateTime? _starts = _initial.starts;
   late DateTime? _ends = _initial.ends;
+  late String _cover = _initial.coverImageUrl;
   List<String> _problems = const [];
   bool _saving = false;
+  bool _uploading = false;
 
   @override
   void dispose() {
@@ -54,6 +57,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         ends: _ends,
         category: _category.text,
         capacity: _capacity.text,
+        coverImageUrl: _cover,
       );
 
   Future<void> _pick(bool start) async {
@@ -126,11 +130,20 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           const SizedBox(height: 12),
           field(const Key('field-category'), _category, 'Category (optional)', hint: 'Club night', maxLength: EventLimits.category + 10),
           field(const Key('field-capacity'), _capacity, 'Capacity (optional)', hint: '250', type: TextInputType.number),
+          PhotoField(
+            key: const Key('cover-photo'),
+            orgId: widget.orgId,
+            label: 'Cover photo (optional)',
+            value: _cover,
+            wide: true,
+            hint: 'JPEG, PNG or WebP, up to 5 MB.',
+            onChanged: (url) => setState(() => _cover = url),
+            onBusyChanged: (busy) => setState(() => _uploading = busy),
+          ),
+          const SizedBox(height: 16),
           ProblemsBox(problems: _problems),
           const SizedBox(height: 12),
-          FilledButton(key: const Key('save-event'), onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving…' : (widget.event == null ? 'Create draft' : 'Save draft'))),
-          const SizedBox(height: 8),
-          Text('The cover photo is set on the website for now; editing here never changes it.', style: theme.textTheme.bodySmall),
+          FilledButton(key: const Key('save-event'), onPressed: _saving || _uploading ? null : _save, child: Text(_saving ? 'Saving…' : (widget.event == null ? 'Create draft' : 'Save draft'))),
         ],
       ),
     );

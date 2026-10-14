@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:bottles_up_vendor/features/organizer_events/providers/organizer_events_providers.dart';
+import 'package:bottles_up_vendor/features/owner/providers/owner_providers.dart';
+import 'package:bottles_up_vendor/features/owner/widgets/photo_field.dart';
 import 'package:bottles_up_vendor/features/organizer_events/screens/organizer_events_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
@@ -9,17 +12,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../owner/fake_setup_backend.dart' show FakeMedia, gifBytes, jpegBytes, pngBytes;
 import 'fake_organizer_events_backend.dart';
 
 late FakeOrganizerEventsBackend db;
 late List<DateTime?> picks;
+late FakeMedia media;
+late List<Uint8List?> photoPicks;
 
 const orgWs = Workspace(membershipId: 'm-g', orgId: 'o1', orgName: 'Night Events', orgKind: 'organizer', role: WorkspaceRole.organizer);
 final fixedNow = DateTime(2031, 10, 24, 12);
 
 Widget host() => ProviderScope(
       key: UniqueKey(),
-      overrides: [organizerEventsServiceProvider.overrideWithValue(db.service)],
+      overrides: [
+        organizerEventsServiceProvider.overrideWithValue(db.service),
+        mediaServiceProvider.overrideWithValue(media.service),
+        photoPickerProvider.overrideWithValue((_) async => photoPicks.isEmpty ? null : photoPicks.removeAt(0)),
+      ],
       child: MaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
@@ -61,6 +71,8 @@ void main() {
   setUp(() {
     db = FakeOrganizerEventsBackend();
     picks = [];
+    media = FakeMedia();
+    photoPicks = [];
   });
 
   group('the list', () {
@@ -149,9 +161,10 @@ void main() {
       final d = call['p_details'] as Map;
       expect([d['title'], d['venue_name'], d['address'], d['capacity'], d['category']], ['Midnight Social', 'Eonics Lounge', '5 Queen St', 180, null]);
       expect(DateTime.parse(d['start_date'] as String).isAtSameMomentAs(DateTime(2031, 11, 20, 22)), isTrue);
-      for (final k in ['status', 'org_id', 'slug', 'cover_image_url']) {
+      for (final k in ['status', 'org_id', 'slug']) {
         expect(d.containsKey(k), isFalse, reason: k);
       }
+      expect(d['cover_image_url'], isNull, reason: 'no photo was chosen');
       expect(find.text('Midnight Social'), findsOneWidget);
       expect(find.byKey(const Key('event-${'e1'}')), findsOneWidget);
       expect(find.textContaining('Draft created. It stays private until the BottlesUp team publishes it.'), findsOneWidget);
@@ -239,6 +252,70 @@ void main() {
       for (final forbidden in ['Status', 'Publish', 'Ticket price', 'Slug']) {
         expect(find.text(forbidden), findsNothing, reason: forbidden);
       }
+    });
+  });
+
+  group('the cover photo', () {
+    testWidgets('an event with a cover shows it on its card; one without shows none', (tester) async {
+      db.events.addAll([eventRow('a', 'With cover', cover: 'https://img.example/c.jpg'), eventRow('b', 'Without')]);
+      await open(tester);
+      expect(find.byKey(const Key('thumb-a')), findsOneWidget);
+      expect(find.byKey(const Key('thumb-b')), findsNothing);
+    });
+
+    testWidgets('a photo chosen for a new draft is uploaded into the business\'s folder and saved with it', (tester) async {
+      await open(tester);
+      await tapKey(tester, 'create-event');
+      await fillRequired(tester);
+      photoPicks = [jpegBytes()];
+      await tapKey(tester, 'photo-choose');
+      expect(media.uploads.single.$1, 'o1/img1.jpg');
+      await tapKey(tester, 'save-event');
+      expect((db.paramsOf('save_org_event').single!['p_details'] as Map)['cover_image_url'], 'https://img.example/o1/img1.jpg');
+      expect(find.byKey(const Key('thumb-e1')), findsOneWidget);
+    });
+
+    testWidgets('editing keeps the cover, replaces it, or removes it', (tester) async {
+      db.events.add(eventRow('d', 'Party', cover: 'https://img.example/a.jpg'));
+      await open(tester);
+      await tapKey(tester, 'edit-d');
+      expect(find.text('Replace photo'), findsOneWidget);
+      await tapKey(tester, 'save-event');
+      expect(db.events.single['cover_image_url'], 'https://img.example/a.jpg');
+      await tapKey(tester, 'edit-d');
+      photoPicks = [pngBytes()];
+      await tapKey(tester, 'photo-choose');
+      await tapKey(tester, 'save-event');
+      expect(db.events.single['cover_image_url'], 'https://img.example/o1/img1.png');
+      await tapKey(tester, 'edit-d');
+      await tapKey(tester, 'photo-remove');
+      await tapKey(tester, 'save-event');
+      expect(db.events.single['cover_image_url'], isNull);
+      expect(find.byKey(const Key('thumb-d')), findsNothing);
+    });
+
+    testWidgets('Save waits for the photo upload', (tester) async {
+      await open(tester);
+      await tapKey(tester, 'create-event');
+      final gate = Completer<void>();
+      media.hold = gate.future;
+      photoPicks = [jpegBytes()];
+      await tester.tap(find.byKey(const Key('photo-choose')));
+      await tester.pump();
+      expect(tester.widget<FilledButton>(find.byKey(const Key('save-event'))).onPressed, isNull);
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(tester.widget<FilledButton>(find.byKey(const Key('save-event'))).onPressed, isNotNull);
+    });
+
+    testWidgets('a file that is not allowed is said and nothing is uploaded; the form no longer sends people to the website for the photo', (tester) async {
+      await open(tester);
+      await tapKey(tester, 'create-event');
+      photoPicks = [gifBytes()];
+      await tapKey(tester, 'photo-choose');
+      expect(find.text('Use a JPEG, PNG or WebP image.'), findsOneWidget);
+      expect(media.uploads, isEmpty);
+      expect(find.textContaining('set on the website for now'), findsNothing);
     });
   });
 

@@ -115,8 +115,7 @@ night before), and answers for at most 93 nights and 1000 rows; the app only sho
 - Rules are ports of the website's `venueSetup.ts` and `bookingLink.ts`; tests compare labels, order, the default site, the slug rule and
   the function and argument names with the website repo when it is checked out beside this app. `--dart-define=SITE_URL=https://...`
   points booking links elsewhere (only a plain https address is accepted; anything else is ignored).
-- **Not here yet:** photos for tables, bottles and events, the venue gallery and where tables sit on a floor plan (done on the website for now),
-  claiming an existing venue, taking a venue live, the owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked
+- **Not here yet:** the venue gallery and where tables sit on a floor plan (done on the website for now), claiming an existing venue, taking a venue live, the owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked
   at, not scanned.
 - **Needs the website migrations applied** (tenancy, onboarding, venue bookings). Until then each screen says "not set up on this server
   yet". Not run against a real database: there is no staging.
@@ -132,8 +131,9 @@ person owns or manages THAT venue and refuse any field they do not know.
   app) and fail if a form sends a field the database does not accept, or a limit differs.
 - `services/venue_setup_service.dart` is the calls; a refusal comes back as `SetupEditException` carrying the database's own sentence
   (`raise exception`, code P0001), anything else as a generic one (`services/db_errors.dart`).
-- **Photos for tables and bottles are not edited here.** Those payloads never contain `image_url`; the server only changes keys that are
-  sent, so editing a table or bottle keeps its photo. `sort_order` is not sent either.
+- **Table and bottle photos** are one field like any other (`image_url`): the form shows the photo (`PhotoField`, same upload as the venue
+  cover, into `<organization id>/` of the `business-media` bucket), opening an item and saving it unchanged sends the same address back, a new
+  photo sends the new address, and Remove sends none. The list cards show a thumbnail. `sort_order` is not sent (items keep their position).
 - Quick switches on the bottle menu (On menu, Sold out) send only that one field. A table type or time with bookings cannot be removed
   (the screen says so; the database refuses regardless). After any change the checklist is read again, so a step turns Done at once.
 - Several days can be added to one arrival time at once; each day is its own call and its outcome is reported (added, already there,
@@ -177,13 +177,13 @@ THAT business, looks the event up inside it, and writes only whitelisted fields;
 - `logic/organizer_events_rules.dart` ports the website's `organizerEvents.ts`: the limits, the form's checks and their wording, the
   payload, grouping (drafts, upcoming, past; an event with no end lasts 12 hours), and how a time reads. Tests compare the limits, wording
   and field list with the website repo (SQL and TypeScript) when it is checked out beside this app.
-- **The cover photo is not part of this version, and the payload leaves `cover_image_url` out** (the website sends it, because it edits it).
-  The database changes only the fields sent, so editing here keeps whatever photo the event has. Photos wait for image upload (floor plans
-  need it too).
+- **The cover photo** is one field like any other (`cover_image_url`), uploaded with the shared `PhotoField` into the organizer's own folder of
+  the `business-media` bucket; opening a draft and saving it unchanged sends the same address back, and Remove sends none. The event card shows it.
 - Times are picked on the device and sent as UTC instants (the database refuses a time without a zone); they are shown back in the
   device's zone, and the form says which. Opening a draft and saving it unchanged sends the same instants back.
 - Not here yet: ticket tiers, linking an event to a venue and its agreement, publishing by the organizer, the other event states from the
-  brief (these are client decisions or later parts of section 7), and an organizer's team and guests.
+  brief (these are client decisions or later parts of section 7), and an organizer's team and guests. Nothing deletes an old photo file when
+  a photo is replaced.
 - The classic vendor dashboard's own event wizard (`features/events`, legacy tables) is untouched and unrelated.
 - **Needs the website migration applied** (organizer events, after tenancy and onboarding). Until then the tab says "Events are not set up on
   this server yet". Not run against a real database: there is no staging.
@@ -207,7 +207,7 @@ The Setup list's **Venue profile** and **Rooms and floor plan** steps open edito
   with the website's SQL and TypeScript.
 - **Not tried on a real phone**: the real picker and the real storage upload (no staging, and the picker needs a device). Everything around
   them is covered by tests with fakes. Try a real photo, including an iPhone one, before relying on it.
-- Not here yet: photos for tables, bottles and events (the same `PhotoField` will do), the gallery, deleting old files, reordering floors.
+- Not here yet: the gallery, deleting old files, reordering floors. (Table, bottle and event photos use the same `PhotoField`.)
 
 ### Archived code
 
