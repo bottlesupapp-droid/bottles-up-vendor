@@ -141,3 +141,6 @@ String workspaceLandingPath(Workspace workspace) =>
     workspaceSectionPath(workspace.membershipId, navigationFor(workspace.role).landing.id);
 
 String workspaceSectionPath(String membershipId, String sectionId) => '/w/$membershipId/$sectionId';
+
+/// One venue inside an owner's Venues tab: `/w/{membershipId}/venues/{venueId}`.
+String workspaceVenuePath(String membershipId, String venueId) => '/w/$membershipId/venues/$venueId';
