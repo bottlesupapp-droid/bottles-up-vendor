@@ -594,19 +594,19 @@ void main() {
           ];
     });
 
-    Widget list() => host(const Scaffold(body: VenueSetupList(venueId: 'v1')));
+    Widget list() => host(const Scaffold(body: VenueSetupList(venueId: 'v1', orgId: 'o1')));
 
-    testWidgets('only the steps this app can edit offer Edit, the rest stay on the website', (tester) async {
+    testWidgets('only the steps this app can edit offer Edit (the team and the optional steps do not)', (tester) async {
       tall(tester);
       await open(tester, list());
-      for (final step in ['tables', 'bottles', 'booking_rules']) {
+      for (final step in ['profile', 'floor_plan', 'tables', 'bottles', 'booking_rules']) {
         expect(find.byKey(Key('edit-step-$step')), findsOneWidget, reason: step);
       }
-      for (final step in ['profile', 'floor_plan', 'team']) {
+      for (final step in ['team']) {
         expect(find.byKey(Key('edit-step-$step')), findsNothing, reason: step);
       }
       expect(find.byKey(const Key('setup-footnote')), findsOneWidget);
-      expect(find.textContaining('Tables, the bottle menu and booking times can be edited here'), findsOneWidget);
+      expect(find.textContaining('The venue profile, floor plans, tables, the bottle menu and booking times can be edited here'), findsOneWidget);
     });
 
     testWidgets('adding the first table from the checklist marks that step done without reopening the screen', (tester) async {
@@ -633,7 +633,7 @@ void main() {
     testWidgets('a step with nothing to edit here does nothing when tapped', (tester) async {
       tall(tester);
       await open(tester, list());
-      await tapKey(tester, 'step-profile');
+      await tapKey(tester, 'step-team');
       expect(find.byType(TableTypesEditor), findsNothing);
       expect(find.byType(BottleMenuEditor), findsNothing);
       expect(find.byType(BookingTimesEditor), findsNothing);

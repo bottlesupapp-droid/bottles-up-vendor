@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:bottles_up_vendor/features/floor/providers/floor_providers.dart';
 import 'package:bottles_up_vendor/features/owner/logic/owner_rules.dart';
@@ -6,6 +7,7 @@ import 'package:bottles_up_vendor/features/owner/providers/owner_providers.dart'
 import 'package:bottles_up_vendor/features/owner/screens/owner_home_screen.dart';
 import 'package:bottles_up_vendor/features/owner/screens/owner_venues_screen.dart';
 import 'package:bottles_up_vendor/features/owner/widgets/booking_link_card.dart';
+import 'package:bottles_up_vendor/features/owner/widgets/photo_field.dart';
 import 'package:bottles_up_vendor/features/workspace/logic/workspace_routing.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
@@ -19,6 +21,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../floor/fake_floor_backend.dart';
 import 'fake_owner_backend.dart';
+import 'fake_setup_backend.dart';
 
 late FakeOwnerBackend owner;
 late FakeFloorBackend floor;
@@ -28,7 +31,17 @@ const managerWs = Workspace(membershipId: 'm-m', orgId: 'o1', orgName: 'Club Co'
 
 DateTime friday9pm() => DateTime(2026, 10, 9, 21);
 
-List<Override> overrides() => [ownerServiceProvider.overrideWithValue(owner.service), floorServiceProvider.overrideWithValue(floor.service)];
+late FakeSetupBackend setupDb;
+late FakeMedia mediaDb;
+late List<Uint8List?> photoPicks;
+
+List<Override> overrides() => [
+      ownerServiceProvider.overrideWithValue(owner.service),
+      floorServiceProvider.overrideWithValue(floor.service),
+      venueSetupServiceProvider.overrideWithValue(setupDb.service),
+      mediaServiceProvider.overrideWithValue(mediaDb.service),
+      photoPickerProvider.overrideWithValue((_) async => photoPicks.isEmpty ? null : photoPicks.removeAt(0)),
+    ];
 
 Widget host(Widget screen) => ProviderScope(
       key: UniqueKey(),
@@ -60,6 +73,9 @@ void main() {
   setUp(() {
     owner = FakeOwnerBackend();
     floor = FakeFloorBackend();
+    setupDb = FakeSetupBackend();
+    mediaDb = FakeMedia();
+    photoPicks = [];
     owner.handlers['my_venues'] = (_) => [myVenue('v1', 'Club A'), myVenue('v2', 'Club B', status: 'published'), myVenue('vx', 'Not ours', org: 'o2')];
     owner.onVenueRows = (ids) => [
           {'id': 'v1', 'name': 'Club A', 'slug': 'club-a', 'status': 'draft', 'address': '1 Main St'},
@@ -317,6 +333,24 @@ void main() {
       expect(find.text('Bookings'), findsOneWidget, reason: 'only the tab, not a heading under it');
     });
 
+    testWidgets('Setup: a photo chosen on the venue\'s own page goes into the folder of the business the workspace belongs to', (tester) async {
+      await open(tester, at('/w/m-o/venues/v1'));
+      await tester.tap(find.widgetWithText(Tab, 'Setup'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('step-floor_plan')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('add-floor')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('field-label')), 'Main room');
+      photoPicks = [Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4])];
+      await tester.tap(find.byKey(const Key('photo-choose')));
+      await tester.pumpAndSettle();
+      expect(mediaDb.uploads.single.$1, startsWith('o1/'), reason: 'the folder is the business\'s id (the workspace\'s org), which the storage policy checks');
+      await tester.tap(find.byKey(const Key('save-floor')));
+      await tester.pumpAndSettle();
+      expect(setupDb.paramsOf('save_venue_floor').single!['p_venue'], 'v1');
+    });
+
     testWidgets('Setup: progress, what is next, each step with what is missing, and what cannot be done yet', (tester) async {
       await open(tester, at('/w/m-o/venues/v1'));
       await tester.tap(find.widgetWithText(Tab, 'Setup'));
@@ -342,7 +376,7 @@ void main() {
       await tester.tap(find.widgetWithText(Tab, 'Setup'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.byKey(const Key('setup-footnote')), 300, scrollable: find.byType(Scrollable).last);
-      expect(find.textContaining('edited on the website for now'), findsOneWidget);
+      expect(find.textContaining('done on the website for now'), findsOneWidget);
       expect(find.textContaining('done by the BottlesUp team'), findsOneWidget);
     });
 

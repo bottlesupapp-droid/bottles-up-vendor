@@ -115,8 +115,9 @@ night before), and answers for at most 93 nights and 1000 rows; the app only sho
 - Rules are ports of the website's `venueSetup.ts` and `bookingLink.ts`; tests compare labels, order, the default site, the slug rule and
   the function and argument names with the website repo when it is checked out beside this app. `--dart-define=SITE_URL=https://...`
   points booking links elsewhere (only a plain https address is accepted; anything else is ignored).
-- **Not here yet:** editing floor plans and photos (done on the website for now), claiming an existing venue, taking a venue live, the
-  owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked at, not scanned.
+- **Not here yet:** photos for tables, bottles and events, the venue gallery and where tables sit on a floor plan (done on the website for now),
+  claiming an existing venue, taking a venue live, the owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked
+  at, not scanned.
 - **Needs the website migrations applied** (tenancy, onboarding, venue bookings). Until then each screen says "not set up on this server
   yet". Not run against a real database: there is no staging.
 
@@ -131,8 +132,8 @@ person owns or manages THAT venue and refuse any field they do not know.
   app) and fail if a form sends a field the database does not accept, or a limit differs.
 - `services/venue_setup_service.dart` is the calls; a refusal comes back as `SetupEditException` carrying the database's own sentence
   (`raise exception`, code P0001), anything else as a generic one (`services/db_errors.dart`).
-- **Photos are not edited here.** The payloads never contain `image_url`; the server only changes keys that are sent, so editing a
-  table or bottle keeps its photo. `sort_order` is not sent either. Floor plans (image upload) are the next piece.
+- **Photos for tables and bottles are not edited here.** Those payloads never contain `image_url`; the server only changes keys that are
+  sent, so editing a table or bottle keeps its photo. `sort_order` is not sent either.
 - Quick switches on the bottle menu (On menu, Sold out) send only that one field. A table type or time with bookings cannot be removed
   (the screen says so; the database refuses regardless). After any change the checklist is read again, so a step turns Done at once.
 - Several days can be added to one arrival time at once; each day is its own call and its outcome is reported (added, already there,
@@ -186,6 +187,27 @@ THAT business, looks the event up inside it, and writes only whitelisted fields;
 - The classic vendor dashboard's own event wizard (`features/events`, legacy tables) is untouched and unrelated.
 - **Needs the website migration applied** (organizer events, after tenancy and onboarding). Until then the tab says "Events are not set up on
   this server yet". Not run against a real database: there is no staging.
+
+#### Venue profile and floor plans (with photo upload)
+
+The Setup list's **Venue profile** and **Rooms and floor plan** steps open editors (`screens/setup/venue_profile_editor.dart`,
+`floors_editor.dart`, `floor_form_screen.dart`). They call the website's `update_venue_profile` (onboarding migration) and
+`list_/save_/remove_venue_floor` (venue setup migration); the database checks the person owns or manages THIS venue.
+
+- **The profile** is the name, description, address and cover photo. The payload is those four fields and nothing else: never the
+  venue's status or slug (the BottlesUp team takes a venue live), and not the gallery (not edited here, so left as it is).
+  A blank description, address or cover photo is sent as "none", so it can be cleared.
+- **A floor** is a name and a floor plan image (both required). New floors go to the end of the list; an edit keeps its position. Removing a
+  floor leaves its tables, unplaced (the screen says how many). Where each table sits on a floor is arranged by the BottlesUp team.
+- **Photos** (`widgets/photo_field.dart`, `services/media_service.dart`, `logic/media_rules.dart`): the phone's gallery picker (shrinks to
+  2400 px and re-encodes, which also turns an iPhone HEIC into a JPEG), a check of the real file type from its first bytes, JPEG/PNG/WebP up to
+  5 MB, then an upload into the business's own folder of the public `business-media` bucket (`<organization id>/<new uuid>.<ext>`), which is
+  all the bucket's policy allows. The photo is uploaded as soon as it is chosen and saved to the venue only when the form is saved; Save is held
+  while an upload is going. Replacing a photo leaves the old file in storage (nothing deletes it). Tests compare the limits, folder rule and wording
+  with the website's SQL and TypeScript.
+- **Not tried on a real phone**: the real picker and the real storage upload (no staging, and the picker needs a device). Everything around
+  them is covered by tests with fakes. Try a real photo, including an iPhone one, before relying on it.
+- Not here yet: photos for tables, bottles and events (the same `PhotoField` will do), the gallery, deleting old files, reordering floors.
 
 ### Archived code
 
