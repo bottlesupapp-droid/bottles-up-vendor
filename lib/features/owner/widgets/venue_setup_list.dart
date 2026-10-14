@@ -5,6 +5,8 @@ import 'package:ionicons/ionicons.dart';
 import '../logic/owner_rules.dart';
 import '../providers/owner_providers.dart';
 import '../screens/setup/booking_times_editor.dart';
+import '../screens/setup/floors_editor.dart';
+import '../screens/setup/venue_profile_editor.dart';
 import '../screens/setup/bottle_menu_editor.dart';
 import '../screens/setup/table_types_editor.dart';
 import '../services/owner_service.dart';
@@ -46,12 +48,17 @@ class SetupProgress extends ConsumerWidget {
 /// A venue's full setup checklist, computed by the database from what really exists. Readiness counts only the required steps;
 /// a step the system cannot do yet says "Coming soon" and never counts as done or pending.
 class VenueSetupList extends ConsumerWidget {
-  const VenueSetupList({super.key, required this.venueId});
+  const VenueSetupList({super.key, required this.venueId, required this.orgId});
 
   final String venueId;
 
+  /// The business the venue belongs to: photos are uploaded into its folder.
+  final String orgId;
+
   /// The editor behind a step, when this app has one. The others (the profile, the floor plan) are edited on the website for now.
   Widget? _editorFor(String step) => switch (step) {
+        'profile' => VenueProfileEditor(venueId: venueId, orgId: orgId),
+        'floor_plan' => FloorsEditor(venueId: venueId, orgId: orgId),
         'tables' => TableTypesEditor(venueId: venueId),
         'bottles' => BottleMenuEditor(venueId: venueId),
         'booking_rules' => BookingTimesEditor(venueId: venueId),
@@ -154,7 +161,7 @@ class VenueSetupList extends ConsumerWidget {
                   ),
                 const SizedBox(height: 20),
                 Text(
-                  'Tables, the bottle menu and booking times can be edited here. The venue profile, floor plans and photos are edited on the website for now '
+                  'The venue profile, floor plans, tables, the bottle menu and booking times can be edited here. Photos for tables and bottles, and where tables sit on a floor plan, are done on the website for now '
                   '(bottlesupapp.com, My Venues). Taking a venue live is done by the BottlesUp team once your business is verified and every required step is done.',
                   key: const Key('setup-footnote'),
                   style: theme.textTheme.bodySmall,

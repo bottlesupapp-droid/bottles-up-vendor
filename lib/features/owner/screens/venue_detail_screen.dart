@@ -93,7 +93,7 @@ class VenueDetailScreen extends ConsumerWidget {
                 child: TabBarView(
                   children: [
                     FloorScreen(venueId: venue.id, venueName: venue.name, showHeading: false),
-                    VenueSetupList(venueId: venue.id),
+                    VenueSetupList(venueId: venue.id, orgId: workspace.orgId),
                     BookingLinkCard(venue: venue),
                   ],
                 ),
