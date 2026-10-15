@@ -258,8 +258,10 @@ authorize through the global `door_staff` table (an invited server or verifier i
   **Try the camera and a real receipt on a real phone before relying on it at a table**: the picker and the private-bucket upload were only exercised
   with fakes. Not built: flagging a payment, settling a disputed payment, cash handover from server to cashier, corrections and refunds, partial delivery of a
   line, a service estimate and "mark seated", the manager's checklist for preparing and closing a night, and alerts for slow orders or low stock.
-- `tool/mutate_dart.py` mutation-checks this code on throwaway copies of the app (see its header). Run it with at most 3 workers: more makes the
-  machine unusable, and it kills its test processes when it exits or is stopped.
+- `tool/mutate_dart.py` mutation-checks this code on throwaway copies of the app (see its header). Last result: rules/service 126 of 129 killed, screens/widgets
+  101 of 107; what survived is equivalent (an initial value nothing can observe, a comparison that can never be equal, an invisible empty row) or is killed by
+  `test/table_service/long_lists_test.dart`, which is left out of the runs because it is slow. Run it with at most 3 workers (more makes the machine unusable) and
+  keep the Mac awake: idle sleep pauses a run and makes it look hung.
 
 ### Archived code
 
