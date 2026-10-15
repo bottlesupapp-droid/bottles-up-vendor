@@ -2,6 +2,9 @@ import 'package:bottles_up_vendor/features/door/screens/door_guests_screen.dart'
 import 'package:bottles_up_vendor/features/door/screens/door_scan_screen.dart';
 import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
 import 'package:bottles_up_vendor/features/server_desk/screens/my_tables_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/orders_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/payment_review_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/tonight_screen.dart';
 import 'package:bottles_up_vendor/features/server_desk/screens/service_requests_screen.dart';
 import 'package:bottles_up_vendor/features/organizer_events/screens/organizer_events_screen.dart';
 import 'package:bottles_up_vendor/features/team/screens/team_screen.dart';
@@ -55,16 +58,23 @@ void main() {
           final isOwnerScreen = role == WorkspaceRole.owner && (section.id == 'home' || section.id == 'venues');
           final isTeam = (role == WorkspaceRole.owner || role == WorkspaceRole.manager) && section.id == 'team';
           final isOrganizerEvents = role == WorkspaceRole.organizer && (section.id == 'home' || section.id == 'events');
-          final isServerDesk = role == WorkspaceRole.server && (section.id == 'tables' || section.id == 'requests');
-          expect(built != null, isDoorScreen || isFloor || isOwnerScreen || isTeam || isOrganizerEvents || isServerDesk, reason: '${role.name}/${section.id}');
+          final isServerDesk = role == WorkspaceRole.server && (section.id == 'tables' || section.id == 'orders' || section.id == 'requests');
+          final isManagerNight = role == WorkspaceRole.manager && (section.id == 'tonight' || section.id == 'orders');
+          final isVerifierReview = role == WorkspaceRole.verifier && section.id == 'review';
+          expect(
+            built != null,
+            isDoorScreen || isFloor || isOwnerScreen || isTeam || isOrganizerEvents || isServerDesk || isManagerNight || isVerifierReview,
+            reason: '${role.name}/${section.id}',
+          );
         }
       }
     });
 
-    test('a server gets My Tables and Requests; Orders and Scan wait for functions that exist only in production, and Chat for chat', () {
+    test('a server gets My Tables, Orders and Requests; Scan waits for table check-in, and Chat for chat', () {
       expect(builtSectionFor(as(WorkspaceRole.server), 'tables'), isA<MyTablesScreen>());
+      expect(builtSectionFor(as(WorkspaceRole.server), 'orders'), isA<OrdersScreen>());
       expect(builtSectionFor(as(WorkspaceRole.server), 'requests'), isA<ServiceRequestsScreen>());
-      for (final id in ['orders', 'scan', 'chat']) {
+      for (final id in ['scan', 'chat']) {
         expect(builtSectionFor(as(WorkspaceRole.server), id), isNull, reason: id);
       }
     });
@@ -74,9 +84,30 @@ void main() {
       expect((builtSectionFor(manager, 'floor') as FloorScreen).orgId, 'o9');
     });
 
-    test('a manager\'s other tabs are still placeholders: Orders needs bottle orders, which are not shown yet', () {
-      for (final id in ['tonight', 'orders', 'more']) {
-        expect(builtSectionFor(as(WorkspaceRole.manager), id), isNull, reason: id);
+    test('a manager gets Tonight and Orders for their own club; More is still a placeholder', () {
+      final tonight = builtSectionFor(as(WorkspaceRole.manager), 'tonight');
+      expect(tonight, isA<TonightScreen>());
+      expect((tonight as TonightScreen).workspace.venueId, 'v1');
+      final orders = builtSectionFor(as(WorkspaceRole.manager), 'orders');
+      expect(orders, isA<OrdersScreen>());
+      expect((orders as OrdersScreen).workspace.venueId, 'v1');
+      expect(builtSectionFor(as(WorkspaceRole.manager), 'more'), isNull);
+    });
+
+    test('a verifier\'s Review is the queue of payments to check; their other tabs wait for cash handover and flagging', () {
+      final review = builtSectionFor(as(WorkspaceRole.verifier), 'review');
+      expect(review, isA<PaymentReviewScreen>());
+      expect((review as PaymentReviewScreen).workspace.venueId, 'v1');
+      for (final id in ['cash', 'exceptions', 'summary']) {
+        expect(builtSectionFor(as(WorkspaceRole.verifier), id), isNull, reason: id);
+      }
+    });
+
+    test('Tonight, Orders and Review are for those roles only', () {
+      for (final role in WorkspaceRole.values) {
+        if (role != WorkspaceRole.manager) expect(builtSectionFor(as(role), 'tonight'), isNull, reason: '${role.name}/tonight');
+        if (role != WorkspaceRole.manager && role != WorkspaceRole.server) expect(builtSectionFor(as(role), 'orders'), isNull, reason: '${role.name}/orders');
+        if (role != WorkspaceRole.verifier) expect(builtSectionFor(as(role), 'review'), isNull, reason: '${role.name}/review');
       }
     });
 

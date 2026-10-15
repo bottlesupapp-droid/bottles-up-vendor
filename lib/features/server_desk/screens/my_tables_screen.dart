@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../floor/logic/bookings_rules.dart' show addDays, currentNight, formatNight;
+import '../../table_service/logic/table_service_rules.dart' show TableStatus;
+import '../../table_service/providers/table_service_providers.dart';
+import '../../table_service/screens/table_detail_screen.dart';
 import '../../workspace/models/workspace.dart';
 import '../logic/server_desk_rules.dart';
 import '../providers/server_desk_providers.dart';
@@ -56,6 +59,18 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
     }
   }
 
+  void _open(AssignedTable t) {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+          builder: (_) => TableDetailScreen(bookingId: t.bookingId, title: '${t.tableName} · ${t.customerName}', clock: widget.clock),
+        ))
+        .then((_) {
+      // Whatever was moved or paid on the table's page, the cards show it now.
+      if (!mounted) return;
+      ref.invalidate(tableStatusesProvider(NightQuery(widget.workspace.venueId ?? '', _night)));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -73,12 +88,16 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
     // The open requests are a bonus on each card: if they cannot be loaded the tables still show.
     final requests = ref.watch(serviceRequestsProvider(RequestsQuery(venueId))).asData?.value ?? const <ServiceRequestRow>[];
     final byBooking = openByBooking(requests);
+    // Where each table stands is a bonus on each card too: without it the card simply has no "next" line.
+    final statuses = ref.watch(tableStatusesProvider(NightQuery(venueId, _night))).asData?.value ?? const <TableStatus>[];
+    final statusOf = {for (final s in statuses) s.bookingId: s};
     final now = widget.clock();
 
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(myTablesProvider(_night));
         ref.invalidate(serviceRequestsProvider(RequestsQuery(venueId)));
+        ref.invalidate(tableStatusesProvider(NightQuery(venueId, _night)));
         try {
           await ref.read(myTablesProvider(_night).future);
         } catch (_) {
@@ -159,6 +178,8 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
                       now: now,
                       asking: _asking.contains(t.bookingId),
                       onAsk: () => _ask(t),
+                      status: statusOf[t.bookingId],
+                      onOpen: () => _open(t),
                     ),
                 ],
               );
@@ -166,7 +187,7 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Payments and bottle orders are not shown here yet.',
+            'Open a table for its bottle orders and payments.',
             key: const Key('tables-footnote'),
             style: theme.textTheme.bodySmall,
           ),

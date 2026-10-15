@@ -83,12 +83,12 @@ void main() {
     expect(find.text('VIP booth · 1 guest'), findsOneWidget);
   });
 
-  testWidgets('shows no guest email or phone, and says what is not here yet', (tester) async {
+  testWidgets('shows no guest email or phone, and points at the table page for orders and payments', (tester) async {
     await open(tester, host());
     expect(find.textContaining('@'), findsNothing);
     expect(find.textContaining('+1'), findsNothing);
     expect(find.byKey(const Key('tables-footnote')), findsOneWidget);
-    expect(find.text('Payments and bottle orders are not shown here yet.'), findsOneWidget);
+    expect(find.text('Open a table for its bottle orders and payments.'), findsOneWidget);
   });
 
   testWidgets('another club\'s tables are not shown in this workspace', (tester) async {

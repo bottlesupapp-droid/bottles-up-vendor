@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
 import '../../floor/logic/bookings_rules.dart' show formatTimeSlot;
+import '../../table_service/logic/table_service_rules.dart' show TableStatus, nextAction;
 import '../logic/server_desk_rules.dart';
 import 'desk_chip.dart';
 
@@ -16,6 +17,8 @@ class TableCard extends StatelessWidget {
     required this.now,
     required this.asking,
     required this.onAsk,
+    this.status,
+    this.onOpen,
   });
 
   final AssignedTable table;
@@ -25,6 +28,12 @@ class TableCard extends StatelessWidget {
   /// A request for this table is on its way: the button waits, so a second tap cannot send it twice.
   final bool asking;
   final VoidCallback onAsk;
+
+  /// Where the table stands (what is due, what is left to deliver). Null when it could not be loaded: no line is better than a wrong one.
+  final TableStatus? status;
+
+  /// Opens the table's orders and payments. Null for no button.
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +65,11 @@ class TableCard extends StatelessWidget {
             Text(t.customerName, style: theme.textTheme.titleMedium),
             Text('${t.tableName} · ${t.guestCount} ${t.guestCount == 1 ? 'guest' : 'guests'}', style: theme.textTheme.bodyMedium),
             if (t.confirmationCode != null) Text(t.confirmationCode!, style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')),
+            if (nextAction(t, status) case final next?)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(next, key: Key('next-${t.bookingId}'), style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary)),
+              ),
             for (final r in openRequests)
               Padding(
                 key: Key('open-${r.requestId}'),
@@ -68,11 +82,23 @@ class TableCard extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 8),
-            OutlinedButton.icon(
-              key: Key('ask-${t.bookingId}'),
-              onPressed: asking ? null : onAsk,
-              icon: const Icon(Ionicons.hand_left_outline, size: 18),
-              label: const Text('Ask for something'),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (onOpen != null)
+                  FilledButton.icon(
+                    key: Key('open-${t.bookingId}'),
+                    onPressed: onOpen,
+                    icon: const Icon(Ionicons.receipt_outline, size: 18),
+                    label: const Text('Orders and payments'),
+                  ),
+                OutlinedButton.icon(
+                  key: Key('ask-${t.bookingId}'),
+                  onPressed: asking ? null : onAsk,
+                  icon: const Icon(Ionicons.hand_left_outline, size: 18),
+                  label: const Text('Ask for something'),
+                ),
+              ],
             ),
           ],
         ),

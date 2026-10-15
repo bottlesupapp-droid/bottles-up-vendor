@@ -6,6 +6,7 @@ import '../../server_desk/logic/server_desk_rules.dart';
 import '../../server_desk/providers/server_desk_providers.dart';
 import '../../server_desk/services/server_desk_service.dart';
 import '../../server_desk/widgets/assign_server_row.dart';
+import '../../table_service/screens/table_detail_screen.dart';
 import '../../team/logic/team_rules.dart' show TeamMember;
 import '../../team/providers/team_providers.dart';
 import '../logic/bookings_rules.dart';
@@ -135,6 +136,28 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
         );
       },
     );
+  }
+
+  void _openTable(BookingRow b) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TableDetailScreen(bookingId: b.bookingId, title: '${b.tableName} · ${b.customerName}', clock: widget.clock),
+    ));
+  }
+
+  /// Under a confirmed booking: who serves the table (when the business is known) and a way into its orders and payments.
+  Widget? _footer(BookingRow b, FloorQuery query, AsyncValue<List<BookingServer>>? servers, AsyncValue<List<TeamMember>>? team) {
+    final row = _serverRow(b, query, servers, team);
+    if (!statusInfo(b.status).confirmed) return row;
+    final open = Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        key: Key('open-table-${b.bookingId}'),
+        onPressed: () => _openTable(b),
+        icon: const Icon(Icons.receipt_long_outlined, size: 18),
+        label: const Text('Orders and payments'),
+      ),
+    );
+    return row == null ? open : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [row, open]);
   }
 
   Future<void> _call(Uri uri) async {
@@ -338,7 +361,7 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
               Text('${g.guests} ${g.guests == 1 ? 'guest' : 'guests'} expected', style: theme.textTheme.bodySmall),
             ],
           ),
-          for (final b in g.rows) BookingCard(booking: b, onContact: _call, footer: _serverRow(b, query, servers, team)),
+          for (final b in g.rows) BookingCard(booking: b, onContact: _call, footer: _footer(b, query, servers, team)),
         ],
         const SizedBox(height: 20),
         Text(

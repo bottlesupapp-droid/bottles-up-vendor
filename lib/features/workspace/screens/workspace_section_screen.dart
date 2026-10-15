@@ -9,6 +9,9 @@ import '../../owner/screens/owner_home_screen.dart';
 import '../../owner/screens/owner_venues_screen.dart';
 import '../../server_desk/screens/my_tables_screen.dart';
 import '../../server_desk/screens/service_requests_screen.dart';
+import '../../table_service/screens/orders_screen.dart';
+import '../../table_service/screens/payment_review_screen.dart';
+import '../../table_service/screens/tonight_screen.dart';
 import '../../team/screens/team_screen.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
@@ -21,13 +24,14 @@ import '../providers/workspace_providers.dart';
 /// bookings, setup checklist and booking link). Money, reports and the rest of the owner's tabs wait for the production-only
 /// definitions of payments.
 ///
-/// A manager's Floor shows the bookings of their own club (read only). The rest of the manager's tabs, Orders in particular, wait
-/// for bottle orders, whose cancelled lines and service state live in production-only columns.
+/// A manager's Tonight (what needs a person, the night at a glance), Floor (the bookings of their own club, each with its orders and
+/// payments) and Orders (the club's bottle orders for the night) are built. Their Team tab is shared with the owner.
 ///
-/// A server's My Tables (the tables the manager has given them for the night) and Requests (what those tables have asked for) are
-/// built on the website's `my_assigned_tables` and service-request functions. Their Orders and Scan tabs stay placeholders: bottle
-/// orders and table check-in live in functions and columns that exist only in production, so they cannot be built or tested from this
-/// repository yet. Only the DOOR role gets the ticket scanner: scanning a ticket on a server's Scan tab would be the wrong tool.
+/// A server's My Tables (the tables the manager has given them for the night, each with its orders and payments), Orders and Requests
+/// are built on the website's `my_assigned_tables`, `desk_*` and service-request functions. Their Scan tab (seat a guest from a booking
+/// QR) stays a placeholder. Only the DOOR role gets the ticket scanner: scanning a ticket on a server's Scan tab would be the wrong tool.
+///
+/// A verifier's Review tab is the queue of payments to check. Cash, Exceptions and Summary are not built.
 Widget? builtSectionFor(Workspace workspace, String sectionId) {
   if (workspace.role == WorkspaceRole.door) {
     switch (sectionId) {
@@ -41,8 +45,22 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
     switch (sectionId) {
       case 'tables':
         return MyTablesScreen(workspace: workspace);
+      case 'orders':
+        return OrdersScreen(workspace: workspace);
       case 'requests':
         return ServiceRequestsScreen(workspace: workspace);
+    }
+  }
+  // A verifier's Review tab is the queue of payments to check at their club.
+  if (workspace.role == WorkspaceRole.verifier && sectionId == 'review') {
+    return PaymentReviewScreen(workspace: workspace);
+  }
+  if (workspace.role == WorkspaceRole.manager) {
+    switch (sectionId) {
+      case 'tonight':
+        return TonightScreen(workspace: workspace);
+      case 'orders':
+        return OrdersScreen(workspace: workspace);
     }
   }
   if (workspace.role == WorkspaceRole.owner) {
