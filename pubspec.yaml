@@ -1,7 +1,7 @@
 name: bottles_up_vendor
 description: "Bottles Up Vendor - Event Organizer App"
 publish_to: 'none'
-version: 1.0.3+3
+version: 1.1.0+4
 
 environment:
   sdk: ^3.7.2
