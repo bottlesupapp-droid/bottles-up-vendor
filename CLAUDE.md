@@ -8,7 +8,7 @@ Flutter app for venue owners, managers, organizers, door/server staff and simila
 Supabase project with the Bottles Up website and the customer app, so the **website's `site_*` schema and
 edge functions are the source of truth**. Do not add a second source of truth for bookings or payments here.
 
-- Bundle / application ID: Android `com.bottlesup.vendor`; iOS `com.bottlesup.vendorapp` (they differ on purpose: `com.bottlesup.vendor` was taken on Apple's side by a free personal team's App ID, so team `4T453RG45S` could not register it).
+- Bundle / application ID: Android `com.bottlesup.vendor`; iOS `com..bottlesUp.ORG` (the vendor app's original iOS ID, already registered under team `4T453RG45S`; the double dot is deliberate. They differ on purpose: `com.bottlesup.vendor` is taken on Apple's side by a free personal team's App ID).
 - Backend: **Supabase** (Auth, Postgres with RLS, Edge Functions). There is no Firebase in this app.
 - Shared code lives in `../../packages/shared` (Supabase config, shared models).
 
@@ -272,7 +272,7 @@ Code removed to keep the app focused is in `_archive/` with a manifest and a res
 
 - **Android signing:** release builds require `android/key.properties` (copy `android/key.properties.example`).
   Without it the build fails on purpose. For a throwaway local build set `ORG_GRADLE_PROJECT_allowUnsignedRelease=true`.
-- **iOS signing:** the App ID `com.bottlesup.vendorapp` must be registered under team `4T453RG45S` (automatic signing with `-allowProvisioningUpdates` does this on the first signed build).
+- **iOS signing:** the App ID `com..bottlesUp.ORG` is already registered under team `4T453RG45S` (it has development and store profiles); automatic signing with `-allowProvisioningUpdates` handles the rest.
 - **Android permissions:** `INTERNET` is declared in the main manifest. Flutter only adds it to debug/profile
   builds on its own, so removing it breaks release builds completely.
 - **Crash reporting:** not wired up yet (`_logError` in `main.dart` only prints). Add Sentry or similar before launch.
