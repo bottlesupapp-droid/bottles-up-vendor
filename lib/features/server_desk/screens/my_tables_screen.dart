@@ -11,6 +11,7 @@ import '../providers/server_desk_providers.dart';
 import '../services/server_desk_service.dart';
 import '../widgets/ask_sheet.dart';
 import '../widgets/table_card.dart';
+import '../../cash_review/widgets/cash_held_card.dart';
 
 /// Shows the sheet that asks what a table needs. Replaced in tests.
 typedef AskPicker = Future<AskChoice?> Function(BuildContext context, String tableLabel);
@@ -133,6 +134,7 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
               alignment: Alignment.center,
               child: TextButton(key: const Key('night-tonight'), onPressed: () => setState(() => _night = _tonight), child: const Text('Back to tonight')),
             ),
+          CashHeldCard(workspace: widget.workspace, night: _night),
           const SizedBox(height: 8),
           tablesAsync.when(
             loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../cash_review/providers/cash_providers.dart';
+import '../../cash_review/screens/cash_screen.dart';
+import '../../cash_review/screens/exceptions_screen.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/screens/service_requests_screen.dart';
@@ -93,6 +96,8 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
       );
     }
     final async = ref.watch(tonightProvider(_query));
+    // Cash and flags are a bonus on this screen: without them (an older server) the rest still shows.
+    final cash = ref.watch(verifierSummaryProvider(_query)).asData?.value;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -170,6 +175,21 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                             ),
                           ),
                     ),
+                    if (cash != null) ...[
+                      _tile(
+                        const Key('tile-handovers'),
+                        'Cash handovers waiting to be counted',
+                        cash.handoversWaiting,
+                        onTap: () => _push('Cash', CashScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
+                      _tile(
+                        const Key('tile-flags'),
+                        'Payments flagged',
+                        cash.flagsOpen,
+                        note: 'Flagged by the payment verifier, waiting for you.',
+                        onTap: () => _push('Flagged payments', ExceptionsScreen(workspace: widget.workspace)),
+                      ),
+                    ],
                     _tile(
                       const Key('tile-orders-new'),
                       'New orders not started',

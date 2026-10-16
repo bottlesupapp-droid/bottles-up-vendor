@@ -17,6 +17,9 @@ import '../models/role_navigation.dart';
 import '../models/workspace.dart';
 import '../models/workspace_role.dart';
 import '../providers/workspace_providers.dart';
+import '../../cash_review/screens/summary_screen.dart';
+import '../../cash_review/screens/exceptions_screen.dart';
+import '../../cash_review/screens/cash_screen.dart';
 
 /// The sections that are built, keyed by role and section id. Everything else shows the honest "not built yet" card.
 ///
@@ -52,8 +55,17 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
     }
   }
   // A verifier's Review tab is the queue of payments to check at their club.
-  if (workspace.role == WorkspaceRole.verifier && sectionId == 'review') {
-    return PaymentReviewScreen(workspace: workspace);
+  if (workspace.role == WorkspaceRole.verifier) {
+    switch (sectionId) {
+      case 'review':
+        return PaymentReviewScreen(workspace: workspace);
+      case 'cash':
+        return CashScreen(workspace: workspace);
+      case 'exceptions':
+        return ExceptionsScreen(workspace: workspace);
+      case 'summary':
+        return VerifierSummaryScreen(workspace: workspace);
+    }
   }
   if (workspace.role == WorkspaceRole.manager) {
     switch (sectionId) {

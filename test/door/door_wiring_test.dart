@@ -24,6 +24,16 @@ Workspace as(WorkspaceRole role) => Workspace(
       venueName: 'Club A',
     );
 
+/// Every tab that is built, as role/tab. Add to this when a tab is built; nothing else in this file changes.
+const Set<String> builtTabs = {
+  'door/scan', 'door/guests',
+  'manager/tonight', 'manager/floor', 'manager/orders', 'manager/team',
+  'owner/home', 'owner/venues',
+  'organizer/home', 'organizer/events',
+  'server/tables', 'server/orders', 'server/requests',
+  'verifier/review', 'verifier/cash', 'verifier/exceptions', 'verifier/summary',
+};
+
 void main() {
   group('which sections are built', () {
     test('the door role gets the scanner on Scan and the guest search on Guests, for its own membership', () {
@@ -49,25 +59,14 @@ void main() {
       expect((builtSectionFor(manager, 'floor') as FloorScreen).venueId, isNull);
     });
 
-    test('no other section of any role is built yet: they all say so, honestly', () {
+    test('exactly these tabs are built; every other tab says so, honestly', () {
+      final actual = <String>{};
       for (final role in WorkspaceRole.values) {
         for (final section in navigationFor(role).sections) {
-          final built = builtSectionFor(as(role), section.id);
-          final isDoorScreen = role == WorkspaceRole.door && (section.id == 'scan' || section.id == 'guests');
-          final isFloor = role == WorkspaceRole.manager && section.id == 'floor';
-          final isOwnerScreen = role == WorkspaceRole.owner && (section.id == 'home' || section.id == 'venues');
-          final isTeam = (role == WorkspaceRole.owner || role == WorkspaceRole.manager) && section.id == 'team';
-          final isOrganizerEvents = role == WorkspaceRole.organizer && (section.id == 'home' || section.id == 'events');
-          final isServerDesk = role == WorkspaceRole.server && (section.id == 'tables' || section.id == 'orders' || section.id == 'requests');
-          final isManagerNight = role == WorkspaceRole.manager && (section.id == 'tonight' || section.id == 'orders');
-          final isVerifierReview = role == WorkspaceRole.verifier && section.id == 'review';
-          expect(
-            built != null,
-            isDoorScreen || isFloor || isOwnerScreen || isTeam || isOrganizerEvents || isServerDesk || isManagerNight || isVerifierReview,
-            reason: '${role.name}/${section.id}',
-          );
+          if (builtSectionFor(as(role), section.id) != null) actual.add('${role.name}/${section.id}');
         }
       }
+      expect(actual, builtTabs);
     });
 
     test('a server gets My Tables, Orders and Requests; Scan waits for table check-in, and Chat for chat', () {
@@ -94,12 +93,12 @@ void main() {
       expect(builtSectionFor(as(WorkspaceRole.manager), 'more'), isNull);
     });
 
-    test('a verifier\'s Review is the queue of payments to check; their other tabs wait for cash handover and flagging', () {
+    test('a verifier\'s tabs are Review, Cash, Exceptions and Summary, each for their own club', () {
       final review = builtSectionFor(as(WorkspaceRole.verifier), 'review');
       expect(review, isA<PaymentReviewScreen>());
       expect((review as PaymentReviewScreen).workspace.venueId, 'v1');
       for (final id in ['cash', 'exceptions', 'summary']) {
-        expect(builtSectionFor(as(WorkspaceRole.verifier), id), isNull, reason: id);
+        expect(builtSectionFor(as(WorkspaceRole.verifier), id), isNotNull, reason: id);
       }
     });
 
