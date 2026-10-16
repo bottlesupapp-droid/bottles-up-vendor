@@ -1,7 +1,7 @@
 name: bottles_up_vendor
 description: "Bottles Up Vendor - Event Organizer App"
 publish_to: 'none'
-version: 1.1.0+4
+version: 1.1.0+6
 
 environment:
   sdk: ^3.7.2
@@ -64,6 +64,7 @@ dependencies:
   csv: ^6.0.0
   file_picker: ^8.1.2
   path_provider: ^2.1.5
+  sentry_flutter: ^8.14.2
 
 dev_dependencies:
   flutter_test:
