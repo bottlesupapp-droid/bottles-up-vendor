@@ -21,6 +21,8 @@ import '../../cash_review/screens/summary_screen.dart';
 import '../../cash_review/screens/exceptions_screen.dart';
 import '../../cash_review/screens/cash_screen.dart';
 import '../../seating/screens/server_scan_screen.dart';
+import '../../chat/screens/chat_screen.dart';
+import '../../more/screens/more_screen.dart';
 
 /// The sections that are built, keyed by role and section id. Everything else shows the honest "not built yet" card.
 ///
@@ -32,11 +34,20 @@ import '../../seating/screens/server_scan_screen.dart';
 /// payments) and Orders (the club's bottle orders for the night) are built. Their Team tab is shared with the owner.
 ///
 /// A server's My Tables (the tables the manager has given them for the night, each with its orders and payments), Orders and Requests
-/// are built on the website's `my_assigned_tables`, `desk_*` and service-request functions. Their Scan tab (seat a guest from a booking
-/// QR) stays a placeholder. Only the DOOR role gets the ticket scanner: scanning a ticket on a server's Scan tab would be the wrong tool.
+/// are built on the website's `my_assigned_tables`, `desk_*` and service-request functions. Their Scan tab seats a guest from a booking
+/// QR or code. Chat is the Chat tab of the server, door, security and organizer roles. Only the DOOR role gets the ticket scanner: scanning a ticket on a server's Scan tab would be the wrong tool.
 ///
 /// A verifier's Review tab is the queue of payments to check. Cash, Exceptions and Summary are not built.
 Widget? builtSectionFor(Workspace workspace, String sectionId) {
+  // Chat: the tab of the server, door, security and organizer roles. (A manager and an owner reach it from More.)
+  if (sectionId == 'chat' &&
+      const {WorkspaceRole.server, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.organizer}.contains(workspace.role)) {
+    return ChatScreen(workspace: workspace);
+  }
+  // More: the parts of an owner, a manager and an organizer that do not have a tab of their own.
+  if (sectionId == 'more' && const {WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer}.contains(workspace.role)) {
+    return MoreScreen(workspace: workspace);
+  }
   if (workspace.role == WorkspaceRole.door) {
     switch (sectionId) {
       case 'scan':
