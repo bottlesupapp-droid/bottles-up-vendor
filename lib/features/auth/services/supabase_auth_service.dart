@@ -65,8 +65,11 @@ class SupabaseAuthService {
   // Sign in with phone number (send OTP)
   Future<void> signInWithPhone(String phoneNumber) async {
     try {
+      // shouldCreateUser: false. This app signs people IN; accounts are created on the website, so an unknown number must
+      // not quietly become a new account.
       await _auth.signInWithOtp(
         phone: phoneNumber,
+        shouldCreateUser: false,
       );
     } on AuthException catch (e) {
       throw _handleAuthException(e);
@@ -173,6 +176,8 @@ class SupabaseAuthService {
         return 'OTP has expired. Please request a new one.';
       case 'Invalid phone number':
         return 'Please enter a valid phone number.';
+      case 'Signups not allowed for otp':
+        return 'No account was found for this number. Accounts are created on our website; sign in with your email instead.';
       default:
         return 'Authentication error: ${e.message}';
     }
