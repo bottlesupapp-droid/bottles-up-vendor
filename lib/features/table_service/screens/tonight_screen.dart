@@ -6,6 +6,9 @@ import '../../cash_review/screens/cash_screen.dart';
 import '../../cash_review/screens/exceptions_screen.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../owner/logic/setup_forms.dart' show formatDollars;
+import '../../inventory/logic/inventory_rules.dart' show lowStockCount;
+import '../../inventory/providers/inventory_providers.dart';
+import '../../inventory/screens/inventory_screen.dart';
 import '../../night/screens/night_screen.dart';
 import '../../night/widgets/report_button.dart';
 import '../../security/logic/security_rules.dart' show securitySummaryLine;
@@ -106,6 +109,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     final cash = ref.watch(verifierSummaryProvider(_query)).asData?.value;
     // Security is a bonus too: an older server has no security functions and the rest still shows.
     final security = ref.watch(securitySummaryProvider(_query)).asData?.value;
+    final stock = ref.watch(stockProvider(venueId)).asData?.value;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -221,6 +225,13 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                         onTap: () => _push('Flagged payments', ExceptionsScreen(workspace: widget.workspace)),
                       ),
                     ],
+                    if (stock != null && lowStockCount(stock) > 0)
+                      _tile(
+                        const Key('tile-low-stock'),
+                        'Bottles running low',
+                        lowStockCount(stock),
+                        onTap: () => _push('Inventory', InventoryScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
                     if (security != null)
                       _tile(
                         const Key('tile-security'),
