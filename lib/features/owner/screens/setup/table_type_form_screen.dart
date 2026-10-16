@@ -4,15 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
+import '../../widgets/photo_field.dart';
 import '../../widgets/setup_common.dart';
 
 /// Add or edit one kind of table. Pops true once it is saved. Each problem is said before anything is sent; a refusal from the
-/// database is shown here, in the form, so nothing typed is lost. Where the table sits on the floor plan, and its photo, are not
-/// touched by an edit.
+/// database is shown here, in the form, so nothing typed is lost. Where the table sits on the floor plan is not touched by an edit.
 class TableTypeFormScreen extends ConsumerStatefulWidget {
-  const TableTypeFormScreen({super.key, required this.venueId, this.row});
+  const TableTypeFormScreen({super.key, required this.venueId, required this.orgId, this.row});
 
   final String venueId;
+
+  /// The business the venue belongs to: the photo is uploaded into its folder.
+  final String orgId;
 
   /// The table being edited; null adds a new one.
   final TableTypeRow? row;
@@ -39,8 +42,10 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
   late final _badge = TextEditingController(text: _initial.badgeLabel);
   late PricingMode _mode = _initial.pricingMode;
   late bool _featured = _initial.isFeatured;
+  late String _image = _initial.imageUrl;
   List<String> _problems = const [];
   bool _saving = false;
+  bool _uploading = false;
 
   @override
   void dispose() {
@@ -73,6 +78,7 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
     hourlyRate: _rate.text,
     minHours: _hours.text,
     badgeLabel: _badge.text,
+    imageUrl: _image,
     isFeatured: _featured,
   );
 
@@ -264,6 +270,15 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
             helper: 'A short label such as "Popular" or "Best view".',
             maxLength: 40,
           ),
+          PhotoField(
+            key: const Key('table-photo'),
+            orgId: widget.orgId,
+            label: 'Photo (optional)',
+            value: _image,
+            hint: 'Guests see it when they choose a table. JPEG, PNG or WebP, up to 5 MB.',
+            onChanged: (url) => setState(() => _image = url),
+            onBusyChanged: (busy) => setState(() => _uploading = busy),
+          ),
           SwitchListTile(
             key: const Key('switch-featured'),
             title: const Text('Feature this table'),
@@ -275,12 +290,12 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
           const SizedBox(height: 12),
           FilledButton(
             key: const Key('save-table'),
-            onPressed: _saving ? null : _save,
+            onPressed: _saving || _uploading ? null : _save,
             child: Text(_saving ? 'Saving…' : 'Save table'),
           ),
           const SizedBox(height: 8),
           Text(
-            'Photos, where a table sits on the floor plan, and its seating, view and amenities are set up on the website for now; editing here never changes them.',
+            'Where a table sits on the floor plan, and its seating, view and amenities, are set up on the website for now; editing here never changes them.',
             style: theme.textTheme.bodySmall,
           ),
         ],

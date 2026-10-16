@@ -4,8 +4,8 @@
 // so the form says what is wrong in plain words before anything is sent and the database still refuses anything that gets
 // past it. Money is typed in dollars and kept in whole cents, by parsing the digits, never with floating point.
 //
-// Photos are not part of this version: the database changes only the fields that are sent, so editing a table or a bottle here
-// never touches a photo it already has.
+// A table's and a bottle's photo is one field like any other: the form holds the address of the photo (uploaded when it is chosen) and
+// sends it as `image_url`; empty is sent as "none", so it can be cleared. Where a table sits on a floor plan is not part of it.
 
 const List<String> dayLabels = [
   'Sunday',
@@ -245,6 +245,7 @@ class TableTypeRow {
     this.hourlyRateCents,
     this.minHours,
     this.floorId,
+    this.imageUrl,
     this.bookingCount = 0,
   });
 
@@ -262,6 +263,9 @@ class TableTypeRow {
   final int? hourlyRateCents;
   final int? minHours;
   final String? floorId;
+
+  /// The table's photo, as the public address it was uploaded to.
+  final String? imageUrl;
   final int bookingCount;
 }
 
@@ -286,6 +290,7 @@ TableTypeRow? parseTableType(Map<String, dynamic> r) {
     hourlyRateCents: _int(r['hourly_rate_cents']),
     minHours: _int(r['min_hours']),
     floorId: _text(r['floor_id']),
+    imageUrl: _text(r['image_url']),
     bookingCount: _int(r['booking_count']) ?? 0,
   );
 }
@@ -303,6 +308,7 @@ class TableTypeForm {
     this.hourlyRate = '',
     this.minHours = '',
     this.badgeLabel = '',
+    this.imageUrl = '',
     this.isFeatured = false,
   });
 
@@ -317,6 +323,7 @@ class TableTypeForm {
   final String hourlyRate;
   final String minHours;
   final String badgeLabel;
+  final String imageUrl;
   final bool isFeatured;
 
   TableTypeForm copyWith({
@@ -331,6 +338,7 @@ class TableTypeForm {
     String? hourlyRate,
     String? minHours,
     String? badgeLabel,
+    String? imageUrl,
     bool? isFeatured,
   }) => TableTypeForm(
     name: name ?? this.name,
@@ -344,6 +352,7 @@ class TableTypeForm {
     hourlyRate: hourlyRate ?? this.hourlyRate,
     minHours: minHours ?? this.minHours,
     badgeLabel: badgeLabel ?? this.badgeLabel,
+    imageUrl: imageUrl ?? this.imageUrl,
     isFeatured: isFeatured ?? this.isFeatured,
   );
 }
@@ -360,6 +369,7 @@ TableTypeForm tableTypeFormFrom(TableTypeRow r) => TableTypeForm(
   hourlyRate: moneyInput(r.hourlyRateCents),
   minHours: r.minHours == null ? '' : '${r.minHours}',
   badgeLabel: r.badgeLabel ?? '',
+  imageUrl: r.imageUrl ?? '',
   isFeatured: r.isFeatured,
 );
 
@@ -430,7 +440,7 @@ List<String> validateTableTypeForm(TableTypeForm f) {
   return p;
 }
 
-/// What is sent for a table type: every field the form shows, and nothing it does not (no photo, no place on a floor plan).
+/// What is sent for a table type: every field the form shows, and nothing it does not (no place on a floor plan).
 /// Only call this when [validateTableTypeForm] returned nothing.
 Map<String, dynamic> tableTypePayload(TableTypeForm f) {
   final hourly = f.pricingMode == PricingMode.hourly;
@@ -449,6 +459,7 @@ Map<String, dynamic> tableTypePayload(TableTypeForm f) {
             ? (f.minHours.trim().isEmpty ? 1 : parseWhole(f.minHours))
             : null,
     'badge_label': f.badgeLabel.trim().isEmpty ? null : f.badgeLabel.trim(),
+    'image_url': f.imageUrl.trim().isEmpty ? null : f.imageUrl.trim(),
     'is_featured': f.isFeatured,
   };
 }
@@ -484,6 +495,7 @@ class BottleRow {
     required this.isAvailable,
     required this.isSoldOut,
     this.stockQuantity,
+    this.imageUrl,
   });
 
   final String bottleId;
@@ -495,6 +507,9 @@ class BottleRow {
   final bool isAvailable;
   final bool isSoldOut;
   final int? stockQuantity;
+
+  /// The bottle's photo, as the public address it was uploaded to.
+  final String? imageUrl;
 }
 
 BottleRow? parseBottle(Map<String, dynamic> r) {
@@ -512,6 +527,7 @@ BottleRow? parseBottle(Map<String, dynamic> r) {
     isAvailable: r['is_available'] != false,
     isSoldOut: r['is_sold_out'] == true,
     stockQuantity: _int(r['stock_quantity']),
+    imageUrl: _text(r['image_url']),
   );
 }
 
@@ -523,6 +539,7 @@ class BottleForm {
     this.description = '',
     this.price = '',
     this.stock = '',
+    this.imageUrl = '',
     this.isAvailable = true,
     this.isSoldOut = false,
   });
@@ -533,6 +550,7 @@ class BottleForm {
   final String description;
   final String price;
   final String stock;
+  final String imageUrl;
   final bool isAvailable;
   final bool isSoldOut;
 
@@ -543,6 +561,7 @@ class BottleForm {
     String? description,
     String? price,
     String? stock,
+    String? imageUrl,
     bool? isAvailable,
     bool? isSoldOut,
   }) => BottleForm(
@@ -552,6 +571,7 @@ class BottleForm {
     description: description ?? this.description,
     price: price ?? this.price,
     stock: stock ?? this.stock,
+    imageUrl: imageUrl ?? this.imageUrl,
     isAvailable: isAvailable ?? this.isAvailable,
     isSoldOut: isSoldOut ?? this.isSoldOut,
   );
@@ -564,6 +584,7 @@ BottleForm bottleFormFrom(BottleRow r) => BottleForm(
   description: r.description ?? '',
   price: moneyInput(r.priceCents),
   stock: r.stockQuantity == null ? '' : '${r.stockQuantity}',
+  imageUrl: r.imageUrl ?? '',
   isAvailable: r.isAvailable,
   isSoldOut: r.isSoldOut,
 );
@@ -608,6 +629,7 @@ Map<String, dynamic> bottlePayload(BottleForm f) => {
   'description': f.description.trim().isEmpty ? null : f.description.trim(),
   'price_cents': parseMoney(f.price),
   'stock_quantity': f.stock.trim().isEmpty ? null : parseWhole(f.stock),
+  'image_url': f.imageUrl.trim().isEmpty ? null : f.imageUrl.trim(),
   'is_available': f.isAvailable,
   'is_sold_out': f.isSoldOut,
 };
