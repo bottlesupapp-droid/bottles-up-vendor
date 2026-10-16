@@ -5,8 +5,7 @@ import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/ops_dialogs.dart';
-import '../../owner/logic/owner_rules.dart' show OrgVenue;
-import '../../owner/providers/owner_providers.dart';
+import '../../ops/widgets/venue_picker.dart';
 import '../../workspace/models/workspace.dart';
 import '../logic/inventory_rules.dart';
 import '../providers/inventory_providers.dart';
@@ -136,7 +135,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final venueId = _venueId;
-    if (venueId == null) return _VenuePicker(workspace: widget.workspace, onPick: (id) => setState(() => _chosenVenue = id));
+    if (venueId == null) {
+      return VenuePicker(workspace: widget.workspace, title: 'Inventory', listKey: const Key('inventory-pick-club'), itemKeyPrefix: 'inventory-club-', onPick: (id) => setState(() => _chosenVenue = id));
+    }
     final stock = ref.watch(stockProvider(venueId));
     return RefreshIndicator(
       onRefresh: () async => _refresh(),
@@ -191,36 +192,6 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _VenuePicker extends ConsumerWidget {
-  const _VenuePicker({required this.workspace, required this.onPick});
-
-  final Workspace workspace;
-  final ValueChanged<String> onPick;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final venues = ref.watch(ownerVenuesProvider(workspace.orgId));
-    return ListView(
-      key: const Key('inventory-pick-club'),
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Inventory', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 4),
-        const Text('Which club?'),
-        OpsAsyncView<List<OrgVenue>>(
-          value: venues,
-          what: 'your venues',
-          isEmpty: (d) => d.isEmpty,
-          emptyText: 'No venues yet.',
-          errorKey: const Key('inventory-venues-error'),
-          onRetry: () => ref.invalidate(ownerVenuesProvider(workspace.orgId)),
-          builder: (list) => Column(children: [for (final v in list) ListTile(key: Key('inventory-club-${v.id}'), contentPadding: EdgeInsets.zero, title: Text(v.name), trailing: const Icon(Icons.chevron_right), onTap: () => onPick(v.id))]),
-        ),
-      ],
     );
   }
 }

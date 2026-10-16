@@ -4,6 +4,7 @@ import '../../chat/screens/chat_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
 import '../../security/screens/security_hub_screen.dart';
 import '../../team/screens/team_screen.dart';
+import '../../vip/screens/vip_screen.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
 import '../logic/more_entries.dart';
@@ -14,6 +15,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'chat' => ChatScreen(workspace: workspace),
       // Inventory is the manager's and the owner's: stock levels and the history of how they changed.
       'inventory' => InventoryScreen(workspace: workspace),
+      // VIP guests are the manager's and the owner's list; servers look a guest up from My Tables.
+      'vip' => VipScreen(workspace: workspace),
       // Security is the manager's: the club's alerts, tasks and incident reports.
       'security' when workspace.role == WorkspaceRole.manager => SecurityHubScreen(workspace: workspace),
       // The Team screen is the owner's (and the manager's own Team tab); an organizer's team is not built.

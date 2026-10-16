@@ -23,8 +23,8 @@ Workspace ws(WorkspaceRole role) => Workspace(
 
 /// Every More entry that opens something, as role/entry. Add to this when one is built.
 const Set<String> builtMore = {
-  'owner/team', 'owner/chat', 'owner/settings', 'owner/inventory',
-  'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory',
+  'owner/team', 'owner/chat', 'owner/settings', 'owner/inventory', 'owner/vip',
+  'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings',
 };
 
@@ -69,8 +69,8 @@ void main() {
     for (final e in moreEntriesFor(WorkspaceRole.manager)) {
       expect(find.byKey(Key('more-${e.id}')), findsOneWidget, reason: e.id);
     }
-    expect(find.descendant(of: find.byKey(const Key('more-vip')), matching: find.textContaining('Not available yet.')), findsOneWidget);
-    expect(tester.widget<ListTile>(find.byKey(const Key('more-vip'))).onTap, isNull);
+    expect(find.descendant(of: find.byKey(const Key('more-discounts')), matching: find.textContaining('Not available yet.')), findsOneWidget);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-discounts'))).onTap, isNull);
     expect(find.descendant(of: find.byKey(const Key('more-chat')), matching: find.textContaining('Not available yet')), findsNothing);
     await tester.tap(find.byKey(const Key('more-chat')));
     await tester.pumpAndSettle();

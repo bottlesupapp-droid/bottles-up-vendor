@@ -13,6 +13,7 @@ import '../widgets/ask_sheet.dart';
 import '../widgets/table_card.dart';
 import '../../cash_review/widgets/cash_held_card.dart';
 import '../../security/widgets/raise_alert.dart';
+import '../../vip/screens/vip_lookup_screen.dart';
 
 /// Shows the sheet that asks what a table needs. Replaced in tests.
 typedef AskPicker = Future<AskChoice?> Function(BuildContext context, String tableLabel);
@@ -137,14 +138,22 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
             ),
           CashHeldCard(workspace: widget.workspace, night: _night),
           if ((widget.workspace.venueId ?? '').isNotEmpty)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                key: const Key('call-security'),
-                onPressed: () => raiseAlertFlow(context, ref, venueId: widget.workspace.venueId!, night: _tonight),
-                icon: const Icon(Icons.add_alert_outlined, size: 18),
-                label: const Text('Call security'),
-              ),
+            Wrap(
+              spacing: 8,
+              children: [
+                TextButton.icon(
+                  key: const Key('call-security'),
+                  onPressed: () => raiseAlertFlow(context, ref, venueId: widget.workspace.venueId!, night: _tonight),
+                  icon: const Icon(Icons.add_alert_outlined, size: 18),
+                  label: const Text('Call security'),
+                ),
+                TextButton.icon(
+                  key: const Key('vip-lookup-open'),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => VipLookupScreen(venueId: widget.workspace.venueId!, clock: widget.clock))),
+                  icon: const Icon(Icons.star_outline, size: 18),
+                  label: const Text('VIP lookup'),
+                ),
+              ],
             ),
           const SizedBox(height: 8),
           tablesAsync.when(
