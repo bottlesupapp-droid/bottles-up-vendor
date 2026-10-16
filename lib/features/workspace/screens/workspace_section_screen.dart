@@ -20,6 +20,7 @@ import '../providers/workspace_providers.dart';
 import '../../cash_review/screens/summary_screen.dart';
 import '../../cash_review/screens/exceptions_screen.dart';
 import '../../cash_review/screens/cash_screen.dart';
+import '../../seating/screens/server_scan_screen.dart';
 
 /// The sections that are built, keyed by role and section id. Everything else shows the honest "not built yet" card.
 ///
@@ -52,6 +53,8 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
         return OrdersScreen(workspace: workspace);
       case 'requests':
         return ServiceRequestsScreen(workspace: workspace);
+      case 'scan':
+        return ServerScanScreen(workspace: workspace);
     }
   }
   // A verifier's Review tab is the queue of payments to check at their club.

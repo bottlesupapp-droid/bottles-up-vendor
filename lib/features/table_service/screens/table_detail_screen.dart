@@ -10,6 +10,7 @@ import '../widgets/order_card.dart';
 import '../widgets/payment_tile.dart';
 import '../widgets/receipt_view.dart';
 import 'record_payment_screen.dart';
+import '../../seating/widgets/seating_panel.dart';
 
 /// One table: what it was charged, what has been collected and what is still due, its bottle orders and the payments recorded for it,
 /// with a way to record another. A manager or owner reaches any table of their club; a server only the ones they were given. The
@@ -115,6 +116,7 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           children: [
+            SeatingPanel(bookingId: widget.bookingId, title: widget.title, canUnseat: money.asData?.value.isManager ?? false),
             money.when(
               loading:
                   () => const Padding(

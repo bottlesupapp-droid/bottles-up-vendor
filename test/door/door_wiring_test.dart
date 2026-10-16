@@ -13,6 +13,7 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/workspace/screens/workspace_section_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bottles_up_vendor/features/seating/screens/server_scan_screen.dart';
 
 Workspace as(WorkspaceRole role) => Workspace(
       membershipId: 'm-${role.name}',
@@ -30,7 +31,7 @@ const Set<String> builtTabs = {
   'manager/tonight', 'manager/floor', 'manager/orders', 'manager/team',
   'owner/home', 'owner/venues',
   'organizer/home', 'organizer/events',
-  'server/tables', 'server/orders', 'server/requests',
+  'server/tables', 'server/orders', 'server/requests', 'server/scan',
   'verifier/review', 'verifier/cash', 'verifier/exceptions', 'verifier/summary',
 };
 
@@ -69,13 +70,21 @@ void main() {
       expect(actual, builtTabs);
     });
 
-    test('a server gets My Tables, Orders and Requests; Scan waits for table check-in, and Chat for chat', () {
+    test('a server gets My Tables, Orders, Requests and Scan; Chat waits for chat', () {
       expect(builtSectionFor(as(WorkspaceRole.server), 'tables'), isA<MyTablesScreen>());
       expect(builtSectionFor(as(WorkspaceRole.server), 'orders'), isA<OrdersScreen>());
       expect(builtSectionFor(as(WorkspaceRole.server), 'requests'), isA<ServiceRequestsScreen>());
-      for (final id in ['scan', 'chat']) {
-        expect(builtSectionFor(as(WorkspaceRole.server), id), isNull, reason: id);
+      final scan = builtSectionFor(as(WorkspaceRole.server), 'scan');
+      expect(scan, isA<ServerScanScreen>());
+      expect((scan as ServerScanScreen).workspace.venueId, 'v1');
+      expect(builtSectionFor(as(WorkspaceRole.server), 'chat'), isNull);
+    });
+
+    test('Scan is the server\'s: the door has its own scanner, and nobody else has this one', () {
+      for (final role in WorkspaceRole.values.where((r) => r != WorkspaceRole.server && r != WorkspaceRole.door)) {
+        expect(builtSectionFor(as(role), 'scan'), isNull, reason: role.name);
       }
+      expect(builtSectionFor(as(WorkspaceRole.door), 'scan'), isA<DoorScanScreen>());
     });
 
     test('a manager\'s Floor can give a booking to a server: it is given the business', () {
@@ -120,10 +129,6 @@ void main() {
       for (final role in WorkspaceRole.values.where((r) => r != WorkspaceRole.owner && r != WorkspaceRole.manager)) {
         expect(builtSectionFor(as(role), 'team'), isNull, reason: role.name);
       }
-    });
-
-    test('a server\'s Scan is not the ticket scanner: it is for table bookings, which are not built here', () {
-      expect(builtSectionFor(as(WorkspaceRole.server), 'scan'), isNull);
     });
 
     test('the organizer\'s Home and Events are the business\'s events; nobody else gets them', () {
