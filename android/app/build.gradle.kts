@@ -40,7 +40,8 @@ gradle.taskGraph.whenReady {
 android {
     namespace = "com.bottlesup.vendor"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    // NDK r28 or newer builds 16 KB page-size aligned native code, which Google Play requires for apps targeting Android 15+.
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
