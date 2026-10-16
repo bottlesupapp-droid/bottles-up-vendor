@@ -1,4 +1,3 @@
-import 'package:bottles_up_vendor/features/chat/logic/chat_rules.dart';
 import 'package:bottles_up_vendor/features/ops/services/ops_rpc.dart';
 import 'package:flutter_test/flutter_test.dart';
 

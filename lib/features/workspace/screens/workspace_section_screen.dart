@@ -23,6 +23,9 @@ import '../../cash_review/screens/cash_screen.dart';
 import '../../seating/screens/server_scan_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../more/screens/more_screen.dart';
+import '../../security/screens/alerts_screen.dart';
+import '../../security/screens/incidents_screen.dart';
+import '../../security/screens/tasks_screen.dart';
 
 /// The sections that are built, keyed by role and section id. Everything else shows the honest "not built yet" card.
 ///
@@ -47,6 +50,17 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
   // More: the parts of an owner, a manager and an organizer that do not have a tab of their own.
   if (sectionId == 'more' && const {WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer}.contains(workspace.role)) {
     return MoreScreen(workspace: workspace);
+  }
+  // Security: alerts for the night, tasks given to them, and incident reports.
+  if (workspace.role == WorkspaceRole.security) {
+    switch (sectionId) {
+      case 'alerts':
+        return AlertsScreen(workspace: workspace);
+      case 'tasks':
+        return TasksScreen(workspace: workspace);
+      case 'incidents':
+        return IncidentsScreen(workspace: workspace);
+    }
   }
   if (workspace.role == WorkspaceRole.door) {
     switch (sectionId) {

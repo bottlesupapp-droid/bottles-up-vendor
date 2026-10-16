@@ -35,6 +35,7 @@ const Set<String> builtTabs = {
   'organizer/home', 'organizer/events', 'organizer/chat',
   'door/chat', 'server/chat', 'security/chat',
   'owner/more', 'manager/more', 'organizer/more',
+  'security/alerts', 'security/tasks', 'security/incidents',
   'server/tables', 'server/orders', 'server/requests', 'server/scan',
   'verifier/review', 'verifier/cash', 'verifier/exceptions', 'verifier/summary',
 };

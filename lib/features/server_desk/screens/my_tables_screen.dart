@@ -12,6 +12,7 @@ import '../services/server_desk_service.dart';
 import '../widgets/ask_sheet.dart';
 import '../widgets/table_card.dart';
 import '../../cash_review/widgets/cash_held_card.dart';
+import '../../security/widgets/raise_alert.dart';
 
 /// Shows the sheet that asks what a table needs. Replaced in tests.
 typedef AskPicker = Future<AskChoice?> Function(BuildContext context, String tableLabel);
@@ -135,6 +136,16 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
               child: TextButton(key: const Key('night-tonight'), onPressed: () => setState(() => _night = _tonight), child: const Text('Back to tonight')),
             ),
           CashHeldCard(workspace: widget.workspace, night: _night),
+          if ((widget.workspace.venueId ?? '').isNotEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('call-security'),
+                onPressed: () => raiseAlertFlow(context, ref, venueId: widget.workspace.venueId!, night: _tonight),
+                icon: const Icon(Icons.add_alert_outlined, size: 18),
+                label: const Text('Call security'),
+              ),
+            ),
           const SizedBox(height: 8),
           tablesAsync.when(
             loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),

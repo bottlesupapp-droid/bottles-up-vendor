@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../chat/screens/chat_screen.dart';
+import '../../security/screens/security_hub_screen.dart';
 import '../../team/screens/team_screen.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
@@ -10,6 +11,8 @@ import 'workspace_settings_screen.dart';
 /// The page behind a More entry, or null while that part is not built. Add to this as each part is built; nothing else changes.
 Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entryId) {
       'chat' => ChatScreen(workspace: workspace),
+      // Security is the manager's: the club's alerts, tasks and incident reports.
+      'security' when workspace.role == WorkspaceRole.manager => SecurityHubScreen(workspace: workspace),
       // The Team screen is the owner's (and the manager's own Team tab); an organizer's team is not built.
       'team' when workspace.role == WorkspaceRole.owner => TeamScreen(workspace: workspace),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),

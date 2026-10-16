@@ -16,6 +16,7 @@ class OpsAsyncView<T> extends StatelessWidget {
     this.onRetry,
     this.errorKey = const Key('ops-error'),
     this.emptyKey = const Key('ops-empty'),
+    this.keepWhileReloading = false,
   });
 
   final AsyncValue<T> value;
@@ -29,9 +30,15 @@ class OpsAsyncView<T> extends StatelessWidget {
   final Key errorKey;
   final Key emptyKey;
 
+  /// A list that looks again every few seconds keeps showing what it has while it does (and if a look fails), instead of flashing a
+  /// spinner or an error over it. The screen says it is trying again.
+  final bool keepWhileReloading;
+
   @override
   Widget build(BuildContext context) {
     return value.when(
+      skipLoadingOnReload: keepWhileReloading,
+      skipError: keepWhileReloading,
       loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),
       error: (error, _) {
         final e = opsLoadFailureFor(error, what);

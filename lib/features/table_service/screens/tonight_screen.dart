@@ -6,6 +6,9 @@ import '../../cash_review/screens/cash_screen.dart';
 import '../../cash_review/screens/exceptions_screen.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../owner/logic/setup_forms.dart' show formatDollars;
+import '../../security/logic/security_rules.dart' show securitySummaryLine;
+import '../../security/providers/security_providers.dart';
+import '../../security/screens/security_hub_screen.dart';
 import '../../server_desk/screens/service_requests_screen.dart';
 import '../../workspace/models/workspace.dart';
 import '../logic/table_service_rules.dart';
@@ -98,6 +101,8 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     final async = ref.watch(tonightProvider(_query));
     // Cash and flags are a bonus on this screen: without them (an older server) the rest still shows.
     final cash = ref.watch(verifierSummaryProvider(_query)).asData?.value;
+    // Security is a bonus too: an older server has no security functions and the rest still shows.
+    final security = ref.watch(securitySummaryProvider(_query)).asData?.value;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -190,6 +195,14 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                         onTap: () => _push('Flagged payments', ExceptionsScreen(workspace: widget.workspace)),
                       ),
                     ],
+                    if (security != null)
+                      _tile(
+                        const Key('tile-security'),
+                        'Security alerts',
+                        security.alertsUnresolved,
+                        note: securitySummaryLine(security),
+                        onTap: () => _push('Security', SecurityHubScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
                     _tile(
                       const Key('tile-orders-new'),
                       'New orders not started',
