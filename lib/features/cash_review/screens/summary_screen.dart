@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../floor/logic/bookings_rules.dart' show currentNight;
+import '../../night/widgets/report_button.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../table_service/providers/table_service_providers.dart' show NightQuery;
 import '../../table_service/widgets/night_bar.dart';
@@ -53,6 +54,8 @@ class _VerifierSummaryScreenState extends ConsumerState<VerifierSummaryScreen> {
           if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
+          const SizedBox(height: 8),
+          Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, night: _night, clock: widget.clock)),
           const SizedBox(height: 8),
           OpsAsyncView<VerifierSummary>(
             value: summary,

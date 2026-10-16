@@ -6,11 +6,14 @@ import '../../cash_review/screens/cash_screen.dart';
 import '../../cash_review/screens/exceptions_screen.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../owner/logic/setup_forms.dart' show formatDollars;
+import '../../night/screens/night_screen.dart';
+import '../../night/widgets/report_button.dart';
 import '../../security/logic/security_rules.dart' show securitySummaryLine;
 import '../../security/providers/security_providers.dart';
 import '../../security/screens/security_hub_screen.dart';
 import '../../server_desk/screens/service_requests_screen.dart';
 import '../../workspace/models/workspace.dart';
+import '../../workspace/models/workspace_role.dart';
 import '../logic/table_service_rules.dart';
 import '../providers/table_service_providers.dart';
 import '../services/table_service_service.dart';
@@ -162,6 +165,29 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                 (t) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Card(
+                      key: const Key('tile-night'),
+                      child: ListTile(
+                        leading: const Icon(Icons.nightlight_outlined),
+                        title: const Text('Prepare and close the night'),
+                        subtitle: const Text('Checklist, what is still open, and the final report.'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(
+                          'Prepare and close',
+                          NightScreen(
+                            venueId: venueId,
+                            venueName: widget.workspace.venueName,
+                            canReopen: widget.workspace.role == WorkspaceRole.owner,
+                            clock: widget.clock,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, night: _night, clock: widget.clock),
+                    ),
+                    const SizedBox(height: 8),
                     Text('Needs attention', style: theme.textTheme.titleMedium),
                     _tile(
                       const Key('tile-payments'),

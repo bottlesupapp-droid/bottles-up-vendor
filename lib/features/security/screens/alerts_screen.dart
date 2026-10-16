@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../floor/logic/bookings_rules.dart' show currentNight;
+import '../../night/widgets/report_button.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/ops_dialogs.dart';
@@ -116,6 +117,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
           if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
+          Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, night: _night, clock: widget.clock, label: 'Night report')),
           summary.maybeWhen(
             skipLoadingOnReload: true,
             data: (s) => Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(securitySummaryLine(s), key: const Key('alerts-summary'), style: theme.textTheme.bodyMedium)),

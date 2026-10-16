@@ -31,7 +31,7 @@ Workspace as(WorkspaceRole role) => Workspace(
 const Set<String> builtTabs = {
   'door/scan', 'door/guests',
   'manager/tonight', 'manager/floor', 'manager/orders', 'manager/team',
-  'owner/home', 'owner/venues',
+  'owner/home', 'owner/venues', 'owner/reports',
   'organizer/home', 'organizer/events', 'organizer/chat',
   'door/chat', 'server/chat', 'security/chat',
   'owner/more', 'manager/more', 'organizer/more',
