@@ -30,54 +30,6 @@ class SupabaseAuthService {
     }
   }
 
-  // Register with email and password
-  Future<AuthResponse> registerWithEmailAndPassword({
-    required String email,
-    required String password,
-    required String name,
-    String? businessName,
-    String? phoneNumber,
-    String? vendorType,
-  }) async {
-    try {
-      // Create Supabase auth user
-      final response = await _auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'full_name': name,
-          'business_name': businessName,
-          'phone': phoneNumber,
-          'vendor_type': vendorType,
-        },
-      );
-
-      if (response.user != null) {
-        // Create vendor document with new schema
-        await _createVendorUserDocument(
-          VendorUser(
-            id: response.user!.id,
-            email: email,
-            phone: phoneNumber,
-            businessName: businessName,
-            onboardingCompleted: false,
-            twoFaEnabled: false,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            role: vendorType ?? 'staff', // Use the role from registration
-          ),
-        );
-      }
-
-      return response;
-
-    } on AuthException catch (e) {
-      throw _handleAuthException(e);
-    } catch (e) {
-      throw Exception('Registration failed: $e');
-    }
-  }
-
   // Sign out
   Future<void> signOut() async {
     try {
@@ -93,7 +45,7 @@ class SupabaseAuthService {
       // Call the database function to delete the account
       // This function deletes the vendor record, which triggers the auth user deletion
       await _client.rpc('delete_account');
-      
+
       // Sign out
       await signOut();
     } catch (e) {
@@ -135,27 +87,6 @@ class SupabaseAuthService {
         type: OtpType.sms,
       );
 
-      // Create vendor document if needed
-      if (response.user != null) {
-        // Check if vendor user exists, if not create one
-        final vendorUser = await getVendorUser(response.user!.id);
-        if (vendorUser == null) {
-          await _createVendorUserDocument(
-            VendorUser(
-              id: response.user!.id,
-              email: response.user!.email ?? '',
-              phone: phoneNumber,
-              businessName: 'Bottles Up Vendor',
-              onboardingCompleted: false,
-              twoFaEnabled: false,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              role: 'staff',
-            ),
-          );
-        }
-      }
-
       return response;
     } on AuthException catch (e) {
       throw _handleAuthException(e);
@@ -164,41 +95,20 @@ class SupabaseAuthService {
     }
   }
 
-  // Get vendor user data
+  // The signed-in person's row in the classic `vendors` table, or null when there is none. THROWS when the lookup itself
+  // fails, so "no row" is never confused with "could not ask". This app never creates the row (accounts are created on the
+  // website); it used to create one for every account that signed in, which turned website and customer accounts into
+  // classic vendors.
+  Future<VendorUser?> findVendorUser(String uid) async {
+    final response =
+        await _client.from('vendors').select().eq('id', uid).maybeSingle();
+    return response == null ? null : VendorUser.fromMap(response);
+  }
+
+  // Same lookup for callers that only want an answer: a failed lookup reads as "no row".
   Future<VendorUser?> getVendorUser(String uid) async {
     try {
-      final response = await _client
-          .from('vendors')
-          .select()
-          .eq('id', uid)
-          .maybeSingle();
-      
-      if (response != null) {
-        return VendorUser.fromMap(response);
-      } else {
-        // Auto-create vendor document for existing Supabase Auth users
-        final currentUser = _auth.currentUser;
-        if (currentUser != null && currentUser.id == uid) {
-          final newVendorUser = VendorUser(
-            id: uid,
-            email: currentUser.email ?? 'Unknown Email',
-            phone: currentUser.userMetadata?['phone'],
-            businessName: currentUser.userMetadata?['business_name'] ?? 'Bottles Up Vendor',
-            logoUrl: currentUser.userMetadata?['avatar_url'],
-            onboardingCompleted: false,
-            twoFaEnabled: false,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            role: currentUser.userMetadata?['vendor_type'] ?? 'staff',
-          );
-
-          // Try to create the document asynchronously
-          _createVendorUserDocumentAsync(newVendorUser);
-
-          return newVendorUser;
-        }
-      }
-      return null;
+      return await findVendorUser(uid);
     } catch (e) {
       print('Error getting vendor user: $e');
       return null;
@@ -242,43 +152,6 @@ class SupabaseAuthService {
   }
 
   // Private methods
-
-
-
-  // Create vendor user document asynchronously without blocking
-  void _createVendorUserDocumentAsync(VendorUser user) {
-    Future.microtask(() async {
-      try {
-        await _createVendorUserDocument(user);
-        print('Vendor document created successfully for: ${user.id}');
-      } catch (e) {
-        print('Warning: Failed to create vendor document: $e');
-        // Don't throw - this is non-blocking
-      }
-    });
-  }
-
-  Future<void> _createVendorUserDocument(VendorUser user) async {
-    try {
-      await _client
-          .from('vendors')
-          .insert(user.toMap());
-    } catch (e) {
-      String errorMsg = e.toString();
-      
-      if (errorMsg.contains('relation "vendors" does not exist')) {
-        throw Exception('Database setup required. Please run the database setup script.');
-      } else if (errorMsg.contains('duplicate key')) {
-        print('Vendor user already exists: ${user.id}');
-        return;
-      } else if (errorMsg.contains('permission denied')) {
-        throw Exception('Database permissions issue. Please check RLS policies.');
-      } else {
-        throw Exception('Failed to create vendor user document: $e');
-      }
-    }
-  }
-
 
   String _handleAuthException(AuthException e) {
     switch (e.message) {

@@ -56,6 +56,16 @@ tenancy tables in the website repo (`supabase/migrations/20261006120000_tenancy_
 belong to several workspaces and chooses one after sign-in (`/workspaces`); invitations are accepted at
 `/accept-invite`. Role to navigation mapping is in `models/role_navigation.dart`.
 
+**Accounts are created on the website, not here** (`logic/business_signup.dart`, `screens/no_workspace_screen.dart`). This app has no
+sign-up: `/register` is a page that explains and opens the website's `/signup/business`, and the old role-selection screen, `register()`
+and the `vendors`-row creation are gone. Someone signed in with **no workspace and no finished classic onboarding** is sent to
+`/no-workspace` ("Set up your business": open the website, or paste an invitation link, or check again). A person who finished the classic
+dashboard's own onboarding (`vendors.onboarding_completed`) keeps the classic dashboard unchanged. The rule is the pure
+`decideWorkspaceRedirect` (with `ClassicVendorStatus`: `loading` = not looked up yet or the lookup failed, so nothing is decided; `classic`; `none`).
+`SupabaseAuthService.findVendorUser` throws when it cannot ask; it never creates a row. (It used to create a `vendors` row for **every**
+account that signed in, which is how website and customer accounts became "vendors": production had 59 `vendors` rows for 82 accounts on 16 Oct 2026.)
+The website address comes from `siteUrlProvider` (`--dart-define=SITE_URL`, default the real site).
+
 ### Door scanner (first screens on the website's functions)
 
 `lib/features/door/` is the door role's **Scan** and **Guests** tabs, built on the website's database functions instead of the

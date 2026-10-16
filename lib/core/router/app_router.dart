@@ -9,7 +9,6 @@ import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/phone_login_screen.dart';
 import '../../features/auth/screens/otp_verification_screen.dart';
-import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/onboarding/venue_onboarding_screen.dart';
 import '../../features/auth/screens/onboarding/organizer_onboarding_screen.dart';
 import '../../features/auth/screens/onboarding/promoter_onboarding_screen.dart';
@@ -53,6 +52,7 @@ import '../../features/workspace/providers/workspace_providers.dart';
 import '../../features/workspace/screens/accept_invitation_screen.dart';
 import '../../features/workspace/workspace_routes.dart';
 import '../../features/workspace/screens/workspace_selector_screen.dart';
+import '../../features/workspace/screens/no_workspace_screen.dart';
 
 // Route names
 class AppRoutes {
@@ -63,7 +63,6 @@ class AppRoutes {
   static const String verifyOtp = '/verify-otp';
   static const String databaseSetup = '/database-setup';
   static const String debug = '/debug';
-  static const String roleSelection = '/role-selection';
   static const String onboardingVenue = '/onboarding/venue';
   static const String onboardingOrganizer = '/onboarding/organizer';
   static const String onboardingPromoter = '/onboarding/promoter';
@@ -128,6 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final isAuthenticated = ref.watch(isAuthenticatedProvider);
   final vendorUser = ref.watch(currentVendorUserProvider);
   final workspaceSnapshot = ref.watch(workspaceStateProvider);
+  final classicVendor = ref.watch(classicVendorStatusProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.login,
@@ -141,8 +141,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                           currentPath == AppRoutes.register ||
                           currentPath == AppRoutes.forgotPassword ||
                           currentPath == AppRoutes.phoneLogin ||
-                          currentPath == AppRoutes.verifyOtp ||
-                          currentPath == AppRoutes.roleSelection;
+                          currentPath == AppRoutes.verifyOtp;
 
       // Define onboarding routes
       final isOnboardingRoute = currentPath == AppRoutes.onboardingVenue ||
@@ -160,6 +159,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         isLoggedIn: isLoggedIn,
         path: currentPath,
         snapshot: workspaceSnapshot,
+        classicVendor: classicVendor,
         pendingToken: pendingInviteToken.value,
       );
       if (workspaceDecision.isFinal) return workspaceDecision.location;
@@ -243,17 +243,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      GoRoute(
-        path: AppRoutes.roleSelection,
-        name: 'roleSelection',
-        pageBuilder: (context, state) {
-          final userData = state.extra as Map<String, String>;
-          return CupertinoTransitionPage(
-            name: 'roleSelection',
-            child: RoleSelectionScreen(userData: userData),
-          );
-        },
-      ),
 
       // Onboarding routes (no shell)
       GoRoute(
@@ -295,6 +284,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: WorkspaceRoutes.workspaces,
         name: 'workspaces',
         builder: (context, state) => const WorkspaceSelectorScreen(),
+      ),
+      GoRoute(
+        path: WorkspaceRoutes.noWorkspace,
+        name: 'noWorkspace',
+        builder: (context, state) => const NoWorkspaceScreen(),
       ),
       GoRoute(
         path: WorkspaceRoutes.acceptInvite,
