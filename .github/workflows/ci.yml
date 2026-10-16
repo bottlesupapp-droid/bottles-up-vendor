@@ -1,0 +1,49 @@
+name: CI
+
+# Analyze and test the vendor app on every pull request and on main.
+#
+# The app depends on ../../packages/shared, which lives in the monorepo (bottlesupapp-droid/bottlesup-monorepo), so the monorepo is
+# checked out first and this repository is placed where the app expects to be: monorepo/apps/bottles-up-vendor. (Both repositories
+# are public, so no token is needed.) The tests that compare the app with the website's SQL are skipped here, because the website
+# is not checked out; they run in full on a developer's machine.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the monorepo (for packages/shared)
+        uses: actions/checkout@v4
+        with:
+          repository: bottlesupapp-droid/bottlesup-monorepo
+          path: monorepo
+          submodules: false
+
+      - name: Check out this app inside it
+        uses: actions/checkout@v4
+        with:
+          path: monorepo/apps/bottles-up-vendor
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.5
+          channel: stable
+          cache: true
+
+      - name: Get packages
+        working-directory: monorepo/apps/bottles-up-vendor
+        run: flutter pub get
+
+      # The older code has about 150 notes and warnings that are not being fixed here; only real errors fail the build.
+      - name: Analyze
+        working-directory: monorepo/apps/bottles-up-vendor
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test
+        working-directory: monorepo/apps/bottles-up-vendor
+        run: flutter test
