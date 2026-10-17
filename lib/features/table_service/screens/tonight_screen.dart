@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../cash_review/providers/cash_providers.dart';
+import '../../cash_review/screens/cash_screen.dart';
+import '../../cash_review/screens/exceptions_screen.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../owner/logic/setup_forms.dart' show formatDollars;
+import '../../inventory/logic/inventory_rules.dart' show lowStockCount;
+import '../../inventory/providers/inventory_providers.dart';
+import '../../inventory/screens/inventory_screen.dart';
+import '../../night/screens/night_screen.dart';
+import '../../night/widgets/report_button.dart';
+import '../../security/logic/security_rules.dart' show securitySummaryLine;
+import '../../security/providers/security_providers.dart';
+import '../../security/screens/security_hub_screen.dart';
 import '../../server_desk/screens/service_requests_screen.dart';
 import '../../workspace/models/workspace.dart';
+import '../../workspace/models/workspace_role.dart';
 import '../logic/table_service_rules.dart';
 import '../providers/table_service_providers.dart';
 import '../services/table_service_service.dart';
@@ -93,6 +105,11 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
       );
     }
     final async = ref.watch(tonightProvider(_query));
+    // Cash and flags are a bonus on this screen: without them (an older server) the rest still shows.
+    final cash = ref.watch(verifierSummaryProvider(_query)).asData?.value;
+    // Security is a bonus too: an older server has no security functions and the rest still shows.
+    final security = ref.watch(securitySummaryProvider(_query)).asData?.value;
+    final stock = ref.watch(stockProvider(venueId)).asData?.value;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -152,6 +169,29 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                 (t) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Card(
+                      key: const Key('tile-night'),
+                      child: ListTile(
+                        leading: const Icon(Icons.nightlight_outlined),
+                        title: const Text('Prepare and close the night'),
+                        subtitle: const Text('Checklist, what is still open, and the final report.'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(
+                          'Prepare and close',
+                          NightScreen(
+                            venueId: venueId,
+                            venueName: widget.workspace.venueName,
+                            canReopen: widget.workspace.role == WorkspaceRole.owner,
+                            clock: widget.clock,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, night: _night, clock: widget.clock),
+                    ),
+                    const SizedBox(height: 8),
                     Text('Needs attention', style: theme.textTheme.titleMedium),
                     _tile(
                       const Key('tile-payments'),
@@ -170,6 +210,36 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                             ),
                           ),
                     ),
+                    if (cash != null) ...[
+                      _tile(
+                        const Key('tile-handovers'),
+                        'Cash handovers waiting to be counted',
+                        cash.handoversWaiting,
+                        onTap: () => _push('Cash', CashScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
+                      _tile(
+                        const Key('tile-flags'),
+                        'Payments flagged',
+                        cash.flagsOpen,
+                        note: 'Flagged by the payment verifier, waiting for you.',
+                        onTap: () => _push('Flagged payments', ExceptionsScreen(workspace: widget.workspace)),
+                      ),
+                    ],
+                    if (stock != null && lowStockCount(stock) > 0)
+                      _tile(
+                        const Key('tile-low-stock'),
+                        'Bottles running low',
+                        lowStockCount(stock),
+                        onTap: () => _push('Inventory', InventoryScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
+                    if (security != null)
+                      _tile(
+                        const Key('tile-security'),
+                        'Security alerts',
+                        security.alertsUnresolved,
+                        note: securitySummaryLine(security),
+                        onTap: () => _push('Security', SecurityHubScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
                     _tile(
                       const Key('tile-orders-new'),
                       'New orders not started',

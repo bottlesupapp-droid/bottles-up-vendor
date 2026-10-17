@@ -114,11 +114,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('More'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Inventory, VIP guests, discounts, events and agreements, chat and settings.'), findsOneWidget);
+      expect(find.byKey(const Key('more-list')), findsOneWidget, reason: 'More opens the manager\'s hub');
     });
 
     testWidgets('a section that is not built says so plainly', (tester) async {
-      await tester.pumpWidget(harness(WorkspaceSnapshot.ready([manager]), start: '/w/m1/more'));
+      await tester.pumpWidget(harness(WorkspaceSnapshot.ready([door]), start: '/w/m3/door-sales'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('not-built-yet')), findsOneWidget);
       expect(find.textContaining('Not built yet'), findsOneWidget);
