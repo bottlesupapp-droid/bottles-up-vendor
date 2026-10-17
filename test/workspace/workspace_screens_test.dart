@@ -118,7 +118,7 @@ void main() {
     });
 
     testWidgets('a section that is not built says so plainly', (tester) async {
-      await tester.pumpWidget(harness(WorkspaceSnapshot.ready([owner]), start: '/w/m2/money'));
+      await tester.pumpWidget(harness(WorkspaceSnapshot.ready([door]), start: '/w/m3/door-sales'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('not-built-yet')), findsOneWidget);
       expect(find.textContaining('Not built yet'), findsOneWidget);
