@@ -19,6 +19,7 @@ const _vip = MoreEntry(id: 'vip', label: 'VIP guests', subtitle: 'Guests with st
 const _discounts = MoreEntry(id: 'discounts', label: 'Discounts', subtitle: 'Promo codes staff may apply, with limits and approvals.', icon: Ionicons.pricetag_outline);
 const _complimentary = MoreEntry(id: 'complimentary', label: 'Complimentary bottles', subtitle: 'Offer a bottle with a claim link; every one is recorded.', icon: Ionicons.gift_outline);
 const _agreements = MoreEntry(id: 'agreements', label: 'Events and agreements', subtitle: 'Organizer events at your club and the terms agreed for each.', icon: Ionicons.document_text_outline);
+const _orgAgreements = MoreEntry(id: 'agreements', label: 'Venue agreements', subtitle: 'Ask a club to host your event and agree the terms.', icon: Ionicons.document_text_outline);
 const _settlement = MoreEntry(id: 'settlement', label: 'Settlement', subtitle: 'What is owed between your events and the venues.', icon: Ionicons.cash_outline);
 const _notifications = MoreEntry(id: 'notifications', label: 'Notifications', subtitle: 'What the app tells you, and how.', icon: Ionicons.notifications_outline);
 const _security = MoreEntry(id: 'security', label: 'Security', subtitle: 'Alerts, tasks and incident reports for your club.', icon: Ionicons.shield_outline);
@@ -29,6 +30,6 @@ const _settings = MoreEntry(id: 'settings', label: 'Settings', subtitle: 'Who yo
 List<MoreEntry> moreEntriesFor(WorkspaceRole role) => switch (role) {
       WorkspaceRole.owner => const [_team, _inventory, _vip, _discounts, _complimentary, _agreements, _chat, _settings],
       WorkspaceRole.manager => const [_security, _inventory, _vip, _discounts, _complimentary, _agreements, _chat, _settings],
-      WorkspaceRole.organizer => const [_team, _settlement, _notifications, _settings],
+      WorkspaceRole.organizer => const [_orgAgreements, _team, _settlement, _notifications, _settings],
       _ => const [],
     };

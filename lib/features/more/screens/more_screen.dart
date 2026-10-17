@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../agreements/screens/agreements_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
 import '../../security/screens/security_hub_screen.dart';
@@ -17,6 +18,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'inventory' => InventoryScreen(workspace: workspace),
       // VIP guests are the manager's and the owner's list; servers look a guest up from My Tables.
       'vip' => VipScreen(workspace: workspace),
+      // Agreements: a club's requests and terms with organizers, and an organizer's requests to clubs.
+      'agreements' => AgreementsScreen(workspace: workspace),
       // Security is the manager's: the club's alerts, tasks and incident reports.
       'security' when workspace.role == WorkspaceRole.manager => SecurityHubScreen(workspace: workspace),
       // The Team screen is the owner's (and the manager's own Team tab); an organizer's team is not built.

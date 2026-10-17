@@ -25,7 +25,7 @@ Workspace ws(WorkspaceRole role) => Workspace(
 const Set<String> builtMore = {
   'owner/team', 'owner/chat', 'owner/settings', 'owner/inventory', 'owner/vip',
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
-  'organizer/settings',
+  'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
 };
 
 void main() {
