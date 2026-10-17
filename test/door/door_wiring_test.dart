@@ -1,6 +1,7 @@
 import 'package:bottles_up_vendor/features/chat/screens/chat_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_guests_screen.dart';
 import 'package:bottles_up_vendor/features/more/screens/more_screen.dart';
+import 'package:bottles_up_vendor/features/organizer_guests/screens/organizer_guests_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_scan_screen.dart';
 import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
 import 'package:bottles_up_vendor/features/server_desk/screens/my_tables_screen.dart';
@@ -32,7 +33,7 @@ const Set<String> builtTabs = {
   'door/scan', 'door/guests',
   'manager/tonight', 'manager/floor', 'manager/orders', 'manager/team',
   'owner/home', 'owner/venues', 'owner/reports',
-  'organizer/home', 'organizer/events', 'organizer/chat',
+  'organizer/home', 'organizer/events', 'organizer/chat', 'organizer/guests',
   'door/chat', 'server/chat', 'security/chat',
   'owner/more', 'manager/more', 'organizer/more',
   'security/alerts', 'security/tasks', 'security/incidents',
@@ -148,8 +149,9 @@ void main() {
       expect(builtSectionFor(as(WorkspaceRole.owner), 'home'), isNot(isA<OrganizerEventsScreen>()));
     });
 
-    test('an organizer\'s Guests is not the door guest list', () {
-      expect(builtSectionFor(as(WorkspaceRole.organizer), 'guests'), isNull);
+    test('an organizer\'s Guests is their own read-only list, not the door guest list', () {
+      expect(builtSectionFor(as(WorkspaceRole.organizer), 'guests'), isA<OrganizerGuestsScreen>());
+      expect(builtSectionFor(as(WorkspaceRole.door), 'guests'), isA<DoorGuestsScreen>());
     });
 
     test('Door Sales is not built, so it is not a till that looks real', () {

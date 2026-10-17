@@ -23,6 +23,7 @@ import '../../cash_review/screens/cash_screen.dart';
 import '../../seating/screens/server_scan_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../more/screens/more_screen.dart';
+import '../../organizer_guests/screens/organizer_guests_screen.dart';
 import '../../night/screens/owner_reports_screen.dart';
 import '../../security/screens/alerts_screen.dart';
 import '../../security/screens/incidents_screen.dart';
@@ -113,6 +114,10 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
       case 'reports':
         return OwnerReportsScreen(workspace: workspace);
     }
+  }
+  // An organizer's Guests: who bought tickets to their events and how check-in is going (read-only).
+  if (workspace.role == WorkspaceRole.organizer && sectionId == 'guests') {
+    return OrganizerGuestsScreen(workspace: workspace);
   }
   // An organizer's Home and Events: the business's own events, created as private drafts that the BottlesUp team publishes.
   if (workspace.role == WorkspaceRole.organizer && (sectionId == 'home' || sectionId == 'events')) {
