@@ -11,6 +11,8 @@ import '../widgets/payment_tile.dart';
 import '../widgets/receipt_view.dart';
 import 'record_payment_screen.dart';
 import '../../seating/widgets/seating_panel.dart';
+import '../../booking_detail/widgets/booking_activity_tab.dart';
+import '../../booking_detail/widgets/booking_guests_tab.dart';
 
 /// One table: what it was charged, what has been collected and what is still due, its bottle orders and the payments recorded for it,
 /// with a way to record another. A manager or owner reaches any table of their club; a server only the ones they were given. The
@@ -90,20 +92,8 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final money = ref.watch(bookingMoneyProvider(widget.bookingId));
-    final now = widget.clock();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.title.isEmpty ? 'Table' : widget.title,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      body: RefreshIndicator(
+  /// Every tab scrolls and pulls to refresh the same way.
+  Widget _scroll(List<Widget> children, {Key? key}) => RefreshIndicator(
         onRefresh: () async {
           _reload();
           try {
@@ -113,73 +103,90 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
           }
         },
         child: ListView(
+          key: key,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-          children: [
-            SeatingPanel(bookingId: widget.bookingId, title: widget.title, canUnseat: money.asData?.value.isManager ?? false),
-            money.when(
-              loading:
-                  () => const Padding(
-                    padding: EdgeInsets.only(top: 24),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-              error: (error, _) {
-                final e = loadFailureFor(error, 'payments');
-                return Column(
-                  children: [
-                    Text(
-                      e.message,
-                      key: const Key('detail-error'),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (!e.unavailable)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: OutlinedButton(
-                          key: const Key('detail-retry'),
-                          onPressed: _reload,
-                          child: const Text('Try again'),
-                        ),
-                      ),
-                  ],
-                );
-              },
-              data: (m) => _body(context, m, now, theme),
-            ),
-          ],
+          children: children,
         ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final money = ref.watch(bookingMoneyProvider(widget.bookingId));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.title.isEmpty ? 'Table' : widget.title,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: money.when(
+        loading: () => _scroll(const [Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator()))]),
+        error: (error, _) {
+          final e = loadFailureFor(error, 'payments');
+          return _scroll([
+            SeatingPanel(bookingId: widget.bookingId, title: widget.title, canUnseat: false),
+            Column(
+              children: [
+                Text(e.message, key: const Key('detail-error'), textAlign: TextAlign.center),
+                if (!e.unavailable)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: OutlinedButton(key: const Key('detail-retry'), onPressed: _reload, child: const Text('Try again')),
+                  ),
+              ],
+            ),
+          ]);
+        },
+        data: (m) => _tabs(context, m),
       ),
     );
   }
 
-  Widget _body(
-    BuildContext context,
-    BookingMoney m,
-    DateTime now,
-    ThemeData theme,
-  ) {
-    final orders =
-        m.level == 'verifier'
-            ? null
-            : ref.watch(
-              tableOrdersProvider(
-                TableOrdersQuery(widget.bookingId, m.balanceDueCents),
+  /// The tabs a person gets follow how they stand towards this table (the database says): a manager or owner all five, the server of the table
+  /// all but Activity, a payment verifier only the money.
+  Widget _tabs(BuildContext context, BookingMoney m) {
+    final theme = Theme.of(context);
+    final now = widget.clock();
+    final withOrders = m.level != 'verifier';
+    final withGuests = m.level == 'manager' || m.level == 'server';
+    final withActivity = m.level == 'manager';
+    final tabs = <(String, String, Widget)>[
+      ('Overview', 'tab-overview', _overview(m, theme)),
+      if (withOrders) ('Orders', 'tab-orders', _ordersTab(m, now, theme)),
+      ('Payments', 'tab-payments', _paymentsTab(m, now, theme)),
+      if (withGuests) ('Guests', 'tab-guests', BookingGuestsTab(bookingId: widget.bookingId)),
+      if (withActivity) ('Activity', 'tab-activity', BookingActivityTab(bookingId: widget.bookingId)),
+    ];
+    return DefaultTabController(
+      key: ValueKey('tabs-${tabs.length}'),
+      length: tabs.length,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(m.customerName, style: theme.textTheme.titleLarge),
+                  Text('${m.tableName} · ${m.guestCount} ${m.guestCount == 1 ? 'guest' : 'guests'}', style: theme.textTheme.bodyMedium),
+                  if (m.confirmationCode != null) Text(m.confirmationCode!, style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')),
+                ],
               ),
-            );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(m.customerName, style: theme.textTheme.titleLarge),
-        Text(
-          '${m.tableName} · ${m.guestCount} ${m.guestCount == 1 ? 'guest' : 'guests'}',
-          style: theme.textTheme.bodyMedium,
-        ),
-        if (m.confirmationCode != null)
-          Text(
-            m.confirmationCode!,
-            style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+            ),
           ),
-        const SizedBox(height: 12),
+          TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [for (final t in tabs) Tab(key: Key(t.$2), text: t.$1)]),
+          Expanded(child: TabBarView(children: [for (final t in tabs) t.$3])),
+        ],
+      ),
+    );
+  }
+
+  Widget _overview(BookingMoney m, ThemeData theme) => _scroll([
+        SeatingPanel(bookingId: widget.bookingId, title: widget.title, canUnseat: m.isManager),
         Card(
           key: const Key('money-card'),
           child: Padding(
@@ -187,67 +194,18 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text('Total', style: theme.textTheme.bodyMedium),
-                    ),
-                    Text(
-                      formatDollars(m.totalCents),
-                      key: const Key('money-total'),
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Collected',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                    Text(
-                      formatDollars(m.paidCents),
-                      key: const Key('money-paid'),
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
+                Row(children: [Expanded(child: Text('Total', style: theme.textTheme.bodyMedium)), Text(formatDollars(m.totalCents), key: const Key('money-total'), style: theme.textTheme.bodyMedium)]),
+                Row(children: [Expanded(child: Text('Collected', style: theme.textTheme.bodyMedium)), Text(formatDollars(m.paidCents), key: const Key('money-paid'), style: theme.textTheme.bodyMedium)]),
                 const Divider(),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Still due',
-                        style: theme.textTheme.titleMedium,
-                      ),
-                    ),
-                    Text(
-                      formatDollars(m.balanceDueCents),
-                      key: const Key('money-due'),
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ],
-                ),
+                Row(children: [Expanded(child: Text('Still due', style: theme.textTheme.titleMedium)), Text(formatDollars(m.balanceDueCents), key: const Key('money-due'), style: theme.textTheme.titleMedium)]),
                 if (m.closedOut || m.closeoutRequested)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Wrap(
                       spacing: 6,
                       children: [
-                        if (m.closedOut)
-                          const DeskChip(
-                            key: Key('closed-out'),
-                            text: 'Closed out',
-                            color: Color(0xFF9E9E9E),
-                          ),
-                        if (m.closeoutRequested && !m.closedOut)
-                          const DeskChip(
-                            key: Key('closeout-requested'),
-                            text: 'Closing asked for',
-                            color: Color(0xFFFFB300),
-                          ),
+                        if (m.closedOut) const DeskChip(key: Key('closed-out'), text: 'Closed out', color: Color(0xFF9E9E9E)),
+                        if (m.closeoutRequested && !m.closedOut) const DeskChip(key: Key('closeout-requested'), text: 'Closing asked for', color: Color(0xFFFFB300)),
                       ],
                     ),
                   ),
@@ -257,79 +215,48 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
         ),
         const SizedBox(height: 8),
         if (m.canRecord)
-          FilledButton.icon(
-            key: const Key('record-payment'),
-            onPressed: () => _record(m),
-            icon: const Icon(Icons.add_card_outlined),
-            label: const Text('Record a payment'),
-          )
+          FilledButton.icon(key: const Key('record-payment'), onPressed: () => _record(m), icon: const Icon(Icons.add_card_outlined), label: const Text('Record a payment'))
         else if (m.closedOut)
-          Text(
-            'This table has been closed out. Nothing more can be recorded or changed.',
-            key: const Key('closed-note'),
-            style: theme.textTheme.bodySmall,
-          ),
-        if (orders != null) ...[
-          const SizedBox(height: 20),
-          Text('Bottle orders', style: theme.textTheme.titleMedium),
-          orders.when(
-            loading:
-                () => const Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-            error: (error, _) {
-              final e = loadFailureFor(error, 'orders');
-              return Padding(
+          Text('This table has been closed out. Nothing more can be recorded or changed.', key: const Key('closed-note'), style: theme.textTheme.bodySmall),
+      ]);
+
+  Widget _ordersTab(BookingMoney m, DateTime now, ThemeData theme) {
+    final orders = ref.watch(tableOrdersProvider(TableOrdersQuery(widget.bookingId, m.balanceDueCents)));
+    return _scroll([
+      Text('Bottle orders', style: theme.textTheme.titleMedium),
+      orders.when(
+        loading: () => const Padding(padding: EdgeInsets.only(top: 12), child: Center(child: CircularProgressIndicator())),
+        error: (error, _) {
+          final e = loadFailureFor(error, 'orders');
+          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(e.message, key: const Key('detail-orders-error')));
+        },
+        data: (lines) => lines.isEmpty
+            ? Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(e.message, key: const Key('detail-orders-error')),
-              );
-            },
-            data:
-                (lines) =>
-                    lines.isEmpty
-                        ? Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            'No bottle orders on this table.',
-                            key: const Key('detail-orders-empty'),
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        )
-                        : Column(
-                          children: [
-                            for (final l in lines)
-                              OrderCard(
-                                line: l,
-                                now: now,
-                                manager: m.isManager,
-                                busy: _busy.contains(l.lineId),
-                                showTable: false,
-                                onMove: (to) => _move(l, to),
-                              ),
-                          ],
-                        ),
-          ),
-        ],
-        const SizedBox(height: 20),
+                child: Text('No bottle orders on this table.', key: const Key('detail-orders-empty'), style: theme.textTheme.bodyMedium),
+              )
+            : Column(
+                children: [
+                  for (final l in lines)
+                    OrderCard(line: l, now: now, manager: m.isManager, busy: _busy.contains(l.lineId), showTable: false, onMove: (to) => _move(l, to)),
+                ],
+              ),
+      ),
+    ]);
+  }
+
+  Widget _paymentsTab(BookingMoney m, DateTime now, ThemeData theme) => _scroll([
         Text('Payments', style: theme.textTheme.titleMedium),
         if (m.payments.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'No payment has been recorded for this table.',
-              key: const Key('detail-payments-empty'),
-              style: theme.textTheme.bodyMedium,
-            ),
+            child: Text('No payment has been recorded for this table.', key: const Key('detail-payments-empty'), style: theme.textTheme.bodyMedium),
           )
         else
-          for (final p in m.payments)
-            PaymentTile(
-              payment: p,
-              now: now,
-              onViewReceipt: (path) => showReceipt(context, ref, path),
-            ),
-      ],
-    );
-  }
+          for (final p in m.payments) PaymentTile(payment: p, now: now, onViewReceipt: (path) => showReceipt(context, ref, path)),
+        if (m.canRecord) ...[
+          const SizedBox(height: 12),
+          FilledButton.icon(key: const Key('record-payment-payments'), onPressed: () => _record(m), icon: const Icon(Icons.add_card_outlined), label: const Text('Record a payment')),
+        ],
+      ]);
 }

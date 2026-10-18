@@ -269,6 +269,8 @@ void main() {
           findsOneWidget,
           reason: 'the page is titled with the table and the guest',
         );
+        await tester.tap(find.widgetWithText(Tab, 'Orders'));
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('move-l1')));
         await tester.pumpAndSettle();
         expect(db.line('l1').state, 'preparing');
