@@ -18,6 +18,13 @@ class FakeSetupBackend {
   Map<String, dynamic>? profileRow = {'id': 'v1', 'name': 'Club Noir', 'description': 'A dark club', 'address': '12 King St W', 'cover_image_url': 'https://img.example/cover.jpg'};
   Object? failAll;
 
+  /// The venue's payment settings as the database holds them (site_venues.bottle_payment_mode and deposit_is_credit).
+  String bottleMode = 'pay_ahead';
+  bool depositIsCredit = false;
+
+  /// The database answers the payment read with no row at all (the venue is gone, or the person lost access).
+  bool noPaymentRow = false;
+
   /// Runs before each call; a test throws from it to fail only the call it chooses.
   void Function(String function)? beforeCall;
 
@@ -53,6 +60,21 @@ class FakeSetupBackend {
     if (waiting != null) await waiting;
     final p = params ?? const {};
     switch (function) {
+      case 'venue_payment_rules':
+        return noPaymentRow ? <Map<String, dynamic>>[] : [{'bottle_payment_mode': bottleMode, 'deposit_is_credit': depositIsCredit}];
+      case 'save_venue_payment_rules':
+        final details = p['p_details'] as Map<String, dynamic>;
+        if (details.containsKey('deposit_is_credit')) {
+          throw refuse('whether the deposit is credited against the bottle bill cannot be changed here, because bookings that already exist are worked out with it; ask the BottlesUp team');
+        }
+        for (final k in details.keys) {
+          if (k != 'bottle_payment_mode') throw refuse('unknown field: $k');
+        }
+        final mode = (details['bottle_payment_mode'] as String?)?.trim();
+        if (mode == null) throw refuse('choose how bottles are paid');
+        if (!const {'pay_ahead', 'pay_at_club', 'both'}.contains(mode)) throw refuse('bottle payment must be pay ahead, pay at the venue, or the customer chooses');
+        bottleMode = mode;
+        return mode;
       case 'list_venue_time_slots':
         return [for (final s in slots) Map<String, dynamic>.from(s)];
       case 'add_venue_time_slot':

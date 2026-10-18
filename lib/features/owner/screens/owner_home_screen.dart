@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../business/widgets/business_status_card.dart';
 import '../../floor/logic/bookings_rules.dart';
 import '../../floor/providers/floor_providers.dart';
 import '../../workspace/models/workspace.dart';
@@ -42,6 +43,7 @@ class OwnerHomeScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
         children: [
+          BusinessStatusCard(orgId: workspace.orgId),
           Text('All venues', style: theme.textTheme.headlineSmall),
           Text('${workspace.orgName} · ${formatNight(tonight.from)}', key: const Key('home-night'), style: theme.textTheme.bodyMedium),
           const SizedBox(height: 16),

@@ -1,3 +1,4 @@
+import '../../business/widgets/business_status_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -86,6 +87,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
           children: [
+            BusinessStatusCard(orgId: _orgId),
             Text('Create your events here. They stay private drafts until the BottlesUp team publishes them and sets up tickets with you.', style: theme.textTheme.bodyMedium),
             const SizedBox(height: 12),
             Align(
