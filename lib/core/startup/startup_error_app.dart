@@ -30,7 +30,7 @@ class _StartupErrorAppState extends State<StartupErrorApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Bottles Up Vendor',
+      title: 'BottlesUp Business',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,

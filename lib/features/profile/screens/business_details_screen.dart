@@ -54,7 +54,7 @@ class BusinessDetailsScreen extends ConsumerWidget {
                     context,
                     icon: Ionicons.business_outline,
                     label: 'Business Name',
-                    value: 'Bottles Up Vendor',
+                    value: 'BottlesUp Business',
                   ),
                   const SizedBox(height: 16),
 

@@ -18,9 +18,9 @@ RedirectDecision decide(
 }) =>
     decideWorkspaceRedirect(isLoggedIn: loggedIn, path: path, snapshot: s, pendingToken: pending, classicVendor: classic);
 
-void expectGo(RedirectDecision d, String location) {
-  expect(d.isFinal, isTrue);
-  expect(d.location, location);
+void expectGo(RedirectDecision d, String location, {String? reason}) {
+  expect(d.isFinal, isTrue, reason: reason);
+  expect(d.location, location, reason: reason);
 }
 
 void expectStay(RedirectDecision d) {
@@ -86,8 +86,10 @@ void main() {
       }
     });
 
-    test('also when asking for the workspaces failed (the page says so and offers to try again)', () {
-      expectGo(decide('/dashboard', const WorkspaceSnapshot.error('offline'), classic: none), WorkspaceRoutes.noWorkspace);
+    test('but NOT when asking for the workspaces failed: that is a failure page with Retry, never "set up your business"', () {
+      for (final p in ['/dashboard', '/login', '/', '/workspaces', '/clubs', '/w/x/tonight', WorkspaceRoutes.noWorkspace]) {
+        expectGo(decide(p, const WorkspaceSnapshot.error('offline'), classic: none), WorkspaceRoutes.workspaceError);
+      }
     });
 
     test('while the list is still being asked for they wait, instead of being pushed into the classic onboarding', () {
@@ -99,10 +101,26 @@ void main() {
       expectDefer(decide('/dashboard', const WorkspaceSnapshot.unavailable(), classic: none));
     });
 
-    test('the page itself is theirs, in every state, so "Check again" never bounces them', () {
-      for (final s in [empty, const WorkspaceSnapshot.loading(), const WorkspaceSnapshot.error('x'), const WorkspaceSnapshot.unavailable()]) {
+    test('the setup page is theirs while the answer is empty, being asked again, or the backend has no workspaces, so "Check again" never bounces them', () {
+      for (final s in [empty, const WorkspaceSnapshot.loading(), const WorkspaceSnapshot.unavailable()]) {
         expectStay(decide(WorkspaceRoutes.noWorkspace, s, classic: none));
       }
+    });
+
+    test('a finished classic vendor who is on the setup page is not moved to the failure page by an error (the classic dashboard is theirs)', () {
+      expectStay(decide(WorkspaceRoutes.noWorkspace, const WorkspaceSnapshot.error('offline')));
+    });
+
+    test('the failure page stays while it is failing or retrying, and moves on once there is an answer', () {
+      expectStay(decide(WorkspaceRoutes.workspaceError, const WorkspaceSnapshot.error('offline'), classic: none));
+      expectStay(decide(WorkspaceRoutes.workspaceError, const WorkspaceSnapshot.loading(), classic: none));
+      expectGo(decide(WorkspaceRoutes.workspaceError, empty, classic: none), WorkspaceRoutes.noWorkspace);
+      expectGo(decide(WorkspaceRoutes.workspaceError, empty), '/dashboard', reason: 'a finished classic vendor goes to their dashboard');
+      expectDefer(decide(WorkspaceRoutes.workspaceError, const WorkspaceSnapshot.unavailable(), classic: none));
+    });
+
+    test('a person with a workspace is taken off the failure page once the list arrives', () {
+      expectGo(decide(WorkspaceRoutes.workspaceError, one, classic: none), WorkspaceRoutes.workspaces);
     });
 
     test('an invitation still goes through: the accept screen is not intercepted, a remembered token wins', () {

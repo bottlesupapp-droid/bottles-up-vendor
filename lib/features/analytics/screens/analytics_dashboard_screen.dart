@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
@@ -83,7 +84,7 @@ class _AnalyticsDashboardScreenState
           children: [
             const Icon(Ionicons.alert_circle_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            Text('Error loading analytics: $error'),
+            Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.invalidate(organizerAnalyticsProvider),
@@ -107,7 +108,7 @@ class _AnalyticsDashboardScreenState
           children: [
             const Icon(Ionicons.alert_circle_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            Text('Error: $error'),
+            Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.invalidate(organizerAnalyticsProvider),
@@ -377,9 +378,21 @@ class _AnalyticsDashboardScreenState
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, stack) => _failed(() => ref.invalidate(revenueBreakdownProvider), 'your revenue'),
     );
   }
+
+  /// A failed read is said plainly with Retry; it is never shown as zero revenue or an empty list.
+  Widget _failed(VoidCallback retry, String what) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(loadFailedMessage(what), key: const Key('analytics-error'), textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: retry, child: const Text('Retry')),
+          ],
+        ),
+      );
 
   Widget _buildRevenueBreakdown(BuildContext context, dynamic data) {
     final theme = Theme.of(context);
@@ -524,7 +537,7 @@ class _AnalyticsDashboardScreenState
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, stack) => _failed(() => ref.invalidate(eventPerformanceInsightsProvider), 'your events'),
     );
   }
 

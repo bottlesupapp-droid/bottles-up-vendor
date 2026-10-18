@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -73,7 +74,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load categories: $e')),
+          SnackBar(content: Text(couldNotLoad('categories', e))),
         );
       }
     }
@@ -93,7 +94,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
+          SnackBar(content: Text(couldNot('pick image', e))),
         );
       }
     }
@@ -160,7 +161,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create club: $e')),
+          SnackBar(content: Text(couldNot('create club', e))),
         );
       }
     } finally {

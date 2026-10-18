@@ -204,16 +204,6 @@ void main() {
       expect(tester.widget<OutlinedButton>(find.byKey(const Key('check-again-button'))).onPressed, isNotNull);
     });
 
-    testWidgets('a failed check is said plainly, with the way to try again still there', (tester) async {
-      tallScreen(tester);
-      final h = Harness(snapshot: const WorkspaceSnapshot.error('offline'));
-      await tester.pumpWidget(h.build());
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('no-workspace-error')), findsOneWidget);
-      expect(find.text('Check again'), findsOneWidget);
-    });
-
     testWidgets('Sign out signs out', (tester) async {
       tallScreen(tester);
       final h = Harness();

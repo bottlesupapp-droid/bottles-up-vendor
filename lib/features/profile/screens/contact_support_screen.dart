@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
@@ -59,7 +60,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error submitting ticket: $e'),
+            content: Text(couldNot('submit ticket', e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -295,13 +296,13 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  user?.businessName ?? user?.email.split('@')[0] ?? 'Vendor User',
+                                  user?.businessName ?? user?.email.split('@')[0] ?? 'BottlesUp Business user',
                                   style: theme.textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 Text(
-                                  user?.email ?? 'vendor@example.com',
+                                  user?.email ?? 'you@example.com',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),

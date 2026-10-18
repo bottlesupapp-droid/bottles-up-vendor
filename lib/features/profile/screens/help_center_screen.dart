@@ -62,13 +62,13 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
     ),
     FAQItem(
       category: 'Account',
-      question: 'How do I improve my vendor rating?',
+      question: 'How do I improve my business rating?',
       answer: 'Boost your rating by:\n\n• Responding quickly to bookings\n• Providing accurate event details\n• Maintaining good inventory levels\n• Being professional with customers\n• Honoring all confirmed bookings\n• Resolving issues promptly\n\nHigher ratings lead to more visibility and bookings!',
     ),
     FAQItem(
       category: 'Troubleshooting',
       question: 'I\'m not receiving notifications',
-      answer: 'To fix notification issues:\n\n1. Go to Profile > Notifications\n2. Enable push notifications\n3. Check your phone settings:\n   • iOS: Settings > Bottles Up Vendor > Notifications\n   • Android: Settings > Apps > Bottles Up Vendor > Notifications\n4. Ensure "Do Not Disturb" is off\n5. Try logging out and back in\n\nStill having issues? Contact support.',
+      answer: 'To fix notification issues:\n\n1. Go to Profile > Notifications\n2. Enable push notifications\n3. Check your phone settings:\n   • iOS: Settings > BottlesUp Business > Notifications\n   • Android: Settings > Apps > BottlesUp Business > Notifications\n4. Ensure "Do Not Disturb" is off\n5. Try logging out and back in\n\nStill having issues? Contact support.',
     ),
     FAQItem(
       category: 'Troubleshooting',

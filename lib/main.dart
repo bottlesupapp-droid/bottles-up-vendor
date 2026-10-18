@@ -74,7 +74,7 @@ class BottlesUpVendorApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     
     return MaterialApp.router(
-      title: 'Bottles Up Vendor',
+      title: 'BottlesUp Business',
       debugShowCheckedModeBanner: false,
       
       // Theming

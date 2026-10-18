@@ -53,6 +53,7 @@ import '../../features/workspace/screens/accept_invitation_screen.dart';
 import '../../features/workspace/workspace_routes.dart';
 import '../../features/workspace/screens/workspace_selector_screen.dart';
 import '../../features/workspace/screens/no_workspace_screen.dart';
+import '../../features/workspace/screens/workspace_load_failed_screen.dart';
 
 // Route names
 class AppRoutes {
@@ -289,6 +290,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: WorkspaceRoutes.noWorkspace,
         name: 'noWorkspace',
         builder: (context, state) => const NoWorkspaceScreen(),
+      ),
+      GoRoute(
+        path: WorkspaceRoutes.workspaceError,
+        name: 'workspaceError',
+        builder: (context, state) => const WorkspaceLoadFailedScreen(),
       ),
       GoRoute(
         path: WorkspaceRoutes.acceptInvite,

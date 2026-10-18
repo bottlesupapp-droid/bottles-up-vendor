@@ -277,6 +277,24 @@ authorize through the global `door_staff` table (an invited server or verifier i
   `test/table_service/long_lists_test.dart`, which is left out of the runs because it is slow. Run it with at most 3 workers (more makes the machine unusable) and
   keep the Mac awake: idle sleep pauses a run and makes it look hung.
 
+### Developer brief of 15 Oct 2026 (tranche 1)
+
+The client's newer brief (35 sections; gap analysis in the monorepo, `docs/BRIEF_15OCT_GAP_ANALYSIS.md`) changed these things in the app:
+
+- **Name:** the app is **BottlesUp Business** (phone label, About, Terms, Help, titles); the customer app stays BottlesUp. `test/branding/business_name_test.dart`
+  stops "Bottles Up Vendor" / "BottlesUp Vendor" coming back in anything a person reads. The legal wording of the Terms and Privacy still uses "Vendor" as a
+  defined term; that is for the client's lawyer.
+- **A failed workspace request is not a new account** (`/workspace-error`, `WorkspaceLoadFailedScreen`): "We could not load your workspace" with Retry and Sign out. Only a
+  successful empty answer reaches "Set up your business". A finished classic vendor is not moved by an error. Rule: `_withoutWorkspace` in `workspace_routing.dart`.
+- **Navigation per brief section 6:** Owner Overview / Venues / **Tonight** / Reports / More (Tonight is the manager's Tonight for the venue picked; Payments and earnings moved
+  into More), Organizer Overview, Door gets More (shift summary and promo codes, both "Not available yet", and Settings), Security's Incidents moved into More. Event Lead is in the
+  brief but not built (no database role, program rules to agree first). Tab ids are unchanged (`home` is labelled Overview).
+- **No technical text on screen:** `core/utils/plain_error.dart` (`couldNot`, `couldNotLoad`, `loadFailedMessage`) says what failed and what to do, and logs the reason.
+  `test/branding/no_raw_errors_test.dart` fails if a `Text(...)` is given `$e`, `$error` or `e.toString()`. `ErrorHandler` no longer passes the database's own wording through.
+- **Last workspace remembered** per person on the phone (`LastWorkspaceStore`, shared_preferences, already a locked transitive package): it only orders the selector list and
+  says "Last used"; a workspace the person no longer has is ignored, and access is always the database's.
+- Not done from the brief and why: see the gap analysis (tranche 2 needs small database additions; tranche 3 waits for the client's decisions).
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:

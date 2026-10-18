@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
@@ -35,7 +36,7 @@ class SupabaseAuthService {
     try {
       await _auth.signOut();
     } catch (e) {
-      throw Exception('Failed to sign out: $e');
+      throw Exception(couldNot('sign out', e));
     }
   }
 
@@ -49,7 +50,7 @@ class SupabaseAuthService {
       // Sign out
       await signOut();
     } catch (e) {
-      throw Exception('Failed to delete account: $e');
+      throw Exception(couldNot('delete account', e));
     }
   }
 
@@ -74,7 +75,7 @@ class SupabaseAuthService {
     } on AuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
-      throw Exception('Failed to send OTP: $e');
+      throw Exception(couldNot('send OTP', e));
     }
   }
 
@@ -94,7 +95,7 @@ class SupabaseAuthService {
     } on AuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
-      throw Exception('Failed to verify OTP: $e');
+      throw Exception(couldNot('verify OTP', e));
     }
   }
 
@@ -126,7 +127,7 @@ class SupabaseAuthService {
           .from('vendors')
           .upsert(user.toMap());
     } catch (e) {
-      throw Exception('Failed to update vendor user: $e');
+      throw Exception(couldNot('update vendor user', e));
     }
   }
 
@@ -167,7 +168,7 @@ class SupabaseAuthService {
       case 'Invalid email':
         return 'Please enter a valid email address.';
       case 'User not found':
-        return 'No vendor account found with this email.';
+        return 'No BottlesUp Business account found with this email.';
       case 'Too many requests':
         return 'Too many failed attempts. Please try again later.';
       case 'Invalid OTP':
