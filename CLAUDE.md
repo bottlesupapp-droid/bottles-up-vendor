@@ -86,6 +86,10 @@ Sales is not built.
   This was not run against a real database (there is no staging); behaviour is covered by tests with a fake backend and was
   looked at on a throwaway web build. **Try the camera on a real phone before relying on it at a door**: the test browser
   blocks it, so only the "camera unavailable, type the code" path has been exercised.
+- **VIP lookup at the club door:** a door whose workspace has a venue (a club door) gets a "VIP lookup" button on Guests, which opens the same
+  `VipLookupScreen` the server uses. The database shows the door **entry perks only** (no preferences, contact, notes, service or discount
+  perks) and lets it redeem them; an event-only door has no venue, the database would refuse it, so it gets no button (`DoorGuestsScreen.venueId`
+  is null). `test/door/door_vip_lookup_test.dart`. A VIP credential does not admit anyone to an event by itself (the client's brief).
 - The old scanner (`features/scanner`, `shared/services/check_in_service.dart`) still reads the legacy tables for the classic
   vendor dashboard and is untouched.
 

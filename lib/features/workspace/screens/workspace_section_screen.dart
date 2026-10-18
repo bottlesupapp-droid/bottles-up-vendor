@@ -70,7 +70,7 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
       case 'scan':
         return DoorScanScreen(membershipId: workspace.membershipId);
       case 'guests':
-        return DoorGuestsScreen(membershipId: workspace.membershipId);
+        return DoorGuestsScreen(membershipId: workspace.membershipId, venueId: workspace.venueId);
     }
   }
   if (workspace.role == WorkspaceRole.server) {
