@@ -82,6 +82,24 @@ class FakeTeamBackend {
         if (invitations[i]['state'] != 'pending' && invitations[i]['state'] != 'expired') throw refuse('only a pending invitation can be revoked');
         invitations[i] = {...invitations[i], 'state': 'revoked'};
         return null;
+      case 'create_shift':
+        final name = (p['p_name'] as String).trim();
+        if (name.isEmpty) throw refuse('name required');
+        if (!DateTime.parse(p['p_ends'] as String).isAfter(DateTime.parse(p['p_starts'] as String))) throw refuse('new row for relation "site_shifts" violates check constraint "site_shifts_check"');
+        final sid = id('s');
+        shifts.add(shiftRow(sid, name, venue: p['p_venue'] as String, starts: p['p_starts'] as String, ends: p['p_ends'] as String));
+        return sid;
+      case 'change_member_role':
+        final i = members.indexWhere((x) => x['membership_id'] == p['p_membership']);
+        if (i < 0 || members[i]['state'] == 'revoked') throw refuse('membership not found');
+        if (members[i]['role'] == 'owner' || members[i]['role'] == 'organizer') throw refuse('not allowed');
+        if (members[i]['role'] == p['p_new_role']) throw refuse('they already have that role');
+        if (p['p_new_role'] == 'manager' && !(rolesByVenue['v1'] ?? defaultRoles).contains('manager')) throw refuse('not allowed');
+        final old = members[i];
+        members[i] = {...old, 'state': 'revoked'};
+        final nid = id('m');
+        members.add({...old, 'membership_id': nid, 'role': p['p_new_role'], 'state': 'active'});
+        return nid;
       case 'revoke_membership':
         final i = members.indexWhere((x) => x['membership_id'] == p['p_membership']);
         if (i < 0 || members[i]['state'] == 'revoked') throw refuse('membership not found');

@@ -10,6 +10,10 @@ import '../services/table_service_service.dart';
 import '../widgets/payment_tile.dart' show verificationColor;
 import '../widgets/receipt_view.dart';
 import '../widgets/verify_dialog.dart';
+import '../../cash_review/logic/cash_rules.dart' show checkFlagReason;
+import '../../cash_review/providers/cash_providers.dart';
+import '../../ops/services/ops_rpc.dart' show OpsActionException;
+import '../../ops/widgets/ops_dialogs.dart' show showTextDialog;
 
 /// Asks for the note that goes with checking a payment. Replaced in tests.
 typedef VerifyPrompt =
@@ -67,6 +71,27 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
       ref.invalidate(pendingPaymentsProvider(widget.workspace.venueId ?? ''));
       if (mounted) setState(() => _busy.remove(p.paymentId));
     }
+  }
+
+  Future<void> _flag(PendingPayment p) async {
+    final reason = await showTextDialog(
+      context,
+      title: 'Flag this payment',
+      message: '${p.tableName} · ${p.customerName}: ${formatDollars(p.paidCents)} by ${p.methodLabel.toLowerCase()}. A manager will look at it.',
+      hint: 'What is wrong with it?',
+      confirmLabel: 'Flag it',
+      validate: checkFlagReason,
+    );
+    if (reason == null || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final venue = widget.workspace.venueId ?? '';
+    try {
+      await ref.read(cashServiceProvider).flagPayment(p.paymentId, reason);
+      messenger.showSnackBar(const SnackBar(content: Text('Payment flagged. A manager will resolve it.')));
+    } on OpsActionException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+    ref.invalidate(flagsProvider((venueId: venue, resolved: false)));
   }
 
   @override
@@ -282,6 +307,16 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
                 onPressed:
                     _busy.contains(p.paymentId) ? null : () => _verify(p),
                 child: const Text('Check it against the till'),
+              ),
+            if (!p.recordedByMe)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: Key('flag-${p.paymentId}'),
+                  onPressed: () => _flag(p),
+                  icon: const Icon(Icons.flag_outlined, size: 18),
+                  label: const Text('Flag a problem'),
+                ),
               ),
           ],
         ),
