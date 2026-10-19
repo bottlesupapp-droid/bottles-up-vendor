@@ -6,12 +6,15 @@ import '../logic/bookings_rules.dart';
 /// One booking: when, who, which table, how many, whether it is paid, how to reach the guest, and whether they have arrived.
 /// Amounts are what was booked, not what was collected (the database only holds the booked total and deposit here).
 class BookingCard extends StatelessWidget {
-  const BookingCard({super.key, required this.booking, required this.onContact});
+  const BookingCard({super.key, required this.booking, required this.onContact, this.footer});
 
   final BookingRow booking;
 
   /// Opens a phone or email link. A failure is the caller's to report.
   final ValueChanged<Uri> onContact;
+
+  /// Something under the booking, such as who serves the table. Null for nothing.
+  final Widget? footer;
 
   Color _tone(StatusTone tone) => switch (tone) {
         StatusTone.good => const Color(0xFF66BB6A),
@@ -89,6 +92,7 @@ class BookingCard extends StatelessWidget {
             ),
             if (b.confirmationCode != null)
               Text(b.confirmationCode!, style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')),
+            if (footer != null) footer!,
           ],
         ),
       ),

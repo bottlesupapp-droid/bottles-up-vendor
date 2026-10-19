@@ -8,7 +8,7 @@ Flutter app for venue owners, managers, organizers, door/server staff and simila
 Supabase project with the Bottles Up website and the customer app, so the **website's `site_*` schema and
 edge functions are the source of truth**. Do not add a second source of truth for bookings or payments here.
 
-- Bundle / application ID: `com.bottlesup.vendor` (iOS and Android must stay identical).
+- Bundle / application ID: Android `com.bottlesup.vendor`; iOS `com..bottlesUp.ORG` (the vendor app's original iOS ID, already registered under team `4T453RG45S`; the double dot is deliberate. They differ on purpose: `com.bottlesup.vendor` is taken on Apple's side by a free personal team's App ID).
 - Backend: **Supabase** (Auth, Postgres with RLS, Edge Functions). There is no Firebase in this app.
 - Shared code lives in `../../packages/shared` (Supabase config, shared models).
 
@@ -90,10 +90,9 @@ night before), and answers for at most 93 nights and 1000 rows; the app only sho
   "confirmed"), grouping by night, the counts, the ready-made ranges (Tonight, Next 7, Next 30, Last 7) in business nights, range
   validation. Night arithmetic uses calendar dates, not "minus 24 hours", so clock-change days are right. Tests compare the
   cutoff, limits, status wording and messages with the website repo when it is checked out beside this one.
-- Amounts are **what was booked, not what was collected** (the deposit and total on the booking). Money received, cancellation
-  detail and bottle orders live in production-only columns that no committed migration defines, so they are not shown until
-  `supabase db pull` brings them into the website repo. The screen says so.
-- Not here yet: walk-ins, guest allowances, table assignment, table check-in, bottle orders (the manager's **Orders** tab).
+- Amounts on the list are **what was booked, not what was collected** (the deposit and total on the booking). What was collected, what is still due,
+  the payments and the bottle orders are on each confirmed booking's "Orders and payments" page (Table service, below).
+- Not here yet: walk-ins, guest allowances, table check-in. Orders, collected money and payments are on each confirmed booking's "Orders and payments" page (see Table service).
 - **Needs the website migrations applied** (tenancy for the manager's workspace, then the venue bookings one). Until then it says
   "not set up on this server yet". Not run against a real database: there is no staging.
 - Run the tests under a timezone with daylight saving at least once (`TZ=America/Toronto flutter test test/floor`): a machine in a
@@ -209,6 +208,61 @@ The Setup list's **Venue profile** and **Rooms and floor plan** steps open edito
   them is covered by tests with fakes. Try a real photo, including an iPhone one, before relying on it.
 - Not here yet: the gallery, deleting old files, reordering floors. (Table, bottle and event photos use the same `PhotoField`.)
 
+### Server desk (My Tables, Requests, and giving a booking to a server)
+
+`lib/features/server_desk/` is a server's **My Tables** and **Requests** tabs, plus the manager's and owner's "Server" line on each confirmed
+booking of the Floor / venue Bookings list. It calls the website's `my_assigned_tables`, `list_service_requests`, `create_service_request`,
+`update_service_request`, `list_venue_booking_servers`, `assign_booking_server`, `unassign_booking_server` (website repo,
+`20261014100000_table_servers.sql` and `20261014110000_service_requests.sql`, on branch `feat/server-desk-foundation`). The database decides who may
+do what; the buttons only offer moves it would accept (a test runs every offered button against a model of the SQL).
+
+- A booking has one server. Individual tables do not exist yet, so what is given out is the booking (the client brief says "tables": to confirm).
+- First to acknowledge owns a request; a colleague is told so. Asking twice for the same thing is one request. Escalating and cancelling need a reason.
+- A server's table list carries no guest email or phone. Where each table stands (what is due, what is left to deliver) and each table's
+  orders and payments come from the table service below; the Scan tab (seat a guest from a booking QR) is still a placeholder.
+- The old staff functions (`list_my_tables` etc.) authorize through the global `door_staff` table, which an invited server is not in; this does not use them.
+- Not here: requests made by the guest, a manager's requests tab (Tonight links to the same list), handing a request on (the database supports it), shifts.
+- **Needs both website migrations applied.** Not run against a real database. Mutation-checked: rules, service, screens and the Floor row (the last 20 Floor/picker mutants were not run). The table service below needs two more migrations.
+
+### Table service (orders, payments, checking them, Tonight)
+
+`lib/features/table_service/` is the money side of table service (brief sections 6, 13, 14 and 15): a server's and a manager's **Orders**, the
+page of one table (its money, bottle orders and payments, with **Record a payment**), the verifier's **Review** queue, and the manager's
+**Tonight**. It calls the website's `desk_orders`, `desk_booking_orders`, `desk_set_service_status`, `desk_booking_money`,
+`desk_record_payment`, `desk_pending_verifications`, `desk_verify_payment`, `desk_table_status` and `desk_tonight` (website repo,
+`20261014120000_desk_orders.sql` and `20261014130000_desk_payments.sql`, branch `feat/server-desk-foundation`). The database decides who may do what;
+the buttons only offer what it would accept. Those functions replace, for the membership roles, production's own staff functions, which
+authorize through the global `door_staff` table (an invited server or verifier is not in it).
+
+- **Orders** (`screens/orders_screen.dart`, server and manager): a night's bottle lines, longest wait first, delivered last, with filters New / Needs
+  payment / Preparing / On the way / Delivered and the move to make next. A server sees only their tables; the manager the whole club. The five states are
+  the database's (`awaiting_prep`, `preparing`, `ready`, `picked_up`, `served`; the app says New / Preparing / Ready / On the way / Delivered). A server
+  cannot take a delivered item back (only a manager); an item to be paid at the venue says why it cannot be delivered while its table owes money.
+  Repeated taps change nothing and say so. The brief's "needs attention" filter means orders left waiting too long: the client has not said how long,
+  so every order shows how long it has waited instead. Lists build only the rows near the screen (a night can have a thousand orders).
+- **A table's page** (`screens/table_detail_screen.dart`): opened from a server's card ("Orders and payments") or the manager's Floor row. Shows total /
+  collected / still due, the bottle orders (cancelled ones with their reason) and every payment with where it stands: "Recorded - verification pending",
+  Verified, Confirmed by the guest, Disputed. A guest's email is never sent to the app. Receipts open through a short-lived address (private bucket).
+- **Record a payment** (`screens/record_payment_screen.dart`): bill, amount collected, method (a split's parts must add up), the till's receipt number,
+  optional bill details, and the receipt photo. A **server must attach a photo** and confirm the total and date can be read; a **manager may instead
+  say why there is no receipt**. The photo is uploaded to `club-payment-receipts/<booking id>/<file>` with its SHA-256; it stays uploaded across a
+  retry, so a lost answer sent again is a repeat ("already recorded"), not a second payment. Recording does not verify anything.
+- **Review** (`screens/payment_review_screen.dart`, verifier; also from Tonight): payments nobody has checked and ones a guest disputed (those first).
+  Nobody checks their own entry or a disputed one (the screen says why instead of offering the button); a photo alone verifies nothing.
+- **Tonight** (`screens/tonight_screen.dart`, manager): what needs a person (payments to check, new orders, open requests, tables without a server,
+  closings asked for) and the night at a glance. Payments to check, closings and open requests are club-wide, not tied to a night.
+- `logic/table_service_rules.dart` is the rules (words, parsing that drops rows it cannot trust, filters, which moves to offer, the payment form's
+  checks and payload); `services/table_service_service.dart` and `services/receipt_service.dart` are the calls. A test reads the website's SQL (when the
+  repo is checked out beside this app) and fails if the states, methods, argument names, returned columns, limits or sentences differ.
+- **Needs both website migrations applied**, and the production-only tables they build on. Not run against a real database (there is no staging).
+  **Try the camera and a real receipt on a real phone before relying on it at a table**: the picker and the private-bucket upload were only exercised
+  with fakes. Not built: flagging a payment, settling a disputed payment, cash handover from server to cashier, corrections and refunds, partial delivery of a
+  line, a service estimate and "mark seated", the manager's checklist for preparing and closing a night, and alerts for slow orders or low stock.
+- `tool/mutate_dart.py` mutation-checks this code on throwaway copies of the app (see its header). Last result: rules/service 126 of 129 killed, screens/widgets
+  101 of 107; what survived is equivalent (an initial value nothing can observe, a comparison that can never be equal, an invisible empty row) or is killed by
+  `test/table_service/long_lists_test.dart`, which is left out of the runs because it is slow. Run it with at most 3 workers (more makes the machine unusable) and
+  keep the Mac awake: idle sleep pauses a run and makes it look hung.
+
 ### Archived code
 
 Code removed to keep the app focused is in `_archive/` with a manifest and a restore script:
@@ -218,7 +272,7 @@ Code removed to keep the app focused is in `_archive/` with a manifest and a res
 
 - **Android signing:** release builds require `android/key.properties` (copy `android/key.properties.example`).
   Without it the build fails on purpose. For a throwaway local build set `ORG_GRADLE_PROJECT_allowUnsignedRelease=true`.
-- **iOS signing:** the App ID `com.bottlesup.vendor` must be registered in the Apple Developer account.
+- **iOS signing:** the App ID `com..bottlesUp.ORG` is already registered under team `4T453RG45S` (it has development and store profiles); automatic signing with `-allowProvisioningUpdates` handles the rest.
 - **Android permissions:** `INTERNET` is declared in the main manifest. Flutter only adds it to debug/profile
   builds on its own, so removing it breaks release builds completely.
 - **Crash reporting:** not wired up yet (`_logError` in `main.dart` only prints). Add Sentry or similar before launch.
