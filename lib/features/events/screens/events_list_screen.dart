@@ -244,16 +244,6 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen>
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text(
-              error.toString(),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
             const SizedBox(height: 32),
             FilledButton.icon(
               onPressed: () => ref.invalidate(filteredEventsProvider(tab)),

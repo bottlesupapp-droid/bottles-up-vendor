@@ -1,3 +1,4 @@
+import '../../core/utils/plain_error.dart';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,7 +19,7 @@ class EventService {
 
       return (response as List).map((json) => Event.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('Failed to fetch events: $e');
+      throw Exception(couldNot('fetch events', e));
     }
   }
 
@@ -33,7 +34,7 @@ class EventService {
 
       return Event.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to fetch event: $e');
+      throw Exception(couldNot('fetch event', e));
     }
   }
 
@@ -54,7 +55,7 @@ class EventService {
 
       return Event.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to create event: $e');
+      throw Exception(couldNot('create event', e));
     }
   }
 
@@ -70,7 +71,7 @@ class EventService {
 
       return Event.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to update event: $e');
+      throw Exception(couldNot('update event', e));
     }
   }
 
@@ -82,7 +83,7 @@ class EventService {
           .delete()
           .eq('id', eventId);
     } catch (e) {
-      throw Exception('Failed to delete event: $e');
+      throw Exception(couldNot('delete event', e));
     }
   }
 
@@ -97,7 +98,7 @@ class EventService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      throw Exception('Failed to fetch categories: $e');
+      throw Exception(couldNot('fetch categories', e));
     }
   }
 
@@ -112,7 +113,7 @@ class EventService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      throw Exception('Failed to fetch zones: $e');
+      throw Exception(couldNot('fetch zones', e));
     }
   }
 
@@ -128,7 +129,7 @@ class EventService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      throw Exception('Failed to fetch zones for club: $e');
+      throw Exception(couldNot('fetch zones for club', e));
     }
   }
 
@@ -143,7 +144,7 @@ class EventService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      throw Exception('Failed to fetch clubs: $e');
+      throw Exception(couldNot('fetch clubs', e));
     }
   }
 
@@ -181,7 +182,7 @@ class EventService {
     } catch (e) {
       // Log full error so we can see the exact Supabase StorageException detail
       debugPrint('❌ [EventService] uploadEventImages error: $e');
-      throw Exception('Failed to upload images: $e');
+      throw Exception(couldNot('upload images', e));
     }
   }
 
@@ -196,7 +197,7 @@ class EventService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      throw Exception('Failed to fetch event bookings: $e');
+      throw Exception(couldNot('fetch event bookings', e));
     }
   }
 
@@ -290,7 +291,7 @@ class EventService {
       final response = await query.order('event_date', ascending: false);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      throw Exception('Failed to fetch filtered events: $e');
+      throw Exception(couldNot('fetch filtered events', e));
     }
   }
 
@@ -313,7 +314,7 @@ class EventService {
       cities.sort();
       return cities;
     } catch (e) {
-      throw Exception('Failed to fetch distinct cities: $e');
+      throw Exception(couldNot('fetch distinct cities', e));
     }
   }
 
@@ -325,7 +326,7 @@ class EventService {
           .update({'status': status, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', eventId);
     } catch (e) {
-      throw Exception('Failed to update event status: $e');
+      throw Exception(couldNot('update event status', e));
     }
   }
 
@@ -353,7 +354,7 @@ class EventService {
 
       return response;
     } catch (e) {
-      throw Exception('Failed to duplicate as template: $e');
+      throw Exception(couldNot('duplicate as template', e));
     }
   }
 
@@ -379,7 +380,7 @@ class EventService {
         'available_tickets': event.maxCapacity - event.currentBookings,
       };
     } catch (e) {
-      throw Exception('Failed to fetch event stats: $e');
+      throw Exception(couldNot('fetch event stats', e));
     }
   }
 }

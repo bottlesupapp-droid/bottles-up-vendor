@@ -1,3 +1,4 @@
+import '../../core/utils/plain_error.dart';
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/club.dart';
@@ -15,7 +16,7 @@ class ClubService {
 
       return (response as List).map((json) => Club.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('Failed to fetch clubs: $e');
+      throw Exception(couldNot('fetch clubs', e));
     }
   }
 
@@ -30,7 +31,7 @@ class ClubService {
 
       return Club.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to fetch club: $e');
+      throw Exception(couldNot('fetch club', e));
     }
   }
 
@@ -45,7 +46,7 @@ class ClubService {
 
       return Club.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to create club: $e');
+      throw Exception(couldNot('create club', e));
     }
   }
 
@@ -61,7 +62,7 @@ class ClubService {
 
       return Club.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to update club: $e');
+      throw Exception(couldNot('update club', e));
     }
   }
 
@@ -73,7 +74,7 @@ class ClubService {
           .delete()
           .eq('id', clubId);
     } catch (e) {
-      throw Exception('Failed to delete club: $e');
+      throw Exception(couldNot('delete club', e));
     }
   }
 
@@ -88,7 +89,7 @@ class ClubService {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      throw Exception('Failed to fetch categories: $e');
+      throw Exception(couldNot('fetch categories', e));
     }
   }
 
@@ -109,7 +110,7 @@ class ClubService {
 
       return imageUrl;
     } catch (e) {
-      throw Exception('Failed to upload image: $e');
+      throw Exception(couldNot('upload image', e));
     }
   }
 }

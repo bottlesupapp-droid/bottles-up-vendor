@@ -1,3 +1,4 @@
+import '../../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -234,12 +235,12 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
         });
       }
     } catch (e) {
-      print('Error uploading photo: $e');
+      print(couldNot('upload photo', e));
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to upload image: ${e.toString()}'),
+            content: Text('We could not upload image. Your entries are still here. Try again.'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -364,7 +365,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to create venue: ${e.toString()}'),
+            content: Text('We could not create venue. Your entries are still here. Try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),

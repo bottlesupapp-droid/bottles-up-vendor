@@ -135,7 +135,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to connect Stripe: ${e.toString()}'),
+            content: Text('We could not connect Stripe. Try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -208,7 +208,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to save profile: ${e.toString()}'),
+            content: Text('We could not save profile. Your entries are still here. Try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),

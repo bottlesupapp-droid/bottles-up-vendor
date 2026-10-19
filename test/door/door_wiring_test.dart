@@ -32,11 +32,11 @@ Workspace as(WorkspaceRole role) => Workspace(
 const Set<String> builtTabs = {
   'door/scan', 'door/guests',
   'manager/tonight', 'manager/floor', 'manager/orders', 'manager/team',
-  'owner/home', 'owner/venues', 'owner/reports', 'owner/money',
+  'owner/home', 'owner/venues', 'owner/tonight', 'owner/reports',
   'organizer/home', 'organizer/events', 'organizer/chat', 'organizer/guests',
   'door/chat', 'server/chat', 'security/chat',
-  'owner/more', 'manager/more', 'organizer/more',
-  'security/alerts', 'security/tasks', 'security/incidents',
+  'owner/more', 'manager/more', 'organizer/more', 'door/more', 'security/more',
+  'security/alerts', 'security/tasks',
   'server/tables', 'server/orders', 'server/requests', 'server/scan',
   'verifier/review', 'verifier/cash', 'verifier/exceptions', 'verifier/summary',
 };
@@ -126,7 +126,7 @@ void main() {
 
     test('Tonight, Orders and Review are for those roles only', () {
       for (final role in WorkspaceRole.values) {
-        if (role != WorkspaceRole.manager) expect(builtSectionFor(as(role), 'tonight'), isNull, reason: '${role.name}/tonight');
+        if (role != WorkspaceRole.manager && role != WorkspaceRole.owner) expect(builtSectionFor(as(role), 'tonight'), isNull, reason: '${role.name}/tonight');
         if (role != WorkspaceRole.manager && role != WorkspaceRole.server) expect(builtSectionFor(as(role), 'orders'), isNull, reason: '${role.name}/orders');
         if (role != WorkspaceRole.verifier) expect(builtSectionFor(as(role), 'review'), isNull, reason: '${role.name}/review');
       }

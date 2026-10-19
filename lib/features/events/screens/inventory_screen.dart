@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/inventory_provider.dart';
@@ -66,7 +67,7 @@ class InventoryScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error loading inventory: $error'),
+              Text(couldNotLoad('inventory', error)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.invalidate(inventoryProvider),

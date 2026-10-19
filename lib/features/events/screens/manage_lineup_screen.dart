@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
@@ -50,7 +51,7 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load team members: $e')),
+          SnackBar(content: Text(couldNotLoad('team members', e))),
         );
       }
     }
@@ -227,7 +228,7 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save team member: $e')),
+          SnackBar(content: Text(couldNot('save team member', e))),
         );
       }
     }
@@ -266,7 +267,7 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to remove team member: $e')),
+            SnackBar(content: Text(couldNot('remove team member', e))),
           );
         }
       }

@@ -42,7 +42,6 @@ class _NoWorkspaceScreenState extends ConsumerState<NoWorkspaceScreen> {
     final theme = Theme.of(context);
     final snapshot = ref.watch(workspaceStateProvider);
     final checking = snapshot.status == WorkspaceStatus.loading;
-    final failed = snapshot.status == WorkspaceStatus.error;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,14 +57,6 @@ class _NoWorkspaceScreenState extends ConsumerState<NoWorkspaceScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (failed) ...[
-            Text(
-              'We could not check your workspaces. Check your connection and try again.',
-              key: const Key('no-workspace-error'),
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-            const SizedBox(height: 12),
-          ],
           Text('This account is not part of a business yet.', key: const Key('no-workspace-title'), style: theme.textTheme.titleLarge),
           const SizedBox(height: 16),
           const BusinessSignupCard(),

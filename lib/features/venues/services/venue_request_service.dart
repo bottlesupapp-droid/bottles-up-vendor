@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../shared/models/venue_model.dart';
@@ -34,7 +35,7 @@ class VenueRequestService {
     } catch (e, stackTrace) {
       print('Error getting venues by owner: $e');
       print('Stack trace: $stackTrace');
-      throw Exception('Failed to load your venues: $e');
+      throw Exception(couldNotLoad('your venues', e));
     }
   }
 
@@ -83,7 +84,7 @@ class VenueRequestService {
     } catch (e, stackTrace) {
       print('Error getting venues: $e');
       print('Stack trace: $stackTrace');
-      throw Exception('Failed to load venues: $e');
+      throw Exception(couldNotLoad('venues', e));
     }
   }
 
@@ -101,7 +102,7 @@ class VenueRequestService {
       return Venue.fromJson(response);
     } catch (e) {
       print('Error getting venue: $e');
-      throw Exception('Failed to load venue: $e');
+      throw Exception(couldNotLoad('venue', e));
     }
   }
 
@@ -120,7 +121,7 @@ class VenueRequestService {
           .single();
       return Venue.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to update venue: $e');
+      throw Exception(couldNot('update venue', e));
     }
   }
 
@@ -129,7 +130,7 @@ class VenueRequestService {
     try {
       await _client.from('clubs').delete().eq('id', venueId);
     } catch (e) {
-      throw Exception('Failed to delete venue: $e');
+      throw Exception(couldNot('delete venue', e));
     }
   }
 
@@ -155,8 +156,8 @@ class VenueRequestService {
 
       return VenueRequest.fromJson(response);
     } catch (e) {
-      print('Error creating venue request: $e');
-      throw Exception('Failed to create venue request: $e');
+      print(couldNot('create venue request', e));
+      throw Exception(couldNot('create venue request', e));
     }
   }
 
@@ -172,7 +173,7 @@ class VenueRequestService {
       return (response as List).map((json) => VenueRequest.fromJson(json)).toList();
     } catch (e) {
       print('Error getting organizer requests: $e');
-      throw Exception('Failed to load requests: $e');
+      throw Exception(couldNotLoad('requests', e));
     }
   }
 
@@ -209,7 +210,7 @@ class VenueRequestService {
       return (response as List).map((json) => VenueRequest.fromJson(json)).toList();
     } catch (e) {
       print('Error getting venue owner requests: $e');
-      throw Exception('Failed to load requests: $e');
+      throw Exception(couldNotLoad('requests', e));
     }
   }
 
@@ -279,7 +280,7 @@ class VenueRequestService {
       return EventModel.fromJson(eventResponse);
     } catch (e) {
       print('Error approving venue request: $e');
-      throw Exception('Failed to approve request: $e');
+      throw Exception(couldNot('approve request', e));
     }
   }
 
@@ -321,7 +322,7 @@ class VenueRequestService {
           .eq('id', requestId);
     } catch (e) {
       print('Error declining venue request: $e');
-      throw Exception('Failed to decline request: $e');
+      throw Exception(couldNot('decline request', e));
     }
   }
 
@@ -337,7 +338,7 @@ class VenueRequestService {
       return requestResponse;
     } catch (e) {
       print('Error getting request details: $e');
-      throw Exception('Failed to load request details: $e');
+      throw Exception(couldNotLoad('request details', e));
     }
   }
 

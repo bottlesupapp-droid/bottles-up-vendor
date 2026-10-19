@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
@@ -237,7 +238,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
                       children: [
                         const Icon(Icons.error_outline, color: Colors.red, size: 64),
                         const SizedBox(height: 16),
-                        Text('Scanner error: $error', style: const TextStyle(color: Colors.white)),
+                        Text(couldNot('start the scanner', error), style: const TextStyle(color: Colors.white)),
                       ],
                     ),
                   ),

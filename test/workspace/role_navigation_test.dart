@@ -3,14 +3,15 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// The client's Phase 2 brief, section 2 ("Mobile navigation"), word for word.
+// The client's developer brief of 15 Oct 2026, section 6 ("Role-specific mobile navigation"), word for word. (Event Lead is in the brief too:
+// it is a new role with its own database role and program rules, not built yet.)
 const _brief = <WorkspaceRole, List<String>>{
-  WorkspaceRole.owner: ['Home', 'Venues', 'Money', 'Reports', 'More'],
+  WorkspaceRole.owner: ['Overview', 'Venues', 'Tonight', 'Reports', 'More'],
   WorkspaceRole.manager: ['Tonight', 'Floor', 'Orders', 'Team', 'More'],
-  WorkspaceRole.organizer: ['Home', 'Events', 'Guests', 'Chat', 'More'],
+  WorkspaceRole.organizer: ['Overview', 'Events', 'Guests', 'Chat', 'More'],
   WorkspaceRole.server: ['My Tables', 'Orders', 'Scan', 'Requests', 'Chat'],
-  WorkspaceRole.door: ['Scan', 'Guests', 'Door Sales', 'Chat'],
-  WorkspaceRole.security: ['Alerts', 'Tasks', 'Chat', 'Incidents'],
+  WorkspaceRole.door: ['Scan', 'Guests', 'Door Sales', 'Chat', 'More'],
+  WorkspaceRole.security: ['Alerts', 'Tasks', 'Chat', 'More'],
   WorkspaceRole.verifier: ['Review', 'Cash', 'Exceptions', 'Summary'],
 };
 

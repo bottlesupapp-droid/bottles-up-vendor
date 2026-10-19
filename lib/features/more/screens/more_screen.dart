@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../agreements/screens/agreements_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
+import '../../money/screens/owner_money_screen.dart';
+import '../../security/screens/incidents_screen.dart';
 import '../../security/screens/security_hub_screen.dart';
 import '../../team/screens/team_screen.dart';
 import '../../vip/screens/vip_screen.dart';
@@ -24,11 +26,15 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'security' when workspace.role == WorkspaceRole.manager => SecurityHubScreen(workspace: workspace),
       // The Team screen is the owner's (and the manager's own Team tab); an organizer's team is not built.
       'team' when workspace.role == WorkspaceRole.owner => TeamScreen(workspace: workspace),
+      // Payments and earnings is the owner's: each club's money for a range of nights (it used to be a tab of its own).
+      'money' when workspace.role == WorkspaceRole.owner => OwnerMoneyScreen(workspace: workspace),
+      // Incidents are the security staff's: report one, and read the ones they reported.
+      'incidents' when workspace.role == WorkspaceRole.security => IncidentsScreen(workspace: workspace),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };
 
-/// The More tab of an owner, a manager or an organizer: the parts that do not have a tab of their own. A part that is not built says so,
+/// The More tab of an owner, a manager, an organizer, a door or a security role: the parts that do not have a tab of their own. A part that is not built says so,
 /// plainly, instead of opening an empty page.
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key, required this.workspace});

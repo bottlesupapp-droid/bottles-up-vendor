@@ -55,16 +55,16 @@ WorkspaceSection _s(String id, String label, IconData icon, IconData activeIcon,
 /// behavior". Labels and order are the client's; do not rename them casually.
 final Map<WorkspaceRole, RoleNavigation> _navigation = {
   WorkspaceRole.owner: RoleNavigation(role: WorkspaceRole.owner, sections: [
-    _s('home', 'Home', Ionicons.home_outline, Ionicons.home,
+    _s('home', 'Overview', Ionicons.home_outline, Ionicons.home,
         'All Venues overview: recorded sales, collections, bookings, outstanding balances, event status and unresolved issues.'),
     _s('venues', 'Venues', Ionicons.business_outline, Ionicons.business,
         'Add, select and manage clubs. Each venue keeps its own rooms, payments, staff and stock.'),
-    _s('money', 'Money', Ionicons.cash_outline, Ionicons.cash,
-        'Collections, outstanding balances and organizer settlements.'),
+    _s('tonight', 'Tonight', Ionicons.moon_outline, Ionicons.moon,
+        'Run tonight at one of your venues: what needs attention, the floor, orders, payments and closing the night.'),
     _s('reports', 'Reports', Ionicons.document_text_outline, Ionicons.document_text,
         'Preliminary and final nightly reports for each venue and event.'),
     _s('more', 'More', Ionicons.menu_outline, Ionicons.menu,
-        'Team, inventory, VIP guests, discounts and complimentary offers, agreements, chat and settings.'),
+        'Payments and earnings, team, inventory, VIP guests, discounts and complimentary offers, agreements, chat and settings.'),
   ]),
   WorkspaceRole.manager: RoleNavigation(role: WorkspaceRole.manager, sections: [
     _s('tonight', 'Tonight', Ionicons.moon_outline, Ionicons.moon,
@@ -79,7 +79,7 @@ final Map<WorkspaceRole, RoleNavigation> _navigation = {
         'Inventory, VIP guests, discounts, events and agreements, chat and settings.'),
   ]),
   WorkspaceRole.organizer: RoleNavigation(role: WorkspaceRole.organizer, sections: [
-    _s('home', 'Home', Ionicons.home_outline, Ionicons.home,
+    _s('home', 'Overview', Ionicons.home_outline, Ionicons.home,
         'My events and each event\'s overview.'),
     _s('events', 'Events', Ionicons.calendar_outline, Ionicons.calendar,
         'Create events, set tickets and tables, link a venue, agree terms and publish.'),
@@ -111,6 +111,8 @@ final Map<WorkspaceRole, RoleNavigation> _navigation = {
         'Sell a ticket at the door and check the guest in.'),
     _s('chat', 'Chat', Ionicons.chatbubbles_outline, Ionicons.chatbubbles,
         'Event chat.'),
+    _s('more', 'More', Ionicons.menu_outline, Ionicons.menu,
+        'Shift summary, promo codes you may apply, and settings.'),
   ]),
   WorkspaceRole.security: RoleNavigation(role: WorkspaceRole.security, sections: [
     _s('alerts', 'Alerts', Ionicons.warning_outline, Ionicons.warning,
@@ -119,8 +121,8 @@ final Map<WorkspaceRole, RoleNavigation> _navigation = {
         'Tasks assigned to you.'),
     _s('chat', 'Chat', Ionicons.chatbubbles_outline, Ionicons.chatbubbles,
         'Staff chat.'),
-    _s('incidents', 'Incidents', Ionicons.shield_outline, Ionicons.shield,
-        'Report and review incidents.'),
+    _s('more', 'More', Ionicons.menu_outline, Ionicons.menu,
+        'Report and review incidents, and settings.'),
   ]),
   WorkspaceRole.verifier: RoleNavigation(role: WorkspaceRole.verifier, sections: [
     _s('review', 'Review', Ionicons.eye_outline, Ionicons.eye,

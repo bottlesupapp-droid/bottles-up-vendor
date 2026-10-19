@@ -6,6 +6,7 @@ import '../../door/screens/door_scan_screen.dart';
 import '../../floor/screens/floor_screen.dart';
 import '../../organizer_events/screens/organizer_events_screen.dart';
 import '../../owner/screens/owner_home_screen.dart';
+import '../../owner/screens/owner_tonight_screen.dart';
 import '../../owner/screens/owner_venues_screen.dart';
 import '../../server_desk/screens/my_tables_screen.dart';
 import '../../server_desk/screens/service_requests_screen.dart';
@@ -22,12 +23,10 @@ import '../../cash_review/screens/exceptions_screen.dart';
 import '../../cash_review/screens/cash_screen.dart';
 import '../../seating/screens/server_scan_screen.dart';
 import '../../chat/screens/chat_screen.dart';
-import '../../money/screens/owner_money_screen.dart';
 import '../../more/screens/more_screen.dart';
 import '../../organizer_guests/screens/organizer_guests_screen.dart';
 import '../../night/screens/owner_reports_screen.dart';
 import '../../security/screens/alerts_screen.dart';
-import '../../security/screens/incidents_screen.dart';
 import '../../security/screens/tasks_screen.dart';
 
 /// The sections that are built, keyed by role and section id. Everything else shows the honest "not built yet" card.
@@ -50,8 +49,9 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
       const {WorkspaceRole.server, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.organizer}.contains(workspace.role)) {
     return ChatScreen(workspace: workspace);
   }
-  // More: the parts of an owner, a manager and an organizer that do not have a tab of their own.
-  if (sectionId == 'more' && const {WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer}.contains(workspace.role)) {
+  // More: the parts of an owner, a manager, an organizer, a door and a security role that do not have a tab of their own.
+  if (sectionId == 'more' &&
+      const {WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security}.contains(workspace.role)) {
     return MoreScreen(workspace: workspace);
   }
   // Security: alerts for the night, tasks given to them, and incident reports.
@@ -61,8 +61,6 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
         return AlertsScreen(workspace: workspace);
       case 'tasks':
         return TasksScreen(workspace: workspace);
-      case 'incidents':
-        return IncidentsScreen(workspace: workspace);
     }
   }
   if (workspace.role == WorkspaceRole.door) {
@@ -112,10 +110,10 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
         return OwnerHomeScreen(workspace: workspace);
       case 'venues':
         return OwnerVenuesScreen(workspace: workspace);
+      case 'tonight':
+        return OwnerTonightScreen(workspace: workspace);
       case 'reports':
         return OwnerReportsScreen(workspace: workspace);
-      case 'money':
-        return OwnerMoneyScreen(workspace: workspace);
     }
   }
   // An organizer's Guests: who bought tickets to their events and how check-in is going (read-only).

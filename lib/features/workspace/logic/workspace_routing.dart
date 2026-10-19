@@ -10,6 +10,10 @@ class WorkspaceRoutes {
 
   /// Signed in, no workspace and not a classic vendor: set up a business on the website, or use an invitation.
   static const String noWorkspace = '/no-workspace';
+
+  /// Signed in, but asking for the workspaces FAILED: "We could not load your workspace" with Retry. Never the setup page above: a person
+  /// whose business exists must not be told to set one up just because a request did not get through (brief, section 3).
+  static const String workspaceError = '/workspace-error';
   static const String workspacePrefix = '/w/';
 }
 
@@ -137,7 +141,11 @@ RedirectDecision decideWorkspaceRedirect({
   if (!snapshot.hasWorkspaces) return _withoutWorkspace(path, snapshot, classicVendor);
 
   // From here the person has at least one workspace.
-  if (_signedOutPaths.contains(path) || path == '/' || path == '/dashboard' || path == WorkspaceRoutes.noWorkspace) {
+  if (_signedOutPaths.contains(path) ||
+      path == '/' ||
+      path == '/dashboard' ||
+      path == WorkspaceRoutes.noWorkspace ||
+      path == WorkspaceRoutes.workspaceError) {
     return const RedirectDecision.go(WorkspaceRoutes.workspaces);
   }
 
@@ -156,21 +164,36 @@ RedirectDecision decideWorkspaceRedirect({
 
 /// A signed-in person with no workspace.
 RedirectDecision _withoutWorkspace(String path, WorkspaceSnapshot snapshot, ClassicVendorStatus classicVendor) {
-  // Asked and answered, whether with an empty list or with an error. Loading and "not set up on this server yet"
-  // are not answers.
-  final answered = snapshot.status == WorkspaceStatus.ready || snapshot.status == WorkspaceStatus.error;
+  final failed = snapshot.status == WorkspaceStatus.error;
+  final answeredEmpty = snapshot.status == WorkspaceStatus.ready;
+
+  // The failure page. It stays while the answer is an error or being asked for again ("Retry"), and sends the person on as soon as there
+  // is an answer: a finished classic vendor to their dashboard, everyone else to set up a business. A backend without workspaces is no
+  // failure: the older flow carries on.
+  if (path == WorkspaceRoutes.workspaceError) {
+    if (failed || snapshot.status == WorkspaceStatus.loading) return const RedirectDecision.stay();
+    if (answeredEmpty) {
+      return classicVendor == ClassicVendorStatus.classic
+          ? const RedirectDecision.go('/dashboard')
+          : const RedirectDecision.go(WorkspaceRoutes.noWorkspace);
+    }
+    return const RedirectDecision.defer();
+  }
 
   if (path == WorkspaceRoutes.noWorkspace) {
     // A finished classic vendor does not belong here (a link, a back button): the classic dashboard is theirs.
-    if (classicVendor == ClassicVendorStatus.classic && snapshot.status == WorkspaceStatus.ready) {
+    if (classicVendor == ClassicVendorStatus.classic && answeredEmpty) {
       return const RedirectDecision.go('/dashboard');
     }
+    // A request that failed is not "you have no business": say so on the failure page, with Retry.
+    if (failed && classicVendor == ClassicVendorStatus.none) return const RedirectDecision.go(WorkspaceRoutes.workspaceError);
     // Everyone else stays, including while the list is being asked for again ("Check again").
     return const RedirectDecision.stay();
   }
 
   if (classicVendor == ClassicVendorStatus.none) {
-    if (answered) return const RedirectDecision.go(WorkspaceRoutes.noWorkspace);
+    if (failed) return const RedirectDecision.go(WorkspaceRoutes.workspaceError);
+    if (answeredEmpty) return const RedirectDecision.go(WorkspaceRoutes.noWorkspace);
     // Still asking: do not let the old rules push this person into the classic onboarding in the meantime.
     if (snapshot.status == WorkspaceStatus.loading) return const RedirectDecision.stay();
   }

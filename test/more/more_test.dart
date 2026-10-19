@@ -23,15 +23,16 @@ Workspace ws(WorkspaceRole role) => Workspace(
 
 /// Every More entry that opens something, as role/entry. Add to this when one is built.
 const Set<String> builtMore = {
-  'owner/team', 'owner/chat', 'owner/settings', 'owner/inventory', 'owner/vip',
+  'owner/team', 'owner/chat', 'owner/settings', 'owner/inventory', 'owner/vip', 'owner/money',
+  'door/settings', 'security/settings', 'security/incidents',
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
 };
 
 void main() {
-  test('only the owner, the manager and the organizer have a More hub', () {
+  test('only the owner, the manager, the organizer, the door and security have a More hub', () {
     for (final role in WorkspaceRole.values) {
-      final has = const {WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer}.contains(role);
+      final has = const {WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security}.contains(role);
       expect(moreEntriesFor(role).isNotEmpty, has, reason: role.name);
     }
   });
@@ -77,6 +78,27 @@ void main() {
     expect(find.byType(ChatScreen), findsOneWidget);
     expect(find.descendant(of: find.byType(AppBar), matching: find.text('Chat')), findsOneWidget);
     expect(find.byKey(const Key('chat-row-c1')), findsOneWidget);
+  });
+
+  testWidgets('the door\'s More lists shift summary, promo codes and settings; the first two are plainly not available yet', (tester) async {
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: MoreScreen(workspace: ws(WorkspaceRole.door)))));
+    for (final id in ['shift-summary', 'promo-codes', 'settings']) {
+      expect(find.byKey(Key('more-$id')), findsOneWidget, reason: id);
+    }
+    expect(find.descendant(of: find.byKey(const Key('more-shift-summary')), matching: find.textContaining('Not available yet.')), findsOneWidget);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-promo-codes'))).onTap, isNull);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-settings'))).onTap, isNotNull);
+  });
+
+  test('Payments and earnings is the owner\'s, Incidents is security\'s, and nobody else gets either', () {
+    expect(moreDestinationFor(ws(WorkspaceRole.owner), 'money'), isNotNull);
+    expect(moreDestinationFor(ws(WorkspaceRole.manager), 'money'), isNull);
+    expect(moreDestinationFor(ws(WorkspaceRole.security), 'incidents'), isNotNull);
+    expect(moreDestinationFor(ws(WorkspaceRole.door), 'incidents'), isNull);
+    expect(moreDestinationFor(ws(WorkspaceRole.manager), 'incidents'), isNull);
   });
 
   group('Settings', () {

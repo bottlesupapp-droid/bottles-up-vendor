@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -451,7 +452,7 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to send proposal: $e'),
+            content: Text(couldNot('send proposal', e)),
             backgroundColor: Colors.red,
           ),
         );

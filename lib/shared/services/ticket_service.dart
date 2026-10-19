@@ -1,3 +1,4 @@
+import '../../core/utils/plain_error.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/events/models/ticket_type.dart';
 
@@ -25,7 +26,7 @@ class TicketService {
 
       return TicketType.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to create ticket type: $e');
+      throw Exception(couldNot('create ticket type', e));
     }
   }
 
@@ -51,7 +52,7 @@ class TicketService {
 
       return TicketType.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to update ticket type: $e');
+      throw Exception(couldNot('update ticket type', e));
     }
   }
 
@@ -63,7 +64,7 @@ class TicketService {
           .delete()
           .eq('id', ticketId);
     } catch (e) {
-      throw Exception('Failed to delete ticket type: $e');
+      throw Exception(couldNot('delete ticket type', e));
     }
   }
 
@@ -78,7 +79,7 @@ class TicketService {
 
       return (response as List).map((json) => TicketType.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('Failed to fetch ticket types: $e');
+      throw Exception(couldNot('fetch ticket types', e));
     }
   }
 
@@ -93,7 +94,7 @@ class TicketService {
 
       return TicketType.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to fetch ticket type: $e');
+      throw Exception(couldNot('fetch ticket type', e));
     }
   }
 
@@ -108,7 +109,7 @@ class TicketService {
           })
           .eq('id', ticketId);
     } catch (e) {
-      throw Exception('Failed to update sold count: $e');
+      throw Exception(couldNot('update sold count', e));
     }
   }
 
@@ -123,7 +124,7 @@ class TicketService {
           })
           .eq('id', ticketId);
     } catch (e) {
-      throw Exception('Failed to toggle ticket type status: $e');
+      throw Exception(couldNot('toggle ticket type status', e));
     }
   }
 
@@ -156,7 +157,7 @@ class TicketService {
         'sold_out_count': ticketTypes.where((t) => t.isSoldOut).length,
       };
     } catch (e) {
-      throw Exception('Failed to get ticket sales summary: $e');
+      throw Exception(couldNot('get ticket sales summary', e));
     }
   }
 }

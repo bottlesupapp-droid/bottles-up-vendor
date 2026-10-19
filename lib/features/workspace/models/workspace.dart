@@ -79,6 +79,24 @@ class Workspace {
     return shiftName == null ? base : '$base · $shiftName';
   }
 
+  /// The same workspace looking at one venue of the business. An owner's workspace is not tied to a venue; the venue picker uses this to open a
+  /// venue's screens (the database still checks the person owns or manages that venue).
+  Workspace atVenue(String venueId, String venueName) => Workspace(
+        membershipId: membershipId,
+        orgId: orgId,
+        orgName: orgName,
+        orgKind: orgKind,
+        role: role,
+        venueId: venueId,
+        venueName: venueName,
+        eventId: eventId,
+        eventTitle: eventTitle,
+        shiftId: shiftId,
+        shiftName: shiftName,
+        accessStartAt: accessStartAt,
+        accessEndAt: accessEndAt,
+      );
+
   /// Temporary staff: limited by a window or a shift.
   bool get isTemporary => accessEndAt != null || shiftId != null;
 }

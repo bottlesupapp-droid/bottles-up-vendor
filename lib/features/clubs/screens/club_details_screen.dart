@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,7 +22,7 @@ class ClubDetailsScreen extends ConsumerWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       body: venueAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load venue: $e')),
+        error: (e, _) => Center(child: Text(couldNotLoad('venue', e))),
         data: (venue) {
           if (venue == null) {
             return Center(
@@ -373,7 +374,7 @@ class _VenueDetailBody extends StatelessWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content: Text('Failed to delete: $e'),
+                        content: Text(couldNot('delete', e)),
                         backgroundColor: Colors.red),
                   );
                 }

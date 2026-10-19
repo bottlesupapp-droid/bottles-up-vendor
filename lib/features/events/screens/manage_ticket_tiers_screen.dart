@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,7 +49,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load ticket tiers: $e')),
+          SnackBar(content: Text(couldNotLoad('ticket tiers', e))),
         );
       }
     }
@@ -217,7 +218,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save ticket tier: $e')),
+          SnackBar(content: Text(couldNot('save ticket tier', e))),
         );
       }
     }
@@ -263,7 +264,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete ticket tier: $e')),
+            SnackBar(content: Text(couldNot('delete ticket tier', e))),
           );
         }
       }
@@ -287,7 +288,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update status: $e')),
+          SnackBar(content: Text(couldNot('update status', e))),
         );
       }
     }

@@ -91,9 +91,8 @@ class ErrorHandler {
       return 'Invalid data: Please check your input values.';
     }
 
-    return error.message.isNotEmpty
-        ? error.message
-        : 'Database error. Please try again.';
+    // Anything else is the database's own wording ("Could not find a relationship...", a table name): not for people (brief, section 33).
+    return 'We could not complete that. Please try again.';
   }
 
   /// Handle storage errors
@@ -110,9 +109,7 @@ class ErrorHandler {
       return 'You do not have permission to access this file.';
     }
 
-    return error.message.isNotEmpty
-        ? error.message
-        : 'File upload error. Please try again.';
+    return 'We could not upload that file. Please try again.';
   }
 
   /// Show error snackbar to user
