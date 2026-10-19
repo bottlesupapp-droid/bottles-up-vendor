@@ -11,11 +11,16 @@ class SupabaseAuthState {
   final VendorUser? vendorUser;
   final String? error;
 
+  /// True once the signed-in person's `vendors` row has been looked up, whether or not one exists. A failed
+  /// lookup leaves it false, so "has no row" is never confused with "could not ask".
+  final bool vendorChecked;
+
   const SupabaseAuthState({
     this.isLoading = false,
     this.supabaseUser,
     this.vendorUser,
     this.error,
+    this.vendorChecked = false,
   });
 
   SupabaseAuthState copyWith({
@@ -23,12 +28,14 @@ class SupabaseAuthState {
     User? supabaseUser,
     VendorUser? vendorUser,
     String? error,
+    bool? vendorChecked,
   }) {
     return SupabaseAuthState(
       isLoading: isLoading ?? this.isLoading,
       supabaseUser: supabaseUser ?? this.supabaseUser,
       vendorUser: vendorUser ?? this.vendorUser,
       error: error,
+      vendorChecked: vendorChecked ?? this.vendorChecked,
     );
   }
 
@@ -78,47 +85,8 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
     }
   }
 
-  // Register
-  Future<void> register({
-    required String email,
-    required String password,
-    required String name,
-    String? businessName,
-    String? phoneNumber,
-    String? vendorType,
-  }) async {
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      await _authService.registerWithEmailAndPassword(
-        email: email,
-        password: password,
-        name: name,
-        businessName: businessName,
-        phoneNumber: phoneNumber,
-        vendorType: vendorType,
-      );
-      // User will be loaded via auth state listener
-    } catch (e) {
-      String errorMessage = e.toString();
-
-      // Provide more user-friendly error messages
-      if (errorMessage.contains('Database setup required') ||
-          errorMessage.contains('Vendors table does not exist') ||
-          errorMessage.contains('relation "vendors" does not exist')) {
-        errorMessage = 'DATABASE_SETUP_REQUIRED';
-      } else if (errorMessage.contains('duplicate key')) {
-        errorMessage = 'An account with this email already exists.';
-      } else if (errorMessage.contains('Database error')) {
-        errorMessage = 'Registration failed due to a database error. Please try again.';
-      }
-
-      state = state.copyWith(
-        isLoading: false,
-        error: errorMessage,
-      );
-    }
-  }
+  // There is no register(): business accounts are created on the website (see business_signup.dart), so this app
+  // never creates an account, and never creates a `vendors` row for one.
 
   // Sign out
   Future<void> signOut() async {
@@ -190,7 +158,7 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
   Future<void> updateVendorUser(VendorUser user) async {
     try {
       await _authService.updateVendorUser(user);
-      state = state.copyWith(vendorUser: user);
+      state = state.copyWith(vendorUser: user, vendorChecked: true);
     } catch (e) {
       state = state.copyWith(error: e.toString());
       rethrow;
@@ -211,10 +179,12 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
     );
 
     try {
-      final vendorUser = await _authService.getVendorUser(supabaseUser.id);
+      // findVendorUser throws when it cannot ask, so a network failure is not read as "has no vendors row".
+      final vendorUser = await _authService.findVendorUser(supabaseUser.id);
       state = state.copyWith(
         isLoading: false,
         vendorUser: vendorUser,
+        vendorChecked: true,
       );
     } catch (e) {
       state = state.copyWith(

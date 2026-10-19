@@ -7,7 +7,34 @@ import '../models/workspace.dart';
 class WorkspaceRoutes {
   static const String workspaces = '/workspaces';
   static const String acceptInvite = '/accept-invite';
+
+  /// Signed in, no workspace and not a classic vendor: set up a business on the website, or use an invitation.
+  static const String noWorkspace = '/no-workspace';
   static const String workspacePrefix = '/w/';
+}
+
+/// Is the signed-in person a vendor of the older, classic dashboard (legacy tables)?
+///
+/// Only someone who finished that dashboard's own onboarding is. A `vendors` row that exists but never finished it
+/// (the app used to create one for every account that signed in, including website and customer accounts) is not.
+enum ClassicVendorStatus {
+  /// The `vendors` row has not been looked up yet (or the lookup failed): do not decide anything.
+  loading,
+
+  /// Finished the classic onboarding: keep the classic dashboard exactly as it was.
+  classic,
+
+  /// No such row, or never finished: business accounts are created on the website, not here.
+  none,
+}
+
+ClassicVendorStatus classicVendorStatus({
+  required bool isAuthenticated,
+  required bool vendorChecked,
+  required bool hasCompletedClassicOnboarding,
+}) {
+  if (!isAuthenticated || !vendorChecked) return ClassicVendorStatus.loading;
+  return hasCompletedClassicOnboarding ? ClassicVendorStatus.classic : ClassicVendorStatus.none;
 }
 
 enum WorkspaceStatus {
@@ -84,13 +111,15 @@ const Set<String> _signedOutPaths = {
 /// The workspace layer of the router. Pure: no providers, no widgets, so it can
 /// be tested exhaustively.
 ///
-/// It only takes over for people who actually have a workspace. Everyone else
-/// (no memberships yet, or a backend that does not have them) gets the existing
-/// vendor flow unchanged.
+/// It takes over for people who have a workspace, and for people who have neither a workspace nor the
+/// classic vendor dashboard (they are sent to [WorkspaceRoutes.noWorkspace]: business accounts are created
+/// on the website). Everyone else (a finished classic vendor, or a backend that does not have workspaces)
+/// gets the existing vendor flow unchanged.
 RedirectDecision decideWorkspaceRedirect({
   required bool isLoggedIn,
   required String path,
   required WorkspaceSnapshot snapshot,
+  required ClassicVendorStatus classicVendor,
   String? pendingToken,
 }) {
   if (!isLoggedIn) {
@@ -105,10 +134,10 @@ RedirectDecision decideWorkspaceRedirect({
     return RedirectDecision.go('${WorkspaceRoutes.acceptInvite}?token=${Uri.encodeQueryComponent(pendingToken)}');
   }
 
-  if (!snapshot.hasWorkspaces) return const RedirectDecision.defer();
+  if (!snapshot.hasWorkspaces) return _withoutWorkspace(path, snapshot, classicVendor);
 
   // From here the person has at least one workspace.
-  if (_signedOutPaths.contains(path) || path == '/' || path == '/dashboard') {
+  if (_signedOutPaths.contains(path) || path == '/' || path == '/dashboard' || path == WorkspaceRoutes.noWorkspace) {
     return const RedirectDecision.go(WorkspaceRoutes.workspaces);
   }
 
@@ -123,4 +152,28 @@ RedirectDecision decideWorkspaceRedirect({
   }
 
   return const RedirectDecision.stay();
+}
+
+/// A signed-in person with no workspace.
+RedirectDecision _withoutWorkspace(String path, WorkspaceSnapshot snapshot, ClassicVendorStatus classicVendor) {
+  // Asked and answered, whether with an empty list or with an error. Loading and "not set up on this server yet"
+  // are not answers.
+  final answered = snapshot.status == WorkspaceStatus.ready || snapshot.status == WorkspaceStatus.error;
+
+  if (path == WorkspaceRoutes.noWorkspace) {
+    // A finished classic vendor does not belong here (a link, a back button): the classic dashboard is theirs.
+    if (classicVendor == ClassicVendorStatus.classic && snapshot.status == WorkspaceStatus.ready) {
+      return const RedirectDecision.go('/dashboard');
+    }
+    // Everyone else stays, including while the list is being asked for again ("Check again").
+    return const RedirectDecision.stay();
+  }
+
+  if (classicVendor == ClassicVendorStatus.none) {
+    if (answered) return const RedirectDecision.go(WorkspaceRoutes.noWorkspace);
+    // Still asking: do not let the old rules push this person into the classic onboarding in the meantime.
+    if (snapshot.status == WorkspaceStatus.loading) return const RedirectDecision.stay();
+  }
+
+  return const RedirectDecision.defer();
 }
