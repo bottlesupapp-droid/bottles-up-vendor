@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/widgets/desk_chip.dart';
+import '../logic/bottle_orders_rules.dart';
 import '../logic/table_service_rules.dart';
 import '../providers/table_service_providers.dart';
 import '../services/table_service_service.dart';
+import '../widgets/deliver_part_dialog.dart';
 import '../widgets/order_card.dart';
 import '../widgets/payment_tile.dart';
 import '../widgets/receipt_view.dart';
+import 'add_bottles_screen.dart';
 import 'record_payment_screen.dart';
 import '../../seating/widgets/seating_panel.dart';
 import '../../booking_detail/widgets/booking_activity_tab.dart';
@@ -55,6 +58,35 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
           SnackBar(content: Text('It was already ${to.label.toLowerCase()}.')),
         );
       }
+    } on TableServiceActionException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      _reload();
+      if (mounted) setState(() => _busy.remove(l.lineId));
+    }
+  }
+
+  Future<void> _addBottles(BookingMoney money) async {
+    final result = await Navigator.of(context).push<AddedBottles>(
+      MaterialPageRoute(builder: (_) => AddBottlesScreen(bookingId: widget.bookingId, tableLabel: widget.title.isEmpty ? money.tableName : widget.title)),
+    );
+    if (!mounted) return;
+    // Whatever happened, the table's total and its orders are read again.
+    _reload();
+    if (result != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(addedMessage(result.count, result.subtotalCents))));
+    }
+  }
+
+  Future<void> _deliverPart(OrderLine l) async {
+    if (_busy.contains(l.lineId)) return;
+    final n = await showDialog<int>(context: context, builder: (_) => DeliverPartDialog(line: l));
+    if (n == null || !mounted) return;
+    setState(() => _busy.add(l.lineId));
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final r = await ref.read(tableServiceServiceProvider).deliverPart(l, n);
+      messenger.showSnackBar(SnackBar(content: Text(deliveryOutcomeMessage(l, r))));
     } on TableServiceActionException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } finally {
@@ -223,7 +255,13 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
   Widget _ordersTab(BookingMoney m, DateTime now, ThemeData theme) {
     final orders = ref.watch(tableOrdersProvider(TableOrdersQuery(widget.bookingId, m.balanceDueCents)));
     return _scroll([
-      Text('Bottle orders', style: theme.textTheme.titleMedium),
+      Row(
+        children: [
+          Expanded(child: Text('Bottle orders', style: theme.textTheme.titleMedium)),
+          if (m.canRecord)
+            OutlinedButton.icon(key: const Key('add-bottles'), onPressed: () => _addBottles(m), icon: const Icon(Icons.add, size: 18), label: const Text('Add bottles')),
+        ],
+      ),
       orders.when(
         loading: () => const Padding(padding: EdgeInsets.only(top: 12), child: Center(child: CircularProgressIndicator())),
         error: (error, _) {
@@ -238,7 +276,15 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
             : Column(
                 children: [
                   for (final l in lines)
-                    OrderCard(line: l, now: now, manager: m.isManager, busy: _busy.contains(l.lineId), showTable: false, onMove: (to) => _move(l, to)),
+                    OrderCard(
+                      line: l,
+                      now: now,
+                      manager: m.isManager,
+                      busy: _busy.contains(l.lineId),
+                      showTable: false,
+                      onMove: (to) => _move(l, to),
+                      onDeliverPart: () => _deliverPart(l),
+                    ),
                 ],
               ),
       ),

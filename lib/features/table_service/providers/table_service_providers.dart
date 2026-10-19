@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../logic/bottle_orders_rules.dart';
 import '../logic/table_service_rules.dart';
 import '../services/receipt_service.dart';
 import '../services/table_service_service.dart';
@@ -83,3 +84,8 @@ final tableOrdersProvider = FutureProvider.autoDispose
           .watch(tableServiceServiceProvider)
           .tableOrders(q.bookingId, balanceDueCents: q.balanceDueCents),
     );
+
+/// The bottles that can be added to one table right now. Not kept: stock changes while people order.
+final bottleMenuProvider = FutureProvider.autoDispose.family<List<MenuBottle>, String>(
+  (ref, bookingId) => ref.watch(tableServiceServiceProvider).bottleMenu(bookingId),
+);

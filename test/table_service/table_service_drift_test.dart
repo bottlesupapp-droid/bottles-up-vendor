@@ -423,8 +423,21 @@ void main() {
               r'''refuse\('([^']+)'\)|refuse\("([^"]+)"\)''',
             ).allMatches(fake).map((m) => m.group(1) ?? m.group(2)!).toSet();
         expect(sentences, isNotEmpty);
-        final real = sql();
-        for (final s in sentences) {
+        // The fake's section for adding bottles and partial delivery is checked against its own migrations (and only when they are checked out: an older
+        // website checkout does not have them).
+        const from = '// --- partial delivery and adding bottles';
+        const to = 'String _verification';
+        final newSection = fake.substring(fake.indexOf(from), fake.indexOf(to));
+        final newSentences = RegExp(r'''refuse\('([^']+)'\)''').allMatches(newSection).map((m) => m.group(1)!).toSet();
+        final website = Platform.environment['WEBSITE_REPO'] ?? '../bottles-up-website-main';
+        final addBottlesSql = File('$website/supabase/migrations/20261020150000_add_bottles_checks.sql');
+        final partialSql = File('$website/supabase/migrations/20261020160000_partial_delivery.sql');
+        final haveNew = addBottlesSql.existsSync() && partialSql.existsSync();
+        final real = sql() + (haveNew ? addBottlesSql.readAsStringSync() + partialSql.readAsStringSync() : '');
+        for (final raw in sentences) {
+          if (!haveNew && newSentences.contains(raw)) continue;
+          // A sentence with a number in it is written with % in the SQL.
+          final s = raw.replaceAll(RegExp(r'\$\{[^}]*\}'), '%');
           expect(
             real,
             contains(s.replaceAll("'", "''")),
