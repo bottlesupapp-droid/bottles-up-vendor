@@ -45,8 +45,8 @@ void main() {
     expect(find.textContaining('Seated at 9:42 PM'), findsOneWidget);
     expect(find.byKey(const Key('panel-unseat')), findsOneWidget, reason: 'the page knows this person is a manager');
     final panelTop = tester.getTopLeft(find.byKey(const Key('seating-panel'))).dy;
-    final moneyTop = tester.getTopLeft(find.text('Bottle orders')).dy;
-    expect(panelTop, lessThan(moneyTop));
+    final moneyTop = tester.getTopLeft(find.byKey(const Key('money-card'))).dy;
+    expect(panelTop, lessThan(moneyTop), reason: 'on the Overview tab the seating panel is above the money');
   });
 
   testWidgets('a server\'s page offers no Un-seat', (tester) async {

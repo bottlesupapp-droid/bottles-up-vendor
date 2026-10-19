@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bottles_up_vendor/features/door/services/door_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A stand-in for the database: records every call and answers from handlers set by the test.
 class FakeDoorBackend {
@@ -10,6 +11,10 @@ class FakeDoorBackend {
   Future<dynamic> call(String function, {Map<String, dynamic>? params}) async {
     calls.add((function, params));
     final handler = handlers[function];
+    // A server that does not have group admission (website 20261020170000) does not have these functions: the app must carry on with the older scan.
+    if (handler == null && const ['door_admit_group', 'door_admission_counts', 'door_guest_admissions'].contains(function)) {
+      throw PostgrestException(message: 'function public.$function does not exist', code: '42883');
+    }
     if (handler == null) throw StateError('no handler for $function');
     return handler(params);
   }
@@ -61,4 +66,15 @@ Map<String, dynamic> guestRow(String name, String code, {bool needsCode = false,
       'quantity': quantity,
       'checked_in_at': checkedInAt,
       'needs_code': needsCode,
+    };
+
+/// One door_admit_group row: the result, the ticket, how many it covers, how many are in and how many are left.
+Map<String, dynamic> groupRow(String result, {String? name = 'Group Gina', String? tier = 'General', int quantity = 4, int admitted = 0, int? remaining}) => {
+      'result': result,
+      'customer_name': name,
+      'event_title': name == null ? null : 'Friday Night',
+      'tier_name': tier,
+      'quantity': quantity,
+      'admitted': admitted,
+      'remaining': remaining ?? (quantity - admitted),
     };

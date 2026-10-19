@@ -591,6 +591,8 @@ void main() {
             stepRow('bottles', setup.bottles.isEmpty ? 'todo' : 'done'),
             stepRow('booking_rules', setup.slots.isEmpty ? 'todo' : 'done'),
             stepRow('team', 'todo', required: false),
+            stepRow('payments', 'unavailable', required: false, detail: 'payment configuration is not available yet'),
+            stepRow('notifications', 'unavailable', required: false),
           ];
     });
 
@@ -599,14 +601,31 @@ void main() {
     testWidgets('only the steps this app can edit offer Edit (the team and the optional steps do not)', (tester) async {
       tall(tester);
       await open(tester, list());
-      for (final step in ['profile', 'floor_plan', 'tables', 'bottles', 'booking_rules']) {
+      for (final step in ['profile', 'floor_plan', 'tables', 'bottles', 'booking_rules', 'payments']) {
         expect(find.byKey(Key('edit-step-$step')), findsOneWidget, reason: step);
       }
       for (final step in ['team']) {
         expect(find.byKey(Key('edit-step-$step')), findsNothing, reason: step);
       }
       expect(find.byKey(const Key('setup-footnote')), findsOneWidget);
-      expect(find.textContaining('The venue profile, floor plans, tables, the bottle menu and booking times can be edited here'), findsOneWidget);
+      expect(find.textContaining('The venue profile, floor plans, tables, the bottle menu, booking times and how bottles are paid can be edited here'), findsOneWidget);
+    });
+
+    testWidgets('the payments step, which the database lists as "not available yet", opens the payment settings and says Settings, not Coming soon', (tester) async {
+      tall(tester);
+      await open(tester, list());
+      expect(find.descendant(of: find.byKey(const Key('step-payments')), matching: find.text('Settings')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('step-payments')), matching: find.text('Coming soon')), findsNothing);
+      await tapKey(tester, 'step-payments');
+      expect(find.byKey(const Key('payment-settings')), findsOneWidget);
+      expect(find.text('Payment settings'), findsOneWidget);
+    });
+
+    testWidgets('the notifications step stays "Coming soon": there is nothing behind it', (tester) async {
+      tall(tester);
+      await open(tester, list());
+      expect(find.descendant(of: find.byKey(const Key('step-notifications')), matching: find.text('Coming soon')), findsOneWidget);
+      expect(find.byKey(const Key('edit-step-notifications')), findsNothing);
     });
 
     testWidgets('adding the first table from the checklist marks that step done without reopening the screen', (tester) async {

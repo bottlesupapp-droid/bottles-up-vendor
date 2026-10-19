@@ -23,6 +23,7 @@ Workspace ws(WorkspaceRole role) => Workspace(
 
 /// Every More entry that opens something, as role/entry. Add to this when one is built.
 const Set<String> builtMore = {
+  'owner/organizer-door', 'manager/organizer-door', 'organizer/team',
   'owner/team', 'owner/chat', 'owner/settings', 'owner/inventory', 'owner/vip', 'owner/money',
   'door/settings', 'security/settings', 'security/incidents',
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',

@@ -175,7 +175,9 @@ void main() {
       'asks for the booking and keeps the balance it was read with',
       () async {
         final lines = await db.service.tableOrders('b1', balanceDueCents: 4000);
+        expect(db.functions, ['desk_booking_orders', 'desk_booking_deliveries'], reason: 'the second is how many of each line were handed over');
         expect(db.params, [
+          {'p_booking': 'b1'},
           {'p_booking': 'b1'},
         ]);
         expect(lines.map((l) => l.lineId), ['l1', 'l2']);

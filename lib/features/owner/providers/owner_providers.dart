@@ -1,3 +1,4 @@
+import '../logic/payment_rules.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../logic/owner_rules.dart';
@@ -29,3 +30,4 @@ final bottlesProvider = FutureProvider.autoDispose.family<List<BottleRow>, Strin
 final mediaServiceProvider = Provider<MediaService>((ref) => MediaService());
 final floorsProvider = FutureProvider.autoDispose.family<List<FloorRow>, String>((ref, venueId) => ref.watch(venueSetupServiceProvider).floors(venueId));
 final venueProfileProvider = FutureProvider.autoDispose.family<VenueProfile, String>((ref, venueId) => ref.watch(venueSetupServiceProvider).venueProfile(venueId));
+final paymentRulesProvider = FutureProvider.autoDispose.family<PaymentRules, String>((ref, venueId) => ref.watch(venueSetupServiceProvider).paymentRules(venueId));

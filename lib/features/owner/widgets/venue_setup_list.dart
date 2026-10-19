@@ -6,6 +6,7 @@ import '../logic/owner_rules.dart';
 import '../providers/owner_providers.dart';
 import '../screens/setup/booking_times_editor.dart';
 import '../screens/setup/floors_editor.dart';
+import '../screens/setup/payment_settings_editor.dart';
 import '../screens/setup/venue_profile_editor.dart';
 import '../screens/setup/bottle_menu_editor.dart';
 import '../screens/setup/table_types_editor.dart';
@@ -56,12 +57,18 @@ class VenueSetupList extends ConsumerWidget {
   final String orgId;
 
   /// The editor behind a step, when this app has one. The others (the profile, the floor plan) are edited on the website for now.
-  Widget? _editorFor(String step) => switch (step) {
+  Widget? _editorFor(BuildContext context, String step) => switch (step) {
         'profile' => VenueProfileEditor(venueId: venueId, orgId: orgId),
         'floor_plan' => FloorsEditor(venueId: venueId, orgId: orgId),
         'tables' => TableTypesEditor(venueId: venueId, orgId: orgId),
         'bottles' => BottleMenuEditor(venueId: venueId, orgId: orgId),
         'booking_rules' => BookingTimesEditor(venueId: venueId),
+        // Payment settings are not a required step (the database lists it as not modelled yet and never counts it), but they can be changed here.
+        'payments' => PaymentSettingsEditor(
+          venueId: venueId,
+          orgId: orgId,
+          onEditTables: () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (_) => TableTypesEditor(venueId: venueId, orgId: orgId))),
+        ),
         _ => null,
       };
 
@@ -125,9 +132,9 @@ class VenueSetupList extends ConsumerWidget {
                     margin: const EdgeInsets.only(top: 8),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
-                      onTap: _editorFor(step.step) == null
+                      onTap: _editorFor(context, step.step) == null
                           ? null
-                          : () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (_) => _editorFor(step.step)!)),
+                          : () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (_) => _editorFor(context, step.step)!)),
                       child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
@@ -150,8 +157,9 @@ class VenueSetupList extends ConsumerWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(setupStatusLabel(step.status), style: theme.textTheme.labelSmall),
-                              if (_editorFor(step.step) != null) Text('Edit', key: Key('edit-step-${step.step}'), style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary)),
+                              // A step the database lists as "not available yet" but that has an editor here says "Settings", not "Coming soon".
+                              Text(step.status == SetupStatus.unavailable && _editorFor(context, step.step) != null ? 'Settings' : setupStatusLabel(step.status), style: theme.textTheme.labelSmall),
+                              if (_editorFor(context, step.step) != null) Text('Edit', key: Key('edit-step-${step.step}'), style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary)),
                             ],
                           ),
                         ],
@@ -161,7 +169,7 @@ class VenueSetupList extends ConsumerWidget {
                   ),
                 const SizedBox(height: 20),
                 Text(
-                  'The venue profile, floor plans, tables, the bottle menu and booking times can be edited here. Photos for tables and bottles, and where tables sit on a floor plan, are done on the website for now '
+                  'The venue profile, floor plans, tables, the bottle menu, booking times and how bottles are paid can be edited here. Photos for tables and bottles, and where tables sit on a floor plan, are done on the website for now '
                   '(bottlesupapp.com, My Venues). Taking a venue live is done by the BottlesUp team once your business is verified and every required step is done.',
                   key: const Key('setup-footnote'),
                   style: theme.textTheme.bodySmall,

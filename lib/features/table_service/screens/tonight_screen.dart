@@ -1,3 +1,4 @@
+import '../../walkin/screens/walkin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -88,6 +89,15 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     );
   }
 
+  /// Walk-ins are booked for tonight; afterwards what Tonight shows is read again.
+  Future<void> _addWalkin(String venueId) async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => WalkinScreen(venueId: venueId, venueName: widget.workspace.venueName, night: _night)),
+    );
+    if (!mounted) return;
+    ref.invalidate(tonightProvider(_query));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -136,6 +146,21 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
             tonight: _tonight,
             onChanged: (n) => setState(() => _night = n),
           ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              key: const Key('add-walkin'),
+              onPressed: _night == _tonight ? () => _addWalkin(venueId) : null,
+              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+              label: const Text('Add walk-in'),
+            ),
+          ),
+          if (_night != _tonight)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text('Walk-ins are added for tonight. Go back to tonight to add one.', key: const Key('walkin-tonight-only'), style: theme.textTheme.bodySmall),
+            ),
           const SizedBox(height: 8),
           async.when(
             loading:

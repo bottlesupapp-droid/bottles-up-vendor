@@ -210,20 +210,39 @@ void main() {
       }
     }, skip: sql.existsSync() ? false : 'website repo is not checked out next to this app');
 
+    // The answers only door_admit_group gives (website 20261020170000_group_admission.sql); the website's own door screen does not have them yet.
+    const groupOnly = {DoorResult.refunded, DoorResult.group, DoorResult.tooMany};
+
     test('every stored result is one the database writes', () {
       final text = sql.readAsStringSync();
-      for (final r in DoorResult.values.where((r) => r != DoorResult.accessEnded && r != DoorResult.scanError)) {
+      for (final r in DoorResult.values.where((r) => r != DoorResult.accessEnded && r != DoorResult.scanError && !groupOnly.contains(r))) {
         expect(text, contains("'${r.db}'"), reason: r.db);
       }
     }, skip: sql.existsSync() ? false : 'website repo is not checked out next to this app');
+
+    final website = Platform.environment['WEBSITE_REPO'] ?? '../bottles-up-website-main';
+    final groupSql = File('$website/supabase/migrations/20261020170000_group_admission.sql');
+    test('the answers of group admission are the ones door_admit_group gives', () {
+      final text = groupSql.readAsStringSync();
+      for (final r in groupOnly) {
+        expect(text, contains("'${r.db}'"), reason: r.db);
+      }
+      // ...and every result the function can return is one the app knows (so none is shown as "scan failed").
+      final given = RegExp(r"(?:return query select|then) '([a-z_]+)'").allMatches(text).map((m) => m.group(1)!).toSet();
+      for (final g in given) {
+        expect(DoorResult.values.any((r) => r.db == g), isTrue, reason: 'the database can answer "$g"');
+      }
+      expect(RegExp(r"admitted int, remaining int").hasMatch(text), isTrue, reason: 'the columns the app reads are named admitted and remaining');
+    }, skip: groupSql.existsSync() ? false : 'the website checkout does not have the group admission migration');
 
     test('the labels and hints are the website\'s, word for word', () {
       final text = ts.readAsStringSync();
       // ok: { label: 'Admit', hint: 'Let them in.', tone: 'ok' },
       final row = RegExp(r"^\s{2}(\w+): \{ label: '([^']*)', hint: '([^']*)', tone: '(ok|warn|error)' \},$", multiLine: true);
       final found = {for (final m in row.allMatches(text)) m.group(1)!: (m.group(2)!, m.group(3)!, m.group(4)!)};
-      expect(found.length, DoorResult.values.length, reason: 'found ${found.keys}');
-      for (final r in DoorResult.values) {
+      final shared = DoorResult.values.where((r) => !groupOnly.contains(r)).toList();
+      expect(found.length, shared.length, reason: 'found ${found.keys}');
+      for (final r in shared) {
         final web = found[r.db];
         expect(web, isNotNull, reason: r.db);
         final copy = resultCopy[r]!;

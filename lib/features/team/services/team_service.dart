@@ -129,6 +129,22 @@ class TeamService {
         return _issued(data, null, 'The invitation could not be created.');
       });
 
+  /// Door staff for ONE EVENT of an organizer's business (no club). The database refuses it unless the event has no club or the club's approved agreement
+  /// allows organizer door staff; the sentence it gives is shown as it is.
+  Future<IssuedLink> inviteEventDoor(String orgId, String eventId, String email, {DateTime? accessStartAt, DateTime? accessEndAt}) => _act(() async {
+        final data = await _rpc('invite_member', params: {
+          'p_org': orgId,
+          'p_email': email.trim().toLowerCase(),
+          'p_role': 'door',
+          'p_venue': null,
+          'p_event': eventId,
+          'p_shift': null,
+          'p_access_start': accessStartAt?.toUtc().toIso8601String(),
+          'p_access_end': accessEndAt?.toUtc().toIso8601String(),
+        });
+        return _issued(data, null, 'The invitation could not be created.');
+      });
+
   /// A new link for an invitation that is waiting or has expired. The old link stops working.
   Future<IssuedLink> sendNewLink(String invitationId) => _act(() async {
         final data = await _rpc('resend_invitation', params: {'p_invitation': invitationId});
