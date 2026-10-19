@@ -1,3 +1,4 @@
+import '../../agreements/screens/agreements_screen.dart';
 import '../../business/widgets/business_status_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/date_time_picker.dart';
 import '../../owner/widgets/setup_common.dart' show confirmRemove;
 import '../../workspace/models/workspace.dart';
+import '../logic/event_states.dart';
 import '../logic/organizer_events_rules.dart';
 import '../providers/organizer_events_providers.dart';
 import '../services/organizer_events_service.dart';
@@ -39,7 +41,20 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
     );
     if (saved != true || !mounted) return;
     ref.invalidate(organizerEventsProvider(_orgId));
+    ref.invalidate(organizerEventStatesProvider(_orgId));
     _say(event == null ? 'Draft created. It stays private until the BottlesUp team publishes it.' : 'Draft saved.');
+  }
+
+  /// The button next to a blocker: the club agreements are where a club is asked, and where its answer is seen.
+  void _openBlocker(BlockerAction action) {
+    if (action != BlockerAction.agreements) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(appBar: AppBar(title: const Text('Venue agreements')), body: SafeArea(child: AgreementsScreen(workspace: widget.workspace))),
+      ),
+    ).then((_) {
+      if (mounted) ref.invalidate(organizerEventStatesProvider(_orgId));
+    });
   }
 
   Future<void> _remove(OrgEvent e) async {
@@ -49,6 +64,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
       await ref.read(organizerEventsServiceProvider).remove(_orgId, e.eventId);
       if (!mounted) return;
       ref.invalidate(organizerEventsProvider(_orgId));
+      ref.invalidate(organizerEventStatesProvider(_orgId));
       _say('Event removed.');
     } on OrganizerEventsActionException catch (ex) {
       if (mounted) _say(ex.message);
@@ -62,6 +78,8 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final events = ref.watch(organizerEventsProvider(_orgId));
+    final states = ref.watch(organizerEventStatesProvider(_orgId));
+    final infos = states.valueOrNull ?? const <String, EventStateInfo>{};
     return events.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) {
@@ -94,6 +112,16 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
               alignment: Alignment.centerLeft,
               child: FilledButton.icon(key: const Key('create-event'), onPressed: () => _openForm(null), icon: const Icon(Icons.add, size: 18), label: const Text('Create event')),
             ),
+            if (states.hasError && list.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    Expanded(child: Text('Where each event stands could not be loaded.', key: const Key('states-error'), style: theme.textTheme.bodySmall)),
+                    TextButton(key: const Key('states-retry'), onPressed: () => ref.invalidate(organizerEventStatesProvider(_orgId)), child: const Text('Try again')),
+                  ],
+                ),
+              ),
             if (list.isEmpty)
               Container(
                 key: const Key('no-events'),
@@ -105,7 +133,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
             for (final (title, group) in [('Drafts', g.drafts), ('Upcoming', g.upcoming), ('Past', g.past)])
               if (group.isNotEmpty) ...[
                 _heading(context, title),
-                for (final e in group) EventCard(event: e, onEdit: () => _openForm(e), onRemove: () => _remove(e)),
+                for (final e in group) EventCard(event: e, info: infos[e.eventId], onBlockerAction: _openBlocker, onEdit: () => _openForm(e), onRemove: () => _remove(e)),
               ],
           ],
         );
