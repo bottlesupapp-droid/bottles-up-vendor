@@ -5,6 +5,7 @@ import 'package:ionicons/ionicons.dart';
 import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
+import '../../widgets/photo_field.dart';
 import '../../widgets/setup_common.dart';
 import 'table_type_form_screen.dart';
 
@@ -12,9 +13,12 @@ import 'table_type_form_screen.dart';
 /// table type that bookings point at cannot be removed; the screen says so and suggests setting the number of tables to 0 to stop
 /// new bookings instead.
 class TableTypesEditor extends ConsumerStatefulWidget {
-  const TableTypesEditor({super.key, required this.venueId});
+  const TableTypesEditor({super.key, required this.venueId, required this.orgId});
 
   final String venueId;
+
+  /// The business the venue belongs to: photos are uploaded into its folder.
+  final String orgId;
 
   @override
   ConsumerState<TableTypesEditor> createState() => _TableTypesEditorState();
@@ -31,7 +35,7 @@ class _TableTypesEditorState extends ConsumerState<TableTypesEditor> {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => TableTypeFormScreen(venueId: widget.venueId, row: row),
+        builder: (_) => TableTypeFormScreen(venueId: widget.venueId, orgId: widget.orgId, row: row),
       ),
     );
     if (saved == true && mounted) {
@@ -111,6 +115,7 @@ class _TableTypesEditorState extends ConsumerState<TableTypesEditor> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (t.imageUrl != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: PhotoThumb(key: Key('thumb-${t.typeId}'), url: t.imageUrl!)),
                           Row(
                             children: [
                               Flexible(

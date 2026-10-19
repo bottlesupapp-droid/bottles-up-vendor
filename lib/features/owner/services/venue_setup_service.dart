@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../workspace/services/workspace_service.dart' show RpcCaller;
 import '../logic/setup_forms.dart';
+import '../logic/venue_profile_rules.dart';
 import 'db_errors.dart';
 import 'owner_service.dart' show OwnerLoadException;
 
@@ -15,16 +16,22 @@ class SetupEditException implements Exception {
   String toString() => 'SetupEditException($message)';
 }
 
+/// Reads one venue's public profile (name, description, address, cover photo). In the app it is a read of `site_venues`, which row
+/// level security limits to venues the person can reach; replaced in tests.
+typedef VenueProfileLoader = Future<Map<String, dynamic>?> Function(String venueId);
+
 /// The owner's setup editors' calls to the website's database functions (`list_/add_/save_/remove_venue_*`, defined in the website
 /// repo's 20261010100000_venue_setup.sql). Each checks in the database that the signed-in person owns or manages THIS venue,
 /// writes only whitelisted fields, and never reaches a row of another venue. Nothing here decides who may edit what.
 class VenueSetupService {
-  VenueSetupService({SupabaseClient? client, RpcCaller? rpc})
-    : _client = client,
-      _rpcOverride = rpc;
+  VenueSetupService({SupabaseClient? client, RpcCaller? rpc, VenueProfileLoader? profileLoader})
+      : _client = client,
+        _rpcOverride = rpc,
+        _profileLoaderOverride = profileLoader;
 
   final SupabaseClient? _client;
   final RpcCaller? _rpcOverride;
+  final VenueProfileLoader? _profileLoaderOverride;
   SupabaseClient get _db => _client ?? Supabase.instance.client;
 
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
@@ -160,4 +167,49 @@ class VenueSetupService {
     ),
     generic: 'This could not be removed. Try again.',
   );
+
+  // --- floor plans ----------------------------------------------------------
+
+  Future<List<FloorRow>> floors(String venueId) => _list('list_venue_floors', venueId, parseFloor);
+
+  /// floorId null adds a floor; otherwise changes that one (its position in the list is kept). A floor needs a name and an image.
+  Future<String> saveFloor(String venueId, String? floorId, String label, String imageUrl) => _act(() async {
+        final id = await _rpc('save_venue_floor', params: {'p_venue': venueId, 'p_floor': floorId, 'p_label': label.trim(), 'p_image_url': imageUrl.trim()});
+        if (id is String && id.isNotEmpty) return id;
+        throw const SetupEditException('The floor could not be saved. Try again.');
+      });
+
+  /// Tables placed on the floor stay, unplaced.
+  Future<void> removeFloor(String venueId, String floorId) => _act(
+        () async => await _rpc('remove_venue_floor', params: {'p_venue': venueId, 'p_floor': floorId}),
+        generic: 'This could not be removed. Try again.',
+      );
+
+  // --- the venue profile ----------------------------------------------------
+
+  Future<VenueProfile> venueProfile(String venueId) async {
+    try {
+      final loader = _profileLoaderOverride;
+      final Map<String, dynamic>? row;
+      if (loader != null) {
+        row = await loader(venueId);
+      } else {
+        final data = await _db.from('site_venues').select('id, name, description, address, cover_image_url').eq('id', venueId).maybeSingle();
+        row = data == null ? null : Map<String, dynamic>.from(data);
+      }
+      final profile = parseVenueProfile(row);
+      // A venue the person cannot reach is simply not returned by row level security.
+      if (profile == null) throw const OwnerLoadException(unavailable: false, accessEnded: true);
+      return profile;
+    } on OwnerLoadException {
+      rethrow;
+    } catch (error) {
+      throw OwnerLoadException(unavailable: isMissingFunction(error), accessEnded: isNoAccess(error));
+    }
+  }
+
+  /// Saves the fields in [details] (see [profilePayload]); the database changes only the keys it is sent.
+  Future<void> saveProfile(String venueId, Map<String, dynamic> details) => _act(
+        () async => await _rpc('update_venue_profile', params: {'p_venue': venueId, 'p_details': details}),
+      );
 }

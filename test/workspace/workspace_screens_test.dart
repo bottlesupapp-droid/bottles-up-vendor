@@ -111,9 +111,9 @@ void main() {
     testWidgets('tapping a tab opens that section', (tester) async {
       await tester.pumpWidget(harness(WorkspaceSnapshot.ready([manager, owner]), start: '/w/m1/tonight'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Team'));
+      await tester.tap(find.text('More'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Staff, invitations, shifts and role limits'), findsOneWidget);
+      expect(find.textContaining('Inventory, VIP guests, discounts, events and agreements, chat and settings.'), findsOneWidget);
     });
 
     testWidgets('a section that is not built says so plainly', (tester) async {

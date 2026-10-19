@@ -115,8 +115,8 @@ night before), and answers for at most 93 nights and 1000 rows; the app only sho
 - Rules are ports of the website's `venueSetup.ts` and `bookingLink.ts`; tests compare labels, order, the default site, the slug rule and
   the function and argument names with the website repo when it is checked out beside this app. `--dart-define=SITE_URL=https://...`
   points booking links elsewhere (only a plain https address is accepted; anything else is ignored).
-- **Not here yet:** editing floor plans and photos (done on the website for now), claiming an existing venue, taking a venue live, the
-  owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked at, not scanned.
+- **Not here yet:** the venue gallery and where tables sit on a floor plan (done on the website for now), claiming an existing venue, taking a venue live, the owner's Money and Reports tabs. The QR code is drawn by `qr_flutter` and was looked
+  at, not scanned.
 - **Needs the website migrations applied** (tenancy, onboarding, venue bookings). Until then each screen says "not set up on this server
   yet". Not run against a real database: there is no staging.
 
@@ -131,14 +131,83 @@ person owns or manages THAT venue and refuse any field they do not know.
   app) and fail if a form sends a field the database does not accept, or a limit differs.
 - `services/venue_setup_service.dart` is the calls; a refusal comes back as `SetupEditException` carrying the database's own sentence
   (`raise exception`, code P0001), anything else as a generic one (`services/db_errors.dart`).
-- **Photos are not edited here.** The payloads never contain `image_url`; the server only changes keys that are sent, so editing a
-  table or bottle keeps its photo. `sort_order` is not sent either. Floor plans (image upload) are the next piece.
+- **Table and bottle photos** are one field like any other (`image_url`): the form shows the photo (`PhotoField`, same upload as the venue
+  cover, into `<organization id>/` of the `business-media` bucket), opening an item and saving it unchanged sends the same address back, a new
+  photo sends the new address, and Remove sends none. The list cards show a thumbnail. `sort_order` is not sent (items keep their position).
 - Quick switches on the bottle menu (On menu, Sold out) send only that one field. A table type or time with bookings cannot be removed
   (the screen says so; the database refuses regardless). After any change the checklist is read again, so a step turns Done at once.
 - Several days can be added to one arrival time at once; each day is its own call and its outcome is reported (added, already there,
   failed) without one failure stopping the rest.
 - Looked at on a throwaway web build and covered by tests with a fake database (`test/owner/fake_setup_backend.dart`); not run against
   a real database.
+
+### Team (owner and manager)
+
+`lib/features/team/` is the **Team** tab of the owner's and the manager's workspace: who works for the business, who has been invited and
+in what state, and the actions to invite, send a new link, cancel an invitation and remove access. It calls the website's `list_team`,
+`list_team_invitations`, `list_shifts`, `invitable_roles`, `invite_member`, `resend_invitation`, `revoke_invitation` and
+`revoke_membership` (website repo, `20261006120000_tenancy_foundation.sql` and `20261008100000_team_invitations.sql`). The database decides
+who sees whom (an owner sees everyone, a manager only the staff of their own club) and which roles may be appointed, so the screen never
+offers a role the database would refuse; nothing here grants access.
+
+- `logic/team_rules.dart` ports the website's `team.ts`: the states and their wording, the invite form's checks, the payload, the
+  link, the `mailto:` fallback and the email-outcome messages. A test compares the labels, wording and rules with the website repo when it
+  is checked out beside this app, and `invite_member`'s parameters with the SQL.
+- An owner invites to any venue of the business (the club picker); a manager only to their own club (taken from the workspace).
+- **The link exists only once.** The database keeps a hash of the token, so the link is shown right after an invitation or a new link
+  is created (Copy, and "Open in your email app" when the server could not send the email) and cannot be shown again.
+  The email itself is the website's `send-team-invitation` edge function, called as the signed-in person; it can only email the
+  address stored on the invitation. If it is not deployed the invitation still exists and the link is shown.
+- Owners and organizers cannot be removed from here (the database refuses it too). Invitations are for a club, never for an event; event
+  staff are invited from an organizer's event (not built).
+- Not here yet: creating a shift (the picker lists shifts that exist), changing an existing member's role or window, an organizer's team.
+- **Needs the website migrations applied** (tenancy, team invitations). Until then the tab says "The team is not set up on this server
+  yet". Not run against a real database: there is no staging.
+
+### Organizer events (Home and Events)
+
+`lib/features/organizer_events/` is the organizer's **Home** and **Events** tabs: the business's events, with a way to create one, change
+or remove a draft, and a plain "Contact BottlesUp" on a published one. It calls the website's `list_org_events`, `save_org_event` and
+`remove_org_event` (website repo, `20261013100000_organizer_events.sql`, website PR #3). The database checks the person is an organizer of
+THAT business, looks the event up inside it, and writes only whitelisted fields; the screen decides nothing about who may do what.
+
+- **An organizer cannot publish.** Events are created as drafts; the payload never carries `status`, `org_id` or `slug` (the database
+  refuses them). A draft is private until the BottlesUp team publishes it in the CMS, which also sets up its ticket tiers. A published
+  event cannot be changed or removed here; the card says to contact BottlesUp.
+- `logic/organizer_events_rules.dart` ports the website's `organizerEvents.ts`: the limits, the form's checks and their wording, the
+  payload, grouping (drafts, upcoming, past; an event with no end lasts 12 hours), and how a time reads. Tests compare the limits, wording
+  and field list with the website repo (SQL and TypeScript) when it is checked out beside this app.
+- **The cover photo** is one field like any other (`cover_image_url`), uploaded with the shared `PhotoField` into the organizer's own folder of
+  the `business-media` bucket; opening a draft and saving it unchanged sends the same address back, and Remove sends none. The event card shows it.
+- Times are picked on the device and sent as UTC instants (the database refuses a time without a zone); they are shown back in the
+  device's zone, and the form says which. Opening a draft and saving it unchanged sends the same instants back.
+- Not here yet: ticket tiers, linking an event to a venue and its agreement, publishing by the organizer, the other event states from the
+  brief (these are client decisions or later parts of section 7), and an organizer's team and guests. Nothing deletes an old photo file when
+  a photo is replaced.
+- The classic vendor dashboard's own event wizard (`features/events`, legacy tables) is untouched and unrelated.
+- **Needs the website migration applied** (organizer events, after tenancy and onboarding). Until then the tab says "Events are not set up on
+  this server yet". Not run against a real database: there is no staging.
+
+#### Venue profile and floor plans (with photo upload)
+
+The Setup list's **Venue profile** and **Rooms and floor plan** steps open editors (`screens/setup/venue_profile_editor.dart`,
+`floors_editor.dart`, `floor_form_screen.dart`). They call the website's `update_venue_profile` (onboarding migration) and
+`list_/save_/remove_venue_floor` (venue setup migration); the database checks the person owns or manages THIS venue.
+
+- **The profile** is the name, description, address and cover photo. The payload is those four fields and nothing else: never the
+  venue's status or slug (the BottlesUp team takes a venue live), and not the gallery (not edited here, so left as it is).
+  A blank description, address or cover photo is sent as "none", so it can be cleared.
+- **A floor** is a name and a floor plan image (both required). New floors go to the end of the list; an edit keeps its position. Removing a
+  floor leaves its tables, unplaced (the screen says how many). Where each table sits on a floor is arranged by the BottlesUp team.
+- **Photos** (`widgets/photo_field.dart`, `services/media_service.dart`, `logic/media_rules.dart`): the phone's gallery picker (shrinks to
+  2400 px and re-encodes, which also turns an iPhone HEIC into a JPEG), a check of the real file type from its first bytes, JPEG/PNG/WebP up to
+  5 MB, then an upload into the business's own folder of the public `business-media` bucket (`<organization id>/<new uuid>.<ext>`), which is
+  all the bucket's policy allows. The photo is uploaded as soon as it is chosen and saved to the venue only when the form is saved; Save is held
+  while an upload is going. Replacing a photo leaves the old file in storage (nothing deletes it). Tests compare the limits, folder rule and wording
+  with the website's SQL and TypeScript.
+- **Not tried on a real phone**: the real picker and the real storage upload (no staging, and the picker needs a device). Everything around
+  them is covered by tests with fakes. Try a real photo, including an iPhone one, before relying on it.
+- Not here yet: the gallery, deleting old files, reordering floors. (Table, bottle and event photos use the same `PhotoField`.)
 
 ### Archived code
 

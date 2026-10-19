@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:bottles_up_vendor/features/owner/services/media_service.dart';
 import 'package:bottles_up_vendor/features/owner/services/venue_setup_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,6 +12,10 @@ class FakeSetupBackend {
   final List<Map<String, dynamic>> slots = [];
   final List<Map<String, dynamic>> tables = [];
   final List<Map<String, dynamic>> bottles = [];
+  final List<Map<String, dynamic>> floors = [];
+
+  /// The venue's row as `site_venues` would give it (name, description, address, cover_image_url), or null when nobody may read it.
+  Map<String, dynamic>? profileRow = {'id': 'v1', 'name': 'Club Noir', 'description': 'A dark club', 'address': '12 King St W', 'cover_image_url': 'https://img.example/cover.jpg'};
   Object? failAll;
 
   /// Runs before each call; a test throws from it to fail only the call it chooses.
@@ -30,7 +37,12 @@ class FakeSetupBackend {
 
   String id(String prefix) => '$prefix${_next++}';
 
-  VenueSetupService get service => VenueSetupService(rpc: call);
+  VenueSetupService get service => VenueSetupService(rpc: call, profileLoader: (venueId) async {
+        calls.add(('read_profile', {'p_venue': venueId}));
+        final broken = failAll;
+        if (broken != null) throw broken;
+        return profileRow == null ? null : Map<String, dynamic>.from(profileRow!);
+      });
 
   Future<dynamic> call(String function, {Map<String, dynamic>? params}) async {
     calls.add((function, params));
@@ -80,6 +92,42 @@ class FakeSetupBackend {
         if (i < 0) throw refuse('bottle not found');
         bottles.removeAt(i);
         return null;
+      case 'list_venue_floors':
+        return [for (final f in floors) Map<String, dynamic>.from(f)];
+      case 'save_venue_floor':
+        final label = (p['p_label'] as String?)?.trim() ?? '';
+        final image = (p['p_image_url'] as String?)?.trim() ?? '';
+        if (label.isEmpty) throw refuse('a floor name is required');
+        if (label.length > 60) throw refuse('floor name must be 60 characters or fewer');
+        if (image.isEmpty) throw refuse('a floor plan image is required');
+        if (!image.startsWith('https://')) throw refuse('floor plan image must be an https link');
+        final id = p['p_floor'] as String?;
+        if (id == null) {
+          if (floors.length >= 10) throw refuse('a venue can have 10 floors at most');
+          final row = {'floor_id': this.id('f'), 'label': label, 'image_url': image, 'sort_order': floors.length, 'table_count': 0};
+          floors.add(row);
+          return row['floor_id'];
+        }
+        final i = floors.indexWhere((f) => f['floor_id'] == id);
+        if (i < 0) throw refuse('floor not found');
+        floors[i] = {...floors[i], 'label': label, 'image_url': image};
+        return id;
+      case 'remove_venue_floor':
+        final i = floors.indexWhere((f) => f['floor_id'] == p['p_floor']);
+        if (i < 0) throw refuse('floor not found');
+        floors.removeAt(i);
+        return null;
+      case 'update_venue_profile':
+        final d = p['p_details'] as Map<String, dynamic>;
+        for (final k in d.keys) {
+          if (!{'name', 'description', 'address', 'cover_image_url', 'gallery'}.contains(k)) throw refuse('unknown field: $k');
+        }
+        if (d.containsKey('name') && (((d['name'] as String?)?.trim().isEmpty ?? true) || (d['name'] as String).length > 120)) throw refuse('name is required (120 characters at most)');
+        if (d.containsKey('description') && (d['description'] as String? ?? '').length > 4000) throw refuse('description must be 4000 characters or fewer');
+        if (d.containsKey('address') && (d['address'] as String? ?? '').length > 300) throw refuse('address is too long');
+        if (d.containsKey('cover_image_url') && d['cover_image_url'] != null && !(d['cover_image_url'] as String).startsWith('https://')) throw refuse('cover image must be an https link');
+        profileRow = {...?profileRow, ...d};
+        return p['p_venue'];
     }
     throw StateError('no handler for $function');
   }
@@ -119,3 +167,29 @@ Map<String, dynamic> bottleRowJson(String id, String name, {int price = 19500, b
       'bottle_id': id, 'name': name, 'size': size, 'description': null, 'price_cents': price, 'category': category, 'image_url': 'https://img.example/$id.jpg',
       'is_available': available, 'is_sold_out': soldOut, 'stock_quantity': stock,
     };
+
+Map<String, dynamic> floorRowJson(String id, String label, {String image = 'https://img.example/main.jpg', int tables = 0, int order = 0}) =>
+    {'floor_id': id, 'label': label, 'image_url': image, 'sort_order': order, 'table_count': tables};
+
+/// A stand-in for the photo storage: records what was uploaded, can be told to refuse, and answers the public address a real bucket would.
+class FakeMedia {
+  final List<(String path, int size, String contentType)> uploads = [];
+  bool refuse = false;
+  Future<void>? hold;
+  int _n = 0;
+
+  MediaService get service => MediaService(
+        newId: () => 'img${++_n}',
+        uploader: (path, bytes, contentType) async {
+          final waiting = hold;
+          if (waiting != null) await waiting;
+          if (refuse) throw Exception('new row violates row-level security policy');
+          uploads.add((path, bytes.length, contentType));
+          return 'https://img.example/$path';
+        },
+      );
+}
+
+Uint8List jpegBytes([int length = 64]) => Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, ...List.filled(length - 4, 7)]);
+Uint8List pngBytes() => Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3, 4]);
+Uint8List gifBytes() => Uint8List.fromList([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 1, 2, 3]);
