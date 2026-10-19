@@ -45,6 +45,7 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
   String? _error;
 
   bool _verifying = false;
+  bool _admitting = false;
   ScanOutcome? _outcome;
   String? _ticket;
 
@@ -116,27 +117,44 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
     _afterAnswer(outcome, ticket);
   }
 
+  /// A group ticket: [count] of its guests are coming in now.
+  Future<void> _admitCount(int count, DoorEvent event) async {
+    final ticket = _ticket;
+    if (ticket == null || _admitting) return;
+    setState(() => _admitting = true);
+    final outcome = await ref.read(doorServiceProvider).admit(ticket, count, event.eventId);
+    if (!mounted) return;
+    setState(() {
+      _admitting = false;
+      _outcome = outcome;
+    });
+    _afterAnswer(outcome, ticket);
+  }
+
+  /// More of a partly admitted group are at the door: the same ticket is asked about again.
+  Future<void> _more(DoorEvent event) async {
+    final ticket = _ticket;
+    if (ticket == null || _admitting) return;
+    setState(() => _admitting = true);
+    final outcome = await ref.read(doorServiceProvider).scan(ticket, event.eventId);
+    if (!mounted) return;
+    setState(() {
+      _admitting = false;
+      _outcome = outcome;
+    });
+    _afterAnswer(outcome, ticket);
+  }
+
   void _afterAnswer(ScanOutcome outcome, String ticketCode) {
     HapticFeedback.mediumImpact();
     if (!outcome.admitted) return;
-    // The list shows this guest as in, without asking again; the count of guests in is read again.
+    // The list shows this guest as in (all of them, or how many of a group), without asking again; the count of guests in is read again.
     final guests = _guests;
     if (guests != null) {
       setState(() {
         _guests = [
           for (final g in guests)
-            if (g.ticketCode == ticketCode)
-              Guest(
-                orderId: g.orderId,
-                name: g.name,
-                ticketCode: g.ticketCode,
-                tierName: g.tierName,
-                quantity: g.quantity,
-                checkedInAt: DateTime.now(),
-                needsCode: g.needsCode,
-              )
-            else
-              g,
+            if (g.ticketCode == ticketCode) g.withAdmitted(outcome.guestsIn ?? g.quantity) else g,
         ];
       });
     }
@@ -218,7 +236,16 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
         ),
         const SizedBox(height: 16),
         if (_outcome != null) ...[
-          ScanResultPanel(outcome: _outcome!, verifying: _verifying, onVerify: (c) => _verify(c, event), onNext: _done, nextLabel: 'Done'),
+          ScanResultPanel(
+            outcome: _outcome!,
+            verifying: _verifying,
+            onVerify: (c) => _verify(c, event),
+            onNext: _done,
+            nextLabel: 'Done',
+            admitting: _admitting,
+            onAdmit: (n) => _admitCount(n, event),
+            onMore: () => _more(event),
+          ),
           const SizedBox(height: 16),
         ],
         TextField(
@@ -282,7 +309,13 @@ class _GuestTile extends StatelessWidget {
             if (guest.isIn)
               const Chip(key: Key('guest-in'), avatar: Icon(Ionicons.checkmark_circle, size: 18), label: Text('In'))
             else
-              FilledButton(key: Key('admit-${guest.ticketCode}'), onPressed: onAdmit, child: const Text('Admit')),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (guest.partlyIn) Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('${guest.admittedCount} of ${guest.quantity} in', key: Key('guest-partly-${guest.ticketCode}'), style: theme.textTheme.bodySmall)),
+                  FilledButton(key: Key('admit-${guest.ticketCode}'), onPressed: onAdmit, child: Text(guest.partlyIn ? 'Admit more' : 'Admit')),
+                ],
+              ),
           ],
         ),
       ),

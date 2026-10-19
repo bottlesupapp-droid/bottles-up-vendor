@@ -181,7 +181,7 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
               if (tables.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.only(top: 24),
-                  child: Text('No tables have been given to you for this night.', key: Key('tables-empty'), textAlign: TextAlign.center),
+                  child: Text('Awaiting assignment: your manager has not given you any tables for this night yet. They will appear here as soon as they do.', key: Key('tables-empty'), textAlign: TextAlign.center),
                 );
               }
               return Column(

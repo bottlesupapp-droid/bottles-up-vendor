@@ -103,7 +103,7 @@ void main() {
     db.assignments.clear();
     await open(tester, host());
     expect(find.byKey(const Key('tables-empty')), findsOneWidget);
-    expect(find.text('No tables have been given to you for this night.'), findsOneWidget);
+    expect(find.text('Awaiting assignment: your manager has not given you any tables for this night yet. They will appear here as soon as they do.'), findsOneWidget);
     expect(find.byKey(const Key('tables-summary')), findsNothing);
   });
 

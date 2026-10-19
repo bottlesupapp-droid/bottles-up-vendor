@@ -96,6 +96,8 @@ class OrderLine {
     this.balanceDueCents,
     this.serverMembershipId,
     this.serverIsMe = false,
+    this.deliveredQuantity = 0,
+    this.deliveryKnown = false,
   });
 
   final String lineId;
@@ -126,8 +128,40 @@ class OrderLine {
   final String? serverMembershipId;
   final bool serverIsMe;
 
+  /// How many of the line's bottles were handed over so far (partial delivery, website 20261020160000_partial_delivery.sql). Only meaningful when
+  /// [deliveryKnown]: a server without that migration has no such count, and then nothing about partial delivery is offered.
+  final int deliveredQuantity;
+  final bool deliveryKnown;
+
   bool get cancelled => cancelledAt != null;
   bool get delivered => state == ServiceState.served;
+
+  /// The same line with the count the database gave for it.
+  OrderLine withDelivered(int count) => OrderLine(
+        lineId: lineId,
+        bookingId: bookingId,
+        bottleName: bottleName,
+        size: size,
+        quantity: quantity,
+        unitPriceCents: unitPriceCents,
+        lineTotalCents: lineTotalCents,
+        isAddon: isAddon,
+        payment: payment,
+        state: state,
+        orderedAt: orderedAt,
+        cancelledAt: cancelledAt,
+        cancellationReason: cancellationReason,
+        confirmationCode: confirmationCode,
+        customerName: customerName,
+        tableName: tableName,
+        guestCount: guestCount,
+        checkedInAt: checkedInAt,
+        balanceDueCents: balanceDueCents,
+        serverMembershipId: serverMembershipId,
+        serverIsMe: serverIsMe,
+        deliveredQuantity: count < 0 ? 0 : count,
+        deliveryKnown: true,
+      );
 
   /// "2 × Patron 750ml".
   String get title => '$quantity × $bottleName${size == null ? '' : ' $size'}';

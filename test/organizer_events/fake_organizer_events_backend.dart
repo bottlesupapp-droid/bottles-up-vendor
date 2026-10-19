@@ -12,6 +12,11 @@ class FakeOrganizerEventsBackend {
   final List<(String, Map<String, dynamic>?)> calls = [];
   final List<Map<String, dynamic>> events = [];
   Object? failAll;
+
+  /// The states list_org_event_states answers, by event id. An event with no entry is a plain draft that no club was asked about (a published
+  /// one is live).
+  final Map<String, Map<String, dynamic>> states = {};
+  bool statesFail = false;
   void Function(String function)? beforeCall;
   Future<void>? hold;
   int _next = 1;
@@ -29,6 +34,20 @@ class FakeOrganizerEventsBackend {
     if (waiting != null) await waiting;
     final p = params ?? const {};
     switch (function) {
+      case 'list_org_event_states':
+        if (statesFail) throw StateError('relation "site_agreements" does not exist');
+        return [
+          for (final e in events)
+            {
+              'event_id': e['event_id'],
+              'state': e['status'] == 'draft' ? 'draft' : 'live',
+              'blockers': e['status'] == 'draft' ? ['venue_request'] : <String>[],
+              'agreement_id': null,
+              'agreement_status': null,
+              'venue_name': null,
+              ...?states[e['event_id']],
+            },
+        ];
       case 'list_org_events':
         return [for (final e in events) Map<String, dynamic>.from(e)];
       case 'save_org_event':

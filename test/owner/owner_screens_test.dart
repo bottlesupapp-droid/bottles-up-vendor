@@ -141,6 +141,8 @@ void main() {
     testWidgets('tapping a venue opens it', (tester) async {
       final opened = <(String, String)>[];
       await open(tester, home(onOpen: (c, m, v) => opened.add((m, v))));
+      await tester.ensureVisible(find.byKey(const Key('home-venue-v2')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('home-venue-v2')));
       expect(opened, [('m-o', 'v2')]);
     });
@@ -375,7 +377,7 @@ void main() {
       await tester.scrollUntilVisible(find.text('Team (optional)'), 200, scrollable: list);
       expect(find.text('Team (optional)'), findsOneWidget);
       await tester.scrollUntilVisible(find.byKey(const Key('step-payments')), 200, scrollable: list);
-      expect(find.descendant(of: find.byKey(const Key('step-payments')), matching: find.text('Coming soon')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('step-payments')), matching: find.text('Settings')), findsOneWidget, reason: 'the payments step now has settings behind it');
       expect(find.textContaining('payment configuration is not available yet'), findsNothing, reason: 'a step that cannot be done yet is never "To do"');
     });
 

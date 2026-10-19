@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../workspace/services/workspace_service.dart' show RpcCaller;
+import '../logic/payment_rules.dart';
 import '../logic/setup_forms.dart';
 import '../logic/venue_profile_rules.dart';
 import 'db_errors.dart';
@@ -113,6 +114,26 @@ class VenueSetupService {
     ),
     generic: 'This could not be removed. Try again.',
   );
+
+  // --- payment settings ------------------------------------------------------
+
+  /// The venue's bottle payment mode and deposit credit (owner or manager of this venue).
+  Future<PaymentRules> paymentRules(String venueId) async {
+    try {
+      final rows = _rows(await _rpc('venue_payment_rules', params: {'p_venue': venueId}));
+      final rules = rows.isEmpty ? null : parsePaymentRules(rows.first);
+      if (rules == null) throw StateError('no row');
+      return rules;
+    } catch (error) {
+      throw OwnerLoadException(unavailable: isMissingFunction(error), accessEnded: isNoAccess(error));
+    }
+  }
+
+  /// Changes how bottles are paid for bookings made from now on. Nothing else can be changed here.
+  Future<BottlePaymentMode> savePaymentRules(String venueId, BottlePaymentMode mode) => _act(() async {
+        final saved = await _rpc('save_venue_payment_rules', params: {'p_venue': venueId, 'p_details': {'bottle_payment_mode': mode.db}});
+        return BottlePaymentMode.fromDb(saved?.toString()) ?? mode;
+      }, generic: 'The payment settings could not be saved. Check your connection and try again.');
 
   // --- table types ----------------------------------------------------------
 

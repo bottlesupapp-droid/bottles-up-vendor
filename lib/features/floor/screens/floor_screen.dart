@@ -17,7 +17,7 @@ import '../widgets/booking_card.dart';
 /// Picks a night. Replaced in tests; in the app it is Flutter's own date picker.
 typedef NightPicker = Future<DateTime?> Function(BuildContext context, DateTime initial);
 
-Future<DateTime?> _defaultPicker(BuildContext context, DateTime initial) => showDatePicker(
+Future<DateTime?> defaultNightPicker(BuildContext context, DateTime initial) => showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: DateTime(2020),
@@ -39,7 +39,7 @@ class FloorScreen extends ConsumerStatefulWidget {
     required this.venueId,
     this.venueName,
     this.clock = DateTime.now,
-    this.pickNight = _defaultPicker,
+    this.pickNight = defaultNightPicker,
     this.contact = _defaultContact,
     this.showHeading = true,
     this.orgId,

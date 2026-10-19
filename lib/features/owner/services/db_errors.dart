@@ -12,8 +12,12 @@ bool isMissingFunction(Object error) =>
         error.code == '42P01');
 
 /// The database says this person may not do this (no role for the venue, access ended, signed out).
+///
+/// Only the database's own short refusals count ("not allowed", "not authorized", "not authenticated" as the WHOLE message, which is what every
+/// permission check in the website's functions raises), or the access-ended and signed-out texts. A longer sentence that merely contains those words, such
+/// as "the club has not allowed door staff for this event", is a reason to show as it is, not a lack of access.
 bool isNoAccess(Object error) => RegExp(
-  r'not authori[sz]ed|not allowed|access has ended|signed out|not authenticated',
+  r'^\s*(not authori[sz]ed|not allowed|not authenticated)\s*\.?\s*$|access has ended|signed out',
   caseSensitive: false,
 ).hasMatch(messageOf(error));
 

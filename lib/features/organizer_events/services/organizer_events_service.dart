@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../owner/services/db_errors.dart';
 import '../../workspace/services/workspace_service.dart' show RpcCaller;
+import '../logic/event_states.dart';
 import '../logic/organizer_events_rules.dart';
 
 /// Loading the events failed. Carries what the screen needs to say, not a stack trace.
@@ -51,6 +52,23 @@ class OrganizerEventsService {
     final override = _rpcOverride;
     if (override != null) return override(function, params: params);
     return await _db.rpc(function, params: params);
+  }
+
+  /// Where each of the business's events stands and what blocks publishing it. A failure here is a [OrganizerEventsLoadException]; the events
+  /// themselves still load without it.
+  Future<List<EventStateInfo>> states(String orgId) async {
+    try {
+      final data = await _rpc('list_org_event_states', params: {'p_org': orgId});
+      return [
+        if (data is List)
+          for (final r in data)
+            if (r is Map) ...[
+              if (parseEventState(Map<String, dynamic>.from(r)) case final info?) info,
+            ],
+      ];
+    } catch (error) {
+      throw OrganizerEventsLoadException(unavailable: isMissingFunction(error), accessEnded: isNoAccess(error));
+    }
   }
 
   Future<T> _act<T>(Future<T> Function() call, String generic) async {

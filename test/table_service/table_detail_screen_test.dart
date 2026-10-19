@@ -51,6 +51,12 @@ Future<void> open(WidgetTester tester, Widget w, {double height = 3000}) async {
   await tester.pumpAndSettle();
 }
 
+/// Opens one of the booking's tabs (Overview, Orders, Payments, Guests, Activity).
+Future<void> tab(WidgetTester tester, String name) async {
+  await tester.tap(find.widgetWithText(Tab, name));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() {
     db = FakeTableBackend()..role = 'manager';
@@ -124,6 +130,7 @@ void main() {
     'lists the table\'s bottle orders, a cancelled one with its reason, and none that are still being paid online',
     (tester) async {
       await open(tester, host());
+      await tab(tester, 'Orders');
       expect(find.text('Bottle orders'), findsOneWidget);
       expect(find.byKey(const Key('order-l1')), findsOneWidget);
       expect(find.byKey(const Key('order-l2')), findsOneWidget);
@@ -155,6 +162,7 @@ void main() {
     'moving an order here works and shows the table\'s balance rule',
     (tester) async {
       await open(tester, host());
+      await tab(tester, 'Orders');
       expect(
         find.byKey(const Key('blocked-l2')),
         findsOneWidget,
@@ -169,6 +177,7 @@ void main() {
   testWidgets('a table with no bottle orders says so', (tester) async {
     db.lines.clear();
     await open(tester, host());
+    await tab(tester, 'Orders');
     expect(find.byKey(const Key('detail-orders-empty')), findsOneWidget);
   });
 
@@ -176,6 +185,7 @@ void main() {
     'a move here is shown at once: the card goes on to the next step',
     (tester) async {
       await open(tester, host());
+      await tab(tester, 'Orders');
       await tester.tap(find.byKey(const Key('move-l1')));
       await tester.pumpAndSettle();
       expect(
@@ -195,6 +205,7 @@ void main() {
         if (f == 'desk_set_service_status') db.line('l1').state = 'preparing';
       };
       await open(tester, host());
+      await tab(tester, 'Orders');
       await tester.tap(find.byKey(const Key('move-l1')));
       await tester.pumpAndSettle();
       expect(find.text('It was already preparing.'), findsOneWidget);
@@ -226,6 +237,7 @@ void main() {
       db.addPayment('b1', 3000, paymentId: 'p1', billed: 3500, tip: 500);
       db.addPayment('b1', 1000, paymentId: 'p2');
       await open(tester, host());
+      await tab(tester, 'Payments');
       final p1 = find.byKey(const Key('payment-p1'));
       final p2 = find.byKey(const Key('payment-p2'));
       expect(
@@ -250,6 +262,7 @@ void main() {
   group('payments', () {
     testWidgets('a table with none says so', (tester) async {
       await open(tester, host());
+      await tab(tester, 'Payments');
       expect(find.byKey(const Key('detail-payments-empty')), findsOneWidget);
     });
 
@@ -276,6 +289,7 @@ void main() {
           at: db.now.subtract(const Duration(minutes: 5)),
         );
         await open(tester, host());
+        await tab(tester, 'Payments');
         expect(find.text('Debit · \$30.00'), findsOneWidget);
         expect(find.text('Cash · \$10.00'), findsOneWidget);
         expect(
@@ -299,6 +313,7 @@ void main() {
         db.addPayment('b1', 1000, paymentId: 'p2', status: 'disputed');
         db.addPayment('b1', 500, paymentId: 'p3', status: 'confirmed');
         await open(tester, host());
+        await tab(tester, 'Payments');
         expect(find.text('Verified'), findsOneWidget);
         expect(find.text('Checked: matches the till'), findsOneWidget);
         expect(find.text('Disputed by the guest'), findsOneWidget);
@@ -312,6 +327,7 @@ void main() {
     ) async {
       db.addPayment('b1', 3000, paymentId: 'p1', path: 'b1/r.jpg');
       await open(tester, host());
+      await tab(tester, 'Payments');
       await tester.tap(find.byKey(const Key('receipt-p1')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('receipt-image')), findsOneWidget);
@@ -332,6 +348,7 @@ void main() {
     ) async {
       db.addPayment('b1', 3000, paymentId: 'p1', path: 'b1/r.jpg');
       await open(tester, host(signFails: true));
+      await tab(tester, 'Payments');
       await tester.tap(find.byKey(const Key('receipt-p1')));
       await tester.pumpAndSettle();
       expect(
@@ -346,6 +363,7 @@ void main() {
     ) async {
       db.addPayment('b1', 3000, paymentId: 'p1', path: 'b1/r.jpg');
       await open(tester, host());
+      await tab(tester, 'Payments');
       expect(find.textContaining('@'), findsNothing);
     });
   });
@@ -453,11 +471,12 @@ void main() {
           findsOneWidget,
         );
         expect(db.payments, hasLength(1));
-        expect(find.text('Cash · \$15.00'), findsOneWidget);
         expect(
           tester.widget<Text>(find.byKey(const Key('money-due'))).data,
           '\$25.00',
         );
+        await tab(tester, 'Payments');
+        expect(find.text('Cash · \$15.00'), findsOneWidget);
       },
     );
 
@@ -538,6 +557,7 @@ void main() {
       db.failOn['desk_booking_orders'] = Exception('offline');
       await open(tester, host());
       expect(find.byKey(const Key('money-card')), findsOneWidget);
+      await tab(tester, 'Orders');
       expect(find.byKey(const Key('detail-orders-error')), findsOneWidget);
       expect(
         find.text(
@@ -563,6 +583,7 @@ void main() {
       'a move the database refuses shows its sentence, and the table is read again',
       (tester) async {
         await open(tester, host());
+        await tab(tester, 'Orders');
         db.line('l1').state = 'served';
         db.role = 'server';
         await tester.tap(find.byKey(const Key('move-l1')));

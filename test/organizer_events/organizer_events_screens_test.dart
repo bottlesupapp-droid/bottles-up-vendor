@@ -89,6 +89,7 @@ void main() {
         eventRow('p', 'Summer Closing', status: 'published', start: '2031-12-30T22:00:00Z', venue: 'Harbour Club'),
         eventRow('x', 'Launch Night', status: 'published', start: '2031-06-01T22:00:00Z', end: '2031-06-02T04:00:00Z'),
       ]);
+      db.states['x'] = {'state': 'ended', 'blockers': <String>[]};
       await open(tester);
       expect(find.text('DRAFTS'), findsOneWidget);
       expect(find.text('UPCOMING'), findsOneWidget);
@@ -99,9 +100,9 @@ void main() {
       expect(find.descendant(of: draft, matching: find.text('The Roof, 1 King St W')), findsOneWidget);
       expect(find.descendant(of: draft, matching: find.text('Capacity 250')), findsOneWidget);
       expect(find.descendant(of: draft, matching: find.text('Draft')), findsOneWidget);
-      expect(find.descendant(of: find.byKey(const Key('event-p')), matching: find.text('Published')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('event-p')), matching: find.text('Live')), findsOneWidget);
       expect(find.descendant(of: find.byKey(const Key('event-p')), matching: find.text('Draft')), findsNothing);
-      expect(find.descendant(of: find.byKey(const Key('event-x')), matching: find.text('Published')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('event-x')), matching: find.text('Ended')), findsOneWidget);
       expect(find.descendant(of: find.byKey(const Key('event-p')), matching: find.text('Harbour Club')), findsOneWidget);
       expect(find.descendant(of: find.byKey(const Key('event-p')), matching: find.textContaining('Capacity')), findsNothing);
     });
@@ -391,6 +392,116 @@ void main() {
       await tapKey(tester, 'confirm-remove');
       expect(find.text('This event already has orders, so it cannot be removed.'), findsOneWidget);
       expect(find.byKey(const Key('event-d')), findsOneWidget);
+    });
+  });
+
+  group('where each event stands, and what blocks publishing', () {
+    testWidgets('a draft with no club asked says what blocks it and offers to ask a club', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      await open(tester);
+      expect(find.descendant(of: find.byKey(const Key('status-d')), matching: find.text('Draft')), findsOneWidget);
+      expect(find.text('What is blocking publishing'), findsOneWidget);
+      expect(find.text('• No club has been asked to host this event yet.'), findsOneWidget);
+      expect(find.byKey(const Key('blocker-action-d')), findsOneWidget);
+      expect(find.text('Ask a club to host it'), findsOneWidget);
+      expect(db.paramsOf('list_org_event_states').single, {'p_org': 'o1'});
+    });
+
+    testWidgets('waiting for a club: the chip says so, the club is named, the draft can still be edited', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      db.states['d'] = {'state': 'awaiting_venue_approval', 'blockers': ['venue_approval'], 'agreement_status': 'requested', 'venue_name': 'Club A'};
+      await open(tester);
+      expect(find.descendant(of: find.byKey(const Key('status-d')), matching: find.text('Awaiting venue approval')), findsOneWidget);
+      expect(find.text('• Waiting for Club A to agree the terms.'), findsOneWidget);
+      expect(find.text('See the agreement'), findsOneWidget);
+      expect(find.byKey(const Key('edit-d')), findsOneWidget, reason: 'draft work is allowed while approval is pending');
+      expect(find.textContaining('keep working on the draft'), findsOneWidget);
+    });
+
+    testWidgets('ready to publish: nothing blocks it, no button', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      db.states['d'] = {'state': 'ready_to_publish', 'blockers': <String>[], 'agreement_status': 'active', 'venue_name': 'Club A'};
+      await open(tester);
+      expect(find.descendant(of: find.byKey(const Key('status-d')), matching: find.text('Ready to publish')), findsOneWidget);
+      expect(find.text('What is blocking publishing'), findsNothing);
+      expect(find.byKey(const Key('blocker-action-d')), findsNothing);
+      expect(find.textContaining('BottlesUp team publishes it and sets up tickets'), findsOneWidget);
+    });
+
+    testWidgets('an unverified business is a blocker with no button (verification is on the card above)', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      db.states['d'] = {'state': 'draft', 'blockers': ['business_verification'], 'agreement_status': 'active', 'venue_name': 'Club A'};
+      await open(tester);
+      expect(find.text('• Your business is not verified yet. Publishing waits for verification.'), findsOneWidget);
+      expect(find.byKey(const Key('blocker-action-d')), findsNothing);
+    });
+
+    testWidgets('a declined club and a cancelled request are worded differently', (tester) async {
+      db.events.addAll([eventRow('a', 'One'), eventRow('b', 'Two')]);
+      db.states['a'] = {'state': 'draft', 'blockers': ['venue_declined'], 'agreement_status': 'declined', 'venue_name': 'Club A'};
+      db.states['b'] = {'state': 'draft', 'blockers': ['venue_declined'], 'agreement_status': 'cancelled', 'venue_name': 'Club B'};
+      await open(tester);
+      expect(find.text('• Club A declined. Ask another club to host this event.'), findsOneWidget);
+      expect(find.text('• The request to Club B was cancelled. Ask a club to host this event.'), findsOneWidget);
+    });
+
+    testWidgets('a live or ended event never shows blockers, even if some were sent', (tester) async {
+      db.events.addAll([eventRow('p', 'Live night', status: 'published')]);
+      db.states['p'] = {'state': 'live', 'blockers': ['venue_request']};
+      await open(tester);
+      expect(find.descendant(of: find.byKey(const Key('status-p')), matching: find.text('Live')), findsOneWidget);
+      expect(find.text('What is blocking publishing'), findsNothing);
+      expect(find.byKey(const Key('blocker-action-p')), findsNothing, reason: 'a live event offers no way to ask a club');
+    });
+
+    testWidgets('the button opens the venue agreements', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      await open(tester);
+      await tester.ensureVisible(find.byKey(const Key('blocker-action-d')));
+      await tester.tap(find.byKey(const Key('blocker-action-d')));
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: find.byType(AppBar), matching: find.text('Venue agreements')), findsOneWidget);
+    });
+
+    testWidgets('if the states cannot be read the events still show, with their plain status, and the person can try again', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      db.statesFail = true;
+      await open(tester);
+      expect(find.byKey(const Key('event-d')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('status-d')), matching: find.text('Draft')), findsOneWidget);
+      expect(find.byKey(const Key('states-error')), findsOneWidget);
+      expect(find.text('What is blocking publishing'), findsNothing);
+      expect(find.textContaining('relation'), findsNothing);
+      db.statesFail = false;
+      await tapKey(tester, 'states-retry');
+      expect(find.byKey(const Key('states-error')), findsNothing);
+      expect(find.text('What is blocking publishing'), findsOneWidget);
+    });
+
+    testWidgets('a state this app does not know falls back to the plain status, not to a guess', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      db.states['d'] = {'state': 'cancelled', 'blockers': <String>[]};
+      await open(tester);
+      expect(find.descendant(of: find.byKey(const Key('status-d')), matching: find.text('Draft')), findsOneWidget);
+    });
+
+    testWidgets('after a draft is removed the states are read again', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      await open(tester);
+      final before = db.count('list_org_event_states');
+      await tapKey(tester, 'remove-d');
+      await tapKey(tester, 'confirm-remove');
+      expect(db.events, isEmpty);
+      expect(db.count('list_org_event_states'), greaterThan(before));
+    });
+
+    testWidgets('after a draft is saved the states are read again', (tester) async {
+      db.events.add(eventRow('d', 'Rooftop Sessions'));
+      await open(tester);
+      final before = db.count('list_org_event_states');
+      await tapKey(tester, 'edit-d');
+      await tapKey(tester, 'save-event');
+      expect(db.count('list_org_event_states'), greaterThan(before));
     });
   });
 }

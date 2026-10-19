@@ -4,6 +4,7 @@ import '../../floor/logic/bookings_rules.dart' show parseNight;
 import '../../owner/services/db_errors.dart';
 import '../../team/services/team_service.dart' show sentence;
 import '../../workspace/services/workspace_service.dart' show RpcCaller;
+import '../logic/bottle_orders_rules.dart';
 import '../logic/table_service_rules.dart';
 
 /// Loading something for table service failed. Carries what the screen needs to say, not a stack trace.
@@ -44,11 +45,17 @@ TableServiceLoadException loadFailureFor(Object error, String what) =>
           what: what,
         );
 
+/// A call to an edge function: its name and JSON body, answering with the decoded body.
+typedef FunctionInvoker = Future<dynamic> Function(String name, Map<String, dynamic> body);
+
 /// Moving an order, recording a payment or verifying one was refused or failed; the message is a plain sentence.
 class TableServiceActionException implements Exception {
-  const TableServiceActionException(this.message);
+  const TableServiceActionException(this.message, {this.outcomeUnknown = false});
 
   final String message;
+
+  /// The call may have gone through (no answer, or the server failed part way): look at the table before doing it again.
+  final bool outcomeUnknown;
 
   @override
   String toString() => 'TableServiceActionException($message)';
@@ -60,13 +67,23 @@ class TableServiceActionException implements Exception {
 /// what: a server reaches only their own tables, only a manager or owner sees the whole club, a verifier checks payments but records
 /// nothing, and nobody verifies their own entry. Nothing here decides that.
 class TableServiceService {
-  TableServiceService({SupabaseClient? client, RpcCaller? rpc})
+  TableServiceService({SupabaseClient? client, RpcCaller? rpc, FunctionInvoker? invoker})
     : _client = client,
-      _rpcOverride = rpc;
+      _rpcOverride = rpc,
+      _invokerOverride = invoker;
 
   final SupabaseClient? _client;
   final RpcCaller? _rpcOverride;
+  final FunctionInvoker? _invokerOverride;
   SupabaseClient get _db => _client ?? Supabase.instance.client;
+
+  /// A call to one of the website's edge functions (the add-bottles function). Throws [FunctionException] when it answers with an error status.
+  Future<dynamic> _invoke(String name, Map<String, dynamic> body) async {
+    final override = _invokerOverride;
+    if (override != null) return override(name, body);
+    final response = await _db.functions.invoke(name, body: body);
+    return response.data;
+  }
 
   Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
     final override = _rpcOverride;
@@ -140,16 +157,72 @@ class TableServiceService {
   Future<List<OrderLine>> tableOrders(
     String bookingId, {
     int? balanceDueCents,
-  }) => _list(
-    'desk_booking_orders',
-    {'p_booking': bookingId},
-    (r) => parseTableLine(
-      r,
-      bookingId: bookingId,
-      balanceDueCents: balanceDueCents,
-    ),
-    'orders',
+  }) async {
+    final lines = await _list(
+      'desk_booking_orders',
+      {'p_booking': bookingId},
+      (r) => parseTableLine(
+        r,
+        bookingId: bookingId,
+        balanceDueCents: balanceDueCents,
+      ),
+      'orders',
+    );
+    if (lines.isEmpty) return lines;
+    // How many of each line were handed over (partial delivery). Without this count (a server that does not have the migration yet, or a failed read) the
+    // lines are shown as they were and nothing about partial delivery is offered.
+    try {
+      final counts = <String, int>{
+        for (final r in _rows(await _rpc('desk_booking_deliveries', params: {'p_booking': bookingId})))
+          if (r['line_id'] is String) r['line_id'] as String: r['delivered_quantity'] is int ? r['delivered_quantity'] as int : 0,
+      };
+      return [for (final l in lines) counts.containsKey(l.lineId) ? l.withDelivered(counts[l.lineId]!) : l];
+    } catch (_) {
+      return lines;
+    }
+  }
+
+  /// Hands over [quantity] more of a line. The database is told how many were delivered when the person looked: if that moved (a repeated tap, a colleague, a lost
+  /// answer sent again) it refuses and nothing is counted twice.
+  Future<DeliveryResult> deliverPart(OrderLine line, int quantity) => _act(
+    () async {
+      final result = parseDeliveryResult(await _rpc('desk_deliver_part', params: deliverPartParams(line.lineId, quantity, line.deliveredQuantity)));
+      if (result == null) {
+        throw const TableServiceActionException('The delivery could not be confirmed. Look at the table\'s orders before trying again.');
+      }
+      return result;
+    },
+    generic: 'The delivery could not be recorded. Check your connection and try again.',
   );
+
+  /// The bottles the club offers for this table right now, with the number left where the club counts. Refused (with the database's own sentence) for someone who
+  /// may not add bottles here, and for a table or night that is closed.
+  Future<List<MenuBottle>> bottleMenu(String bookingId) async {
+    try {
+      return _rows(await _rpc('desk_bottle_menu', params: {'p_booking': bookingId})).map(parseMenuBottle).whereType<MenuBottle>().toList();
+    } catch (error) {
+      if (error is PostgrestException && error.code == 'P0001' && !isNoAccess(error) && error.message.trim().isNotEmpty) {
+        throw TableServiceActionException(sentence(error.message));
+      }
+      throw _loadFailure(error, 'bottles');
+    }
+  }
+
+  /// Adds the basket to the table. The website prices it, checks stock, works out the table's new total and e-mails the guest; staff-added bottles are always due at
+  /// the club. A call that never got an answer may have gone through, so its failure says to look at the table's orders before trying again.
+  Future<void> addBottles(String bookingId, List<MenuBottle> menu, Basket basket) async {
+    final problem = basketProblem(menu, basket);
+    if (problem != null) throw TableServiceActionException(problem);
+    try {
+      await _invoke('add-table-booking-bottles', addBottlesBody(bookingId, menu, basket));
+    } on FunctionException catch (e) {
+      final details = e.details;
+      final message = details is Map && details['error'] is String ? details['error'] as String : (details is String ? details : null);
+      throw TableServiceActionException(addBottlesFailure(status: e.status, message: message), outcomeUnknown: addBottlesOutcomeUnknown(e.status));
+    } catch (_) {
+      throw TableServiceActionException(addBottlesFailure(), outcomeUnknown: addBottlesOutcomeUnknown(null));
+    }
+  }
 
   /// Moves one order line. Answers true when it changed and false when it already was so (a repeated tap, or a colleague got there
   /// first): nothing is written twice.

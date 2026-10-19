@@ -4,7 +4,8 @@
 // 20261009100000_door_scanner.sql); nothing here grants anything. The wording matches the website's door screen on purpose:
 // the same guest must get the same answer from either.
 
-/// Every answer a scan can end in. The first ten come from the database; the last two are raised by the app.
+/// Every answer a scan can end in. All but the last two come from the database (refunded, group and too_many from door_admit_group, website 20261020170000); the last two are
+/// raised by the app.
 enum DoorResult {
   ok('ok'),
   alreadyCheckedIn('already_checked_in'),
@@ -16,6 +17,9 @@ enum DoorResult {
   codeExpired('code_expired'),
   noCodeRequested('no_code_requested'),
   wrongEvent('wrong_event'),
+  refunded('refunded'),
+  group('group'),
+  tooMany('too_many'),
   accessEnded('access_ended'),
   scanError('scan_error');
 
@@ -63,6 +67,11 @@ const Map<DoorResult, ResultCopy> resultCopy = {
       'No code requested yet', 'Ask the guest to request their entry code from their ticket email.', Tone.error),
   DoorResult.wrongEvent:
       ResultCopy('Not for this event', 'This ticket is for a different event. Do not admit it here.', Tone.error),
+  DoorResult.refunded: ResultCopy('Refunded', 'This order was refunded. Do not admit.', Tone.error),
+  DoorResult.group:
+      ResultCopy('Group ticket', 'This ticket covers several guests. Choose how many are coming in now.', Tone.warn),
+  DoorResult.tooMany:
+      ResultCopy('More than this ticket allows', 'There are not that many left on this ticket. Choose fewer.', Tone.warn),
   DoorResult.accessEnded: ResultCopy('Your access has ended',
       'Your shift or invitation is over, or you were signed out. Sign in again or ask your manager.', Tone.error),
   DoorResult.scanError: ResultCopy('Scan failed', 'Something went wrong. Try again.', Tone.error),
@@ -120,18 +129,58 @@ class ScanOutcome {
     this.tierName,
     this.quantity,
     this.attemptsRemaining,
+    this.guestsIn,
+    this.guestsLeft,
+    this.admittedNow,
   });
 
   final DoorResult result;
   final String? customerName;
   final String? eventTitle;
   final String? tierName;
+
+  /// How many guests the ticket covers.
   final int? quantity;
+
+  /// Group admission (door_admit_group): how many of the ticket's guests are in, and how many may still come in. Null from the older scan.
+  final int? guestsIn;
+  final int? guestsLeft;
+
+  /// How many this very answer admitted (the app knows what it asked for). Null when it admitted nobody or the app did not choose a number.
+  final int? admittedNow;
 
   /// Tries left on the entry code, when the database says.
   final int? attemptsRemaining;
 
   bool get admitted => result == DoorResult.ok;
+
+  /// The person must say how many are coming in: nobody has been admitted yet.
+  bool get chooseCount => result == DoorResult.group || result == DoorResult.tooMany;
+
+  /// A ticket for several guests.
+  bool get isGroup => (quantity ?? 1) > 1;
+
+  /// Guests of this ticket that may still come in, when the database says.
+  bool get moreMayCome => (guestsLeft ?? 0) > 0;
+
+  ScanOutcome withAdmittedNow(int n) => ScanOutcome(result,
+      customerName: customerName, eventTitle: eventTitle, tierName: tierName, quantity: quantity, attemptsRemaining: attemptsRemaining, guestsIn: guestsIn, guestsLeft: guestsLeft, admittedNow: n);
+}
+
+/// What the green "Admit" answer says to do: "Let them in." for one guest, "Let 2 guests in." when the person chose a number of a group.
+String admitHint(ScanOutcome o) {
+  final n = o.admittedNow;
+  if (n == null || !o.isGroup) return 'Let them in.';
+  return 'Let $n ${n == 1 ? 'guest' : 'guests'} in.';
+}
+
+/// "2 of 4 are in. 2 may still come in with this ticket." / "All 4 are in." Null when the answer carries no counts, the ticket is for one guest, or nobody is in yet.
+String? groupProgress(ScanOutcome o) {
+  final q = o.quantity, inn = o.guestsIn, left = o.guestsLeft;
+  if (q == null || inn == null || left == null || q < 2) return null;
+  if (inn == 0) return null;
+  if (left == 0) return 'All $q are in.';
+  return '$inn of $q ${inn == 1 ? 'is' : 'are'} in. $left may still come in with this ticket.';
 }
 
 String? _text(Object? v) => v is String && v.isNotEmpty ? v : null;
@@ -147,6 +196,8 @@ ScanOutcome parseScanOutcome(Map<String, dynamic>? row) {
     tierName: _text(row?['tier_name']),
     quantity: _int(row?['quantity']),
     attemptsRemaining: _int(row?['attempts_remaining']),
+    guestsIn: _int(row?['admitted']),
+    guestsLeft: _int(row?['remaining']),
   );
 }
 
@@ -180,6 +231,18 @@ class DoorEvent {
   final String scope;
   final int guestsExpected;
   final int guestsAdmitted;
+
+  /// The same event with the exact count of guests in (door_admission_counts), where a partly admitted group counts only the guests who came in.
+  DoorEvent withAdmitted(int count) => DoorEvent(
+        eventId: eventId,
+        title: title,
+        venueName: venueName,
+        startDate: startDate,
+        endDate: endDate,
+        scope: scope,
+        guestsExpected: guestsExpected,
+        guestsAdmitted: count < 0 ? 0 : count,
+      );
 }
 
 DoorEvent? parseDoorEvent(Map<String, dynamic> row) {
@@ -208,6 +271,7 @@ class Guest {
     required this.quantity,
     this.checkedInAt,
     required this.needsCode,
+    this.admittedCount,
   });
 
   final String orderId;
@@ -218,7 +282,38 @@ class Guest {
   final DateTime? checkedInAt;
   final bool needsCode;
 
-  bool get isIn => checkedInAt != null;
+  /// How many of the ticket's guests are in, when the database says (group admission). Null means "not known": the older "checked in" time decides.
+  final int? admittedCount;
+
+  /// Every guest of the ticket is in.
+  bool get isIn => admittedCount != null ? admittedCount! >= quantity : checkedInAt != null;
+
+  /// Some, not all, of a group are in.
+  bool get partlyIn => admittedCount != null && admittedCount! > 0 && admittedCount! < quantity;
+
+  /// The same guest with the exact count from the server (the checked-in time is the server's and is kept).
+  Guest withAdmittedKeepingTime(int count) => Guest(
+        orderId: orderId,
+        name: name,
+        ticketCode: ticketCode,
+        tierName: tierName,
+        quantity: quantity,
+        checkedInAt: checkedInAt,
+        needsCode: needsCode,
+        admittedCount: count,
+      );
+
+  /// The same guest after a scan here said how many are in (the time is now, until the list is read again).
+  Guest withAdmitted(int count) => Guest(
+        orderId: orderId,
+        name: name,
+        ticketCode: ticketCode,
+        tierName: tierName,
+        quantity: quantity,
+        checkedInAt: checkedInAt ?? DateTime.now(),
+        needsCode: needsCode,
+        admittedCount: count,
+      );
 }
 
 Guest? parseGuest(Map<String, dynamic> row) {

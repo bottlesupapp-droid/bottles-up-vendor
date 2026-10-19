@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../agreements/screens/agreements_screen.dart';
 import '../../chat/screens/chat_screen.dart';
+import '../../door_staff/screens/club_door_staff_screen.dart';
+import '../../door_staff/screens/organizer_team_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
 import '../../money/screens/owner_money_screen.dart';
 import '../../security/screens/incidents_screen.dart';
@@ -26,6 +28,10 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'security' when workspace.role == WorkspaceRole.manager => SecurityHubScreen(workspace: workspace),
       // The Team screen is the owner's (and the manager's own Team tab); an organizer's team is not built.
       'team' when workspace.role == WorkspaceRole.owner => TeamScreen(workspace: workspace),
+      // An organizer's team is its door staff, event by event (the club decides whether it may bring its own).
+      'team' when workspace.role == WorkspaceRole.organizer => OrganizerTeamScreen(workspace: workspace),
+      // The club's side: which organizers may bring door staff to which events, and who they have brought.
+      'organizer-door' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => ClubDoorStaffScreen(workspace: workspace),
       // Payments and earnings is the owner's: each club's money for a range of nights (it used to be a tab of its own).
       'money' when workspace.role == WorkspaceRole.owner => OwnerMoneyScreen(workspace: workspace),
       // Incidents are the security staff's: report one, and read the ones they reported.

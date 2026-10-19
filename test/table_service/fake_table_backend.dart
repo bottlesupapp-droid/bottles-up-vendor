@@ -21,6 +21,7 @@ class FakeBooking {
     this.reconciled = false,
     this.closeoutRequested = false,
     this.checkedIn = false,
+    this.nightClosed = false,
   });
 
   final String id;
@@ -36,6 +37,9 @@ class FakeBooking {
   bool reconciled;
   bool closeoutRequested;
   bool checkedIn;
+
+  /// The business night this table is on has been closed (close night).
+  bool nightClosed;
 
   int get balance => total > paid ? total - paid : 0;
 }
@@ -54,6 +58,8 @@ class FakeLine {
     this.addon = false,
     this.cancelled = false,
     this.reason,
+    this.delivered = 0,
+    this.bottleId,
   });
 
   final String id;
@@ -67,7 +73,23 @@ class FakeLine {
   String state;
   bool cancelled;
   String? reason;
+  int delivered;
+  final String? bottleId;
   final DateTime orderedAt;
+}
+
+/// A bottle on the club's menu.
+class FakeBottle {
+  FakeBottle(this.id, this.name, this.price, {this.size = '750ml', this.category = 'Spirits', this.stock, this.available = true, this.soldOut = false});
+
+  final String id;
+  final String name;
+  final int price;
+  final String? size;
+  final String? category;
+  final int? stock;
+  bool available;
+  bool soldOut;
 }
 
 class FakePayment {
@@ -133,6 +155,13 @@ class FakeTableBackend {
   /// booking id -> the membership it was given to.
   final Map<String, String> assignments = {};
 
+  /// The club's bottle menu (desk_bottle_menu), in the club's order.
+  final List<FakeBottle> menu = [];
+
+  /// Failure to inject into the add-bottles function call (a FunctionException, a socket error...).
+  Object? failInvoke;
+  final List<(String, Map<String, dynamic>)> invocations = [];
+
   /// Open service requests of the club (the database counts them for Tonight).
   int openRequests = 0;
 
@@ -144,7 +173,7 @@ class FakeTableBackend {
   int _next = 1;
   String id(String p) => '$p${_next++}';
 
-  TableServiceService get service => TableServiceService(rpc: call);
+  TableServiceService get service => TableServiceService(rpc: call, invoker: invoke);
 
   FakeBooking addBooking(
     String id, {
@@ -183,6 +212,8 @@ class FakeTableBackend {
     String? reason,
     bool addon = false,
     String? lineId,
+    int delivered = 0,
+    String? bottleId,
   }) {
     final l = FakeLine(
       lineId ?? id('l'),
@@ -196,6 +227,8 @@ class FakeTableBackend {
       cancelled: cancelled,
       reason: reason,
       addon: addon,
+      delivered: delivered,
+      bottleId: bottleId,
     );
     lines.add(l);
     return l;
@@ -300,6 +333,12 @@ class FakeTableBackend {
         return _tableStatus(p);
       case 'desk_tonight':
         return _tonight(p);
+      case 'desk_booking_deliveries':
+        return _deliveries(p);
+      case 'desk_deliver_part':
+        return _deliverPart(p);
+      case 'desk_bottle_menu':
+        return _menu(p);
     }
     throw StateError('unexpected call to $function');
   }
@@ -428,6 +467,111 @@ class FakeTableBackend {
     }
     line.state = status;
     return true;
+  }
+
+  // --- partial delivery and adding bottles (website 20261020150000_add_bottles_checks.sql and 20261020160000_partial_delivery.sql) ---
+
+  List<Map<String, dynamic>> _deliveries(Map<String, dynamic> p) {
+    final bid = p['p_booking'] as String;
+    final level = _level(bid);
+    if (level == null || level == 'verifier') throw refuse('not allowed');
+    final rows = [
+      for (final l in lines)
+        if (l.bookingId == bid && l.pay != 'pending_payment') l,
+    ]..sort((a, b) => a.orderedAt.compareTo(b.orderedAt));
+    return [for (final l in rows) {'line_id': l.id, 'delivered_quantity': l.delivered}];
+  }
+
+  Map<String, dynamic> _deliverPart(Map<String, dynamic> p) {
+    final line = lines.where((l) => l.id == p['p_line']).firstOrNull;
+    final level = line == null ? null : _level(line.bookingId);
+    if (line == null || level == null || level == 'verifier') throw refuse('not allowed');
+    final b = bookings[line.bookingId]!;
+    if (b.status != 'paid') throw refuse('only a paid booking has orders to serve');
+    if (b.reconciled) throw refuse('this table has already been closed out');
+    if (line.cancelled) throw refuse('this item was cancelled');
+    if (line.pay == 'pending_payment') throw refuse('payment not yet verified for this item');
+    if (line.state == 'served') throw refuse('this item has already been delivered');
+    if (line.state != 'ready' && line.state != 'picked_up') throw refuse('this item is not ready to be delivered yet');
+    if (p['p_already'] != line.delivered) throw refuse('someone else has just changed this item, look at it again');
+    final qty = p['p_quantity'] as int?;
+    if (qty == null || qty < 1) throw refuse('choose how many were delivered');
+    if (qty > line.qty - line.delivered) throw refuse('only ${line.qty - line.delivered} of this item are left to deliver');
+    if (line.pay == 'due_at_venue') {
+      if (b.balance > 0) throw refuse('cannot mark delivered - this table still has a balance due at the venue');
+      if (!payments.any((x) => x.bookingId == b.id)) throw refuse('cannot mark delivered - no payment has been recorded for this table');
+    }
+    line.delivered += qty;
+    line.state = line.delivered >= line.qty ? 'served' : 'picked_up';
+    return {'delivered': line.delivered, 'quantity': line.qty, 'service_status': line.state};
+  }
+
+  /// desk_may_add_bottles: who and when. Raises the sentence the database would raise.
+  void _requireMayAddBottles(String bookingId) {
+    final level = _level(bookingId);
+    if (level == null || level == 'verifier') throw refuse('not allowed');
+    final b = bookings[bookingId]!;
+    if (b.status != 'paid') throw refuse('only a confirmed booking can have bottles added');
+    if (b.reconciled) throw refuse('this table has already been closed out');
+    if (b.nightClosed) throw refuse('this night has been closed, so no bottles can be added');
+  }
+
+  int _committed(String bottleId) {
+    var n = 0;
+    for (final l in lines) {
+      if (l.bottleId == bottleId && (l.pay == 'paid' || l.pay == 'due_at_venue') && bookings[l.bookingId]?.status == 'paid') n += l.qty;
+    }
+    return n;
+  }
+
+  List<Map<String, dynamic>> _menu(Map<String, dynamic> p) {
+    _requireMayAddBottles(p['p_booking'] as String);
+    return [
+      for (final m in menu)
+        if (m.available && !m.soldOut)
+          {
+            'bottle_id': m.id,
+            'name': m.name,
+            'size': m.size,
+            'category': m.category,
+            'price_cents': m.price,
+            'left_count': m.stock == null ? null : (m.stock! - _committed(m.id)).clamp(0, 1 << 30),
+          },
+    ];
+  }
+
+  /// The add-table-booking-bottles edge function for table staff: asks desk_may_add_bottles first, then checks the bottles and stock, adds due-at-the-club lines
+  /// and raises the table's total.
+  Future<dynamic> invoke(String name, Map<String, dynamic> body) async {
+    invocations.add((name, body));
+    final broken = failInvoke;
+    if (broken != null) throw broken;
+    final waiting = hold;
+    if (waiting != null) await waiting;
+    if (name != 'add-table-booking-bottles') throw StateError('unexpected function $name');
+    final bid = body['booking_id'] as String;
+    try {
+      _requireMayAddBottles(bid);
+    } on PostgrestException catch (e) {
+      if (e.message == 'not allowed') throw FunctionException(status: 403, details: {'error': 'Forbidden'});
+      throw FunctionException(status: 409, details: {'error': e.message});
+    }
+    final requested = (body['bottles'] as List).cast<Map<String, dynamic>>();
+    if (requested.isEmpty) throw FunctionException(status: 400, details: {'error': 'Select at least one bottle'});
+    final chosen = <(FakeBottle, int)>[];
+    for (final r in requested) {
+      final m = menu.where((x) => x.id == r['bottle_id']).firstOrNull;
+      if (m == null || !m.available || m.soldOut) throw FunctionException(status: 400, details: {'error': 'One of the selected bottles is no longer available'});
+      final qty = r['quantity'] as int;
+      if (m.stock != null && _committed(m.id) + qty > m.stock!) throw FunctionException(status: 409, details: {'error': 'Not enough "${m.name}" left in stock'});
+      chosen.add((m, qty));
+    }
+    final b = bookings[bid]!;
+    for (final (m, qty) in chosen) {
+      addLine(bid, m.name, pay: 'due_at_venue', qty: qty, price: m.price, addon: true, bottleId: m.id, minutesAgo: 0);
+      b.total += m.price * qty;
+    }
+    return {'success': true, 'mode': 'due_at_venue'};
   }
 
   String _verification(FakePayment x) {

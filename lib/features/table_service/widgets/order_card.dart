@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/widgets/desk_chip.dart';
+import '../logic/bottle_orders_rules.dart';
 import '../logic/table_service_rules.dart';
 
 Color serviceStateColor(ServiceState s) => switch (s) {
@@ -30,6 +31,7 @@ class OrderCard extends StatelessWidget {
     required this.onMove,
     this.onOpenTable,
     this.showTable = true,
+    this.onDeliverPart,
   });
 
   final OrderLine line;
@@ -45,6 +47,9 @@ class OrderCard extends StatelessWidget {
 
   /// Show which table and guest this is (a night's list); a table's own page already says.
   final bool showTable;
+
+  /// Hand over part of the line (a table's own page only). Offered when the line allows it (see [canDeliverPart]).
+  final VoidCallback? onDeliverPart;
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +167,11 @@ class OrderCard extends StatelessWidget {
                   style: theme.textTheme.bodySmall,
                 ),
               ),
+            if (deliveredLabel(l) != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(deliveredLabel(l)!, key: Key('delivered-count-${l.lineId}'), style: theme.textTheme.bodyMedium),
+              ),
             if (block != null && !l.delivered && !l.cancelled)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
@@ -188,6 +198,15 @@ class OrderCard extends StatelessWidget {
                                 ? null
                                 : () => onMove(primary),
                         child: Text(primary.moveLabel),
+                      ),
+                    if (onDeliverPart != null && canDeliverPart(l))
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: OutlinedButton(
+                          key: Key('deliver-part-${l.lineId}'),
+                          onPressed: busy || block != null ? null : onDeliverPart,
+                          child: const Text('Deliver some'),
+                        ),
                       ),
                     const Spacer(),
                     if (menu.isNotEmpty)
