@@ -141,6 +141,8 @@ void main() {
     testWidgets('tapping a venue opens it', (tester) async {
       final opened = <(String, String)>[];
       await open(tester, home(onOpen: (c, m, v) => opened.add((m, v))));
+      await tester.ensureVisible(find.byKey(const Key('home-venue-v2')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('home-venue-v2')));
       expect(opened, [('m-o', 'v2')]);
     });
