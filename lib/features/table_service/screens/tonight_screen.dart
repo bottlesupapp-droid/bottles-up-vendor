@@ -1,3 +1,4 @@
+import '../../chat/screens/chat_screen.dart';
 import '../../walkin/screens/walkin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -147,14 +148,23 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
             onChanged: (n) => setState(() => _night = n),
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              key: const Key('add-walkin'),
-              onPressed: _night == _tonight ? () => _addWalkin(venueId) : null,
-              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
-              label: const Text('Add walk-in'),
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              OutlinedButton.icon(
+                key: const Key('add-walkin'),
+                onPressed: _night == _tonight ? () => _addWalkin(venueId) : null,
+                icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                label: const Text('Add walk-in'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('message-team'),
+                onPressed: () => _push('Messages', ChatScreen(workspace: widget.workspace, clock: widget.clock)),
+                icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                label: const Text('Message team'),
+              ),
+            ],
           ),
           if (_night != _tonight)
             Padding(
