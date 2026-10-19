@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../vip/screens/vip_lookup_screen.dart';
 import '../logic/door_rules.dart';
 import '../providers/door_providers.dart';
 import '../services/door_service.dart';
@@ -15,10 +16,17 @@ import '../widgets/scan_result_panel.dart';
 /// Guests (door role): find a paid guest of the selected event by name or ticket code and admit them from the list, through
 /// exactly the same database checks as a scan, including the entry code for non-transferable tickets. For the guest whose QR
 /// will not scan, or who left their phone at home.
+///
+/// A door at a CLUB (the workspace has a venue) also gets "VIP lookup": the club's VIP guests by name or credential code, with the entry
+/// perks the database lets the door see and redeem (priority entry and the like; never contact details, notes or service perks). A door that
+/// works one EVENT has no venue, the database would refuse it, so it gets no button. A VIP credential never admits anyone to an event by itself.
 class DoorGuestsScreen extends ConsumerStatefulWidget {
-  const DoorGuestsScreen({super.key, required this.membershipId, this.debounce = const Duration(milliseconds: 350)});
+  const DoorGuestsScreen({super.key, required this.membershipId, this.venueId, this.debounce = const Duration(milliseconds: 350)});
 
   final String membershipId;
+
+  /// The club this door works at, when it is a club door.
+  final String? venueId;
 
   /// How long typing must pause before a search runs. Short in tests.
   final Duration debounce;
@@ -142,6 +150,28 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final venueId = widget.venueId;
+    if (venueId == null || venueId.isEmpty) return _events();
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: TextButton.icon(
+              key: const Key('vip-lookup-open'),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => VipLookupScreen(venueId: venueId))),
+              icon: const Icon(Icons.star_outline, size: 18),
+              label: const Text('VIP lookup'),
+            ),
+          ),
+        ),
+        Expanded(child: _events()),
+      ],
+    );
+  }
+
+  Widget _events() {
     final events = ref.watch(doorEventsProvider(widget.membershipId));
     return events.when(
       skipLoadingOnReload: true,

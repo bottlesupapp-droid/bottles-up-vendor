@@ -50,6 +50,13 @@ void main() {
       final guests = builtSectionFor(as(WorkspaceRole.door), 'guests');
       expect(guests, isA<DoorGuestsScreen>());
       expect((guests as DoorGuestsScreen).membershipId, 'm-door');
+      expect(guests.venueId, 'v1', reason: 'a club door gets the VIP lookup of its own club');
+    });
+
+    test('a door that works one event (no club) is built without a club, so it gets no VIP lookup', () {
+      const eventDoor = Workspace(membershipId: 'm-ed', orgId: 'o', orgName: 'Promoter Co', orgKind: 'organizer', role: WorkspaceRole.door, eventId: 'e1');
+      final guests = builtSectionFor(eventDoor, 'guests') as DoorGuestsScreen;
+      expect(guests.venueId, isNull);
     });
 
     test('the manager\'s Floor shows the bookings of the manager\'s own club', () {

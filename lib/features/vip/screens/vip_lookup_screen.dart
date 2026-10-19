@@ -6,8 +6,9 @@ import '../../ops/services/ops_rpc.dart';
 import '../logic/vip_rules.dart';
 import '../providers/vip_providers.dart';
 
-/// VIP lookup at the club (servers, and managers): type 3+ letters of a name, or the credential code, and see what this person is allowed
-/// to see. A server sees service perks and preferences only. An expired or ended membership is shown as such, with no perks to use.
+/// VIP lookup at the club (servers, club door staff, and managers): type 3+ letters of a name, or the credential code, and see what this person
+/// is allowed to see. A server sees service perks and preferences only; the door sees entry perks only (no preferences, contact or notes).
+/// An expired or ended membership is shown as such, with no perks to use.
 class VipLookupScreen extends ConsumerStatefulWidget {
   const VipLookupScreen({super.key, required this.venueId, this.clock = DateTime.now});
 
