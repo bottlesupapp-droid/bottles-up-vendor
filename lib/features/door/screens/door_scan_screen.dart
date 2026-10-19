@@ -34,6 +34,7 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
 
   bool _busy = false;
   bool _verifying = false;
+  bool _admitting = false;
   ScanOutcome? _outcome;
   String? _ticket;
   String? _lastCode;
@@ -112,6 +113,34 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
     _afterAnswer(outcome);
   }
 
+  /// A group ticket: [count] of its guests are coming in now.
+  Future<void> _admit(int count, DoorEvent event) async {
+    final ticket = _ticket;
+    if (ticket == null || _admitting) return;
+    setState(() => _admitting = true);
+    final outcome = await ref.read(doorServiceProvider).admit(ticket, count, event.eventId);
+    if (!mounted) return;
+    setState(() {
+      _admitting = false;
+      _outcome = outcome;
+    });
+    _afterAnswer(outcome);
+  }
+
+  /// More of a partly admitted group are at the door: the same ticket is asked about again, which answers how many are left.
+  Future<void> _more(DoorEvent event) async {
+    final ticket = _ticket;
+    if (ticket == null || _admitting) return;
+    setState(() => _admitting = true);
+    final outcome = await ref.read(doorServiceProvider).scan(ticket, event.eventId);
+    if (!mounted) return;
+    setState(() {
+      _admitting = false;
+      _outcome = outcome;
+    });
+    _afterAnswer(outcome);
+  }
+
   void _afterAnswer(ScanOutcome outcome) {
     // A short vibration confirms the answer without looking at the screen.
     HapticFeedback.mediumImpact();
@@ -168,7 +197,15 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
         ),
         const SizedBox(height: 16),
         if (_outcome != null) ...[
-          ScanResultPanel(outcome: _outcome!, verifying: _verifying, onVerify: (c) => _verify(c, event), onNext: _next),
+          ScanResultPanel(
+            outcome: _outcome!,
+            verifying: _verifying,
+            onVerify: (c) => _verify(c, event),
+            onNext: _next,
+            admitting: _admitting,
+            onAdmit: (n) => _admit(n, event),
+            onMore: () => _more(event),
+          ),
           const SizedBox(height: 16),
         ],
         if (_busy) const Padding(padding: EdgeInsets.only(bottom: 12), child: LinearProgressIndicator(key: Key('checking'))),

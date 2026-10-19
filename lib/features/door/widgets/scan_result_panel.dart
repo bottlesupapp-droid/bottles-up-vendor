@@ -14,6 +14,9 @@ class ScanResultPanel extends StatefulWidget {
     required this.onNext,
     this.verifying = false,
     this.nextLabel = 'Scan next',
+    this.onAdmit,
+    this.onMore,
+    this.admitting = false,
   });
 
   final ScanOutcome outcome;
@@ -26,6 +29,15 @@ class ScanResultPanel extends StatefulWidget {
   final bool verifying;
   final String nextLabel;
 
+  /// A group ticket: called with how many are coming in now. Null where group admission is not offered.
+  final ValueChanged<int>? onAdmit;
+
+  /// More of a partly admitted group are at the door: asks again for how many.
+  final VoidCallback? onMore;
+
+  /// A group admission is on its way: its buttons wait, so it cannot be sent twice.
+  final bool admitting;
+
   @override
   State<ScanResultPanel> createState() => _ScanResultPanelState();
 }
@@ -33,11 +45,22 @@ class ScanResultPanel extends StatefulWidget {
 class _ScanResultPanelState extends State<ScanResultPanel> {
   final _code = TextEditingController();
 
+  /// How many of a group are coming in now. Starts at everyone who is left.
+  late int _count = _most;
+
+  int get _most {
+    final left = widget.outcome.guestsLeft ?? widget.outcome.quantity ?? 1;
+    return left < 1 ? 1 : left;
+  }
+
   @override
   void didUpdateWidget(ScanResultPanel old) {
     super.didUpdateWidget(old);
     // A new answer starts with an empty code box; a wrong code is not left in it to be sent again by accident.
-    if (!identical(old.outcome, widget.outcome)) _code.clear();
+    if (!identical(old.outcome, widget.outcome)) {
+      _code.clear();
+      _count = _most;
+    }
   }
 
   @override
@@ -85,7 +108,13 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(copy.hint, style: theme.textTheme.bodyLarge),
+          Text(
+            o.result == DoorResult.ok
+                ? admitHint(o)
+                : (o.result == DoorResult.tooMany && o.guestsLeft != null ? 'Only ${o.guestsLeft} ${o.guestsLeft == 1 ? 'is' : 'are'} left on this ticket. Choose fewer.' : copy.hint),
+            key: const Key('scan-result-hint'),
+            style: theme.textTheme.bodyLarge,
+          ),
           if (hasDetails) ...[
             const SizedBox(height: 12),
             if (o.customerName != null) Text(o.customerName!, key: const Key('scan-result-name'), style: theme.textTheme.titleMedium),
@@ -95,6 +124,28 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
                 key: const Key('scan-result-ticket'),
               ),
             if (o.eventTitle != null) Text(o.eventTitle!, style: theme.textTheme.bodySmall),
+          ],
+          if (groupProgress(o) != null)
+            Padding(padding: const EdgeInsets.only(top: 10), child: Text(groupProgress(o)!, key: const Key('group-progress'), style: theme.textTheme.titleSmall)),
+          if (o.chooseCount && widget.onAdmit != null) ...[
+            const SizedBox(height: 12),
+            Text('How many are coming in now?', style: theme.textTheme.bodyMedium),
+            Row(
+              children: [
+                IconButton(key: const Key('group-less'), onPressed: widget.admitting || _count <= 1 ? null : () => setState(() => _count--), icon: const Icon(Icons.remove_circle_outline)),
+                SizedBox(width: 40, child: Text('$_count', key: const Key('group-count'), textAlign: TextAlign.center, style: theme.textTheme.titleLarge)),
+                IconButton(key: const Key('group-more'), onPressed: widget.admitting || _count >= _most ? null : () => setState(() => _count++), icon: const Icon(Icons.add_circle_outline)),
+              ],
+            ),
+            FilledButton(
+              key: const Key('admit-group'),
+              onPressed: widget.admitting ? null : () => widget.onAdmit!(_count),
+              child: Text(widget.admitting ? 'Admitting…' : 'Admit $_count ${_count == 1 ? 'guest' : 'guests'}'),
+            ),
+          ],
+          if (o.admitted && o.moreMayCome && widget.onMore != null) ...[
+            const SizedBox(height: 10),
+            OutlinedButton(key: const Key('admit-more'), onPressed: widget.admitting ? null : widget.onMore, child: const Text('Admit more of this group')),
           ],
           if (canRetryCode(o.result)) ...[
             const SizedBox(height: 14),
