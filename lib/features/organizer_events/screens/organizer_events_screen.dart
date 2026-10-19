@@ -1,5 +1,6 @@
 import '../../agreements/screens/agreements_screen.dart';
 import '../../business/widgets/business_status_card.dart';
+import '../../door_staff/screens/organizer_team_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,6 +56,15 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
     } catch (_) {
       messenger.showSnackBar(SnackBar(content: Text('The link could not be copied. It is ${eventLink(e.eventId)}')));
     }
+  }
+
+  /// The organizer's door staff, event by event (the same screen as More > Team).
+  void _openTeam() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(appBar: AppBar(title: const Text('Door staff')), body: SafeArea(child: OrganizerTeamScreen(workspace: widget.workspace))),
+      ),
+    );
   }
 
   void _openBlocker(BlockerAction action) {
@@ -119,9 +129,13 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
             BusinessStatusCard(orgId: _orgId),
             Text('Create your events here. They stay private drafts until the BottlesUp team publishes them and sets up tickets with you.', style: theme.textTheme.bodyMedium),
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.icon(key: const Key('create-event'), onPressed: () => _openForm(null), icon: const Icon(Icons.add, size: 18), label: const Text('Create event')),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                FilledButton.icon(key: const Key('create-event'), onPressed: () => _openForm(null), icon: const Icon(Icons.add, size: 18), label: const Text('Create event')),
+                OutlinedButton.icon(key: const Key('invite-team'), onPressed: _openTeam, icon: const Icon(Icons.group_add_outlined, size: 18), label: const Text('Invite door staff')),
+              ],
             ),
             if (states.hasError && list.isNotEmpty)
               Padding(

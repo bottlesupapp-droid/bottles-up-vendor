@@ -1,7 +1,10 @@
+import 'package:bottles_up_vendor/features/door_staff/providers/door_staff_providers.dart';
+import 'package:bottles_up_vendor/features/door_staff/screens/organizer_team_screen.dart';
 import 'package:bottles_up_vendor/features/organizer_events/logic/organizer_events_rules.dart';
 import 'package:bottles_up_vendor/features/organizer_events/providers/organizer_events_providers.dart';
 import 'package:bottles_up_vendor/features/organizer_events/screens/organizer_events_screen.dart';
 import 'package:bottles_up_vendor/features/owner/providers/owner_providers.dart';
+import 'package:bottles_up_vendor/features/team/providers/team_providers.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../door_staff/fake_door_staff_backend.dart';
 import '../owner/fake_setup_backend.dart' show FakeMedia;
 import 'fake_organizer_events_backend.dart';
 
@@ -70,6 +74,32 @@ void main() {
       expect(find.byKey(const Key('copy-link-p')), findsOneWidget);
       expect(find.byKey(const Key('copy-link-d')), findsNothing);
       expect(find.byKey(const Key('copy-link-x')), findsNothing);
+    });
+
+    testWidgets('Invite door staff opens the organizer\'s door staff screen, and Back returns to the events', (tester) async {
+      final doors = FakeDoorStaffBackend();
+      tester.view.physicalSize = const Size(800, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          organizerEventsServiceProvider.overrideWithValue(db.service),
+          mediaServiceProvider.overrideWithValue(FakeMedia().service),
+          doorStaffServiceProvider.overrideWithValue(doors.doorService),
+          teamServiceProvider.overrideWithValue(doors.teamService),
+        ],
+        child: MaterialApp(theme: ThemeData.dark(), home: Scaffold(body: OrganizerEventsScreen(workspace: orgWs, clock: () => DateTime(2031, 10, 24, 12)))),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.byType(OrganizerTeamScreen), findsNothing);
+      await tester.tap(find.byKey(const Key('invite-team')));
+      await tester.pumpAndSettle();
+      expect(find.byType(OrganizerTeamScreen), findsOneWidget);
+      expect(find.text('Door staff'), findsWidgets);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(OrganizerTeamScreen), findsNothing);
+      expect(find.byKey(const Key('create-event')), findsOneWidget);
     });
 
     testWidgets('Copy puts exactly the event\'s public link on the clipboard and says so', (tester) async {
