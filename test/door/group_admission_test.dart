@@ -140,6 +140,7 @@ void main() {
       expect((partly.isIn, partly.partlyIn, partly.admittedCount), (false, true, 2), reason: 'the exact count wins over the checked-in time');
       expect(partly.checkedInAt, older.checkedInAt);
       expect(older.withAdmittedKeepingTime(4).isIn, isTrue);
+      expect(older.withAdmittedKeepingTime(0).partlyIn, isFalse, reason: 'nobody in is not part way in');
       expect(fresh.withAdmitted(4).isIn, isTrue);
       expect(fresh.withAdmitted(1).partlyIn, isTrue);
     });
@@ -250,6 +251,14 @@ void main() {
       expect([for (final g in guests) (g.ticketCode, g.isIn, g.partlyIn)], [('G1', false, true), ('G2', true, false), ('G3', false, false)]);
     });
 
+    test('without the guest counts on the server the search still works, and is not asked again', () async {
+      db.handlers['door_guests'] = (_) => [guestRow('Gina', 'G1', quantity: 4, checkedInAt: '2026-10-09T21:00:00Z')];
+      final service = db.service;
+      expect((await service.guests('e1', 'gi')).single.isIn, isTrue);
+      await service.guests('e1', 'gi');
+      expect(db.count('door_guest_admissions'), 1, reason: 'asked once, then known to be missing');
+    });
+
     test('a failed read of the counts leaves the search as it was', () async {
       db.handlers['door_guests'] = (_) => [guestRow('Gina', 'G1', quantity: 4, checkedInAt: '2026-10-09T21:00:00Z')];
       db.handlers['door_guest_admissions'] = (_) => throw Exception('offline');
@@ -339,6 +348,46 @@ void main() {
       expect(ticket.inside, 4);
     });
 
+    testWidgets('while "Admit more" is asking again, the button waits and a second tap changes nothing', (tester) async {
+      tall(tester);
+      await tester.pumpWidget(scanScreen());
+      await tester.pumpAndSettle();
+      await read(tester, 'GA-1');
+      await tapKey(tester, 'group-less');
+      await tapKey(tester, 'admit-group');
+      final gate = Completer<void>();
+      db.handlers['door_admit_group'] = (p) async {
+        await gate.future;
+        return ticket.answer(p);
+      };
+      await tester.tap(find.byKey(const Key('admit-more')));
+      await tester.pump();
+      expect(tester.widget<OutlinedButton>(find.byKey(const Key('admit-more'))).onPressed, isNull);
+      await tester.tap(find.byKey(const Key('admit-more')), warnIfMissed: false);
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(db.paramsOf('door_admit_group').where((p) => p?['p_count'] == null).length, 2, reason: 'the first scan and ONE more');
+    });
+
+    testWidgets('two taps in the same instant on "Admit more", before any redraw, ask once', (tester) async {
+      tall(tester);
+      await tester.pumpWidget(scanScreen());
+      await tester.pumpAndSettle();
+      await read(tester, 'GA-1');
+      await tapKey(tester, 'group-less');
+      await tapKey(tester, 'admit-group');
+      final gate = Completer<void>();
+      db.handlers['door_admit_group'] = (p) async {
+        await gate.future;
+        return ticket.answer(p);
+      };
+      await tester.tap(find.byKey(const Key('admit-more')));
+      await tester.tap(find.byKey(const Key('admit-more')));
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(db.paramsOf('door_admit_group').where((p) => p?['p_count'] == null).length, 2, reason: 'the first scan and ONE more');
+    });
+
     testWidgets('the same group scanned again once everybody is in is "already checked in", with all four in', (tester) async {
       tall(tester);
       ticket.inside = 4;
@@ -379,6 +428,8 @@ void main() {
       await tester.tap(find.byKey(const Key('admit-group')));
       await tester.pump();
       expect(tester.widget<FilledButton>(find.byKey(const Key('admit-group'))).onPressed, isNull);
+      expect(tester.widget<IconButton>(find.byKey(const Key('group-less'))).onPressed, isNull, reason: 'the number cannot change meanwhile');
+      expect(tester.widget<IconButton>(find.byKey(const Key('group-more'))).onPressed, isNull);
       expect(find.text('Admitting…'), findsOneWidget);
       await tester.tap(find.byKey(const Key('admit-group')), warnIfMissed: false);
       await tester.pump();
@@ -511,6 +562,41 @@ void main() {
       await tapKey(tester, 'scan-next');
       expect(find.byKey(const Key('admit-GA-1')), findsNothing);
       expect(find.byKey(const Key('guest-in')), findsNWidgets(2));
+    });
+
+    testWidgets('two taps in the same instant on Admit, before any redraw, admit once', (tester) async {
+      tall(tester);
+      await search(tester);
+      await tapKey(tester, 'admit-GA-1');
+      final gate = Completer<void>();
+      db.handlers['door_admit_group'] = (p) async {
+        if (p?['p_count'] != null) await gate.future;
+        return ticket.answer(p);
+      };
+      await tester.ensureVisible(find.byKey(const Key('admit-group')));
+      await tester.tap(find.byKey(const Key('admit-group')));
+      await tester.tap(find.byKey(const Key('admit-group')));
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(db.paramsOf('door_admit_group').where((p) => p?['p_count'] != null).length, 1);
+    });
+
+    testWidgets('while "Admit more" is asking again in the list, a second tap changes nothing', (tester) async {
+      tall(tester);
+      await search(tester);
+      await tapKey(tester, 'admit-GA-1');
+      await tapKey(tester, 'group-less');
+      await tapKey(tester, 'admit-group');
+      final gate = Completer<void>();
+      db.handlers['door_admit_group'] = (p) async {
+        await gate.future;
+        return ticket.answer(p);
+      };
+      await tester.tap(find.byKey(const Key('admit-more')));
+      await tester.tap(find.byKey(const Key('admit-more')));
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(db.paramsOf('door_admit_group').where((p) => p?['p_count'] == null).length, 2, reason: 'the first ask and ONE more');
     });
 
     testWidgets('a guest of one ticket seat is admitted straight from the list', (tester) async {
