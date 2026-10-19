@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -150,7 +151,7 @@ class _SimpleCreateEventScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to upload flyer: $e'),
+          content: Text(couldNot('upload flyer', e)),
           backgroundColor: Colors.red,
         ));
       }
@@ -252,7 +253,7 @@ class _SimpleCreateEventScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to create event: $e'),
+          content: Text(couldNot('create event', e)),
           backgroundColor: Colors.red,
         ));
       }
@@ -297,7 +298,7 @@ class _SimpleCreateEventScreenState
       ),
       body: venuesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load venues: $e')),
+        error: (e, _) => Center(child: Text(couldNotLoad('venues', e))),
         data: (venues) {
           if (venues.isEmpty) {
             return Center(

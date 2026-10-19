@@ -1,6 +1,14 @@
+import 'package:bottles_up_vendor/features/chat/screens/chat_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_guests_screen.dart';
+import 'package:bottles_up_vendor/features/more/screens/more_screen.dart';
+import 'package:bottles_up_vendor/features/organizer_guests/screens/organizer_guests_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_scan_screen.dart';
 import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
+import 'package:bottles_up_vendor/features/server_desk/screens/my_tables_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/orders_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/payment_review_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/tonight_screen.dart';
+import 'package:bottles_up_vendor/features/server_desk/screens/service_requests_screen.dart';
 import 'package:bottles_up_vendor/features/organizer_events/screens/organizer_events_screen.dart';
 import 'package:bottles_up_vendor/features/team/screens/team_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/role_navigation.dart';
@@ -8,6 +16,7 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/workspace/screens/workspace_section_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bottles_up_vendor/features/seating/screens/server_scan_screen.dart';
 
 Workspace as(WorkspaceRole role) => Workspace(
       membershipId: 'm-${role.name}',
@@ -19,6 +28,19 @@ Workspace as(WorkspaceRole role) => Workspace(
       venueName: 'Club A',
     );
 
+/// Every tab that is built, as role/tab. Add to this when a tab is built; nothing else in this file changes.
+const Set<String> builtTabs = {
+  'door/scan', 'door/guests',
+  'manager/tonight', 'manager/floor', 'manager/orders', 'manager/team',
+  'owner/home', 'owner/venues', 'owner/tonight', 'owner/reports',
+  'organizer/home', 'organizer/events', 'organizer/chat', 'organizer/guests',
+  'door/chat', 'server/chat', 'security/chat',
+  'owner/more', 'manager/more', 'organizer/more', 'door/more', 'security/more',
+  'security/alerts', 'security/tasks',
+  'server/tables', 'server/orders', 'server/requests', 'server/scan',
+  'verifier/review', 'verifier/cash', 'verifier/exceptions', 'verifier/summary',
+};
+
 void main() {
   group('which sections are built', () {
     test('the door role gets the scanner on Scan and the guest search on Guests, for its own membership', () {
@@ -28,6 +50,13 @@ void main() {
       final guests = builtSectionFor(as(WorkspaceRole.door), 'guests');
       expect(guests, isA<DoorGuestsScreen>());
       expect((guests as DoorGuestsScreen).membershipId, 'm-door');
+      expect(guests.venueId, 'v1', reason: 'a club door gets the VIP lookup of its own club');
+    });
+
+    test('a door that works one event (no club) is built without a club, so it gets no VIP lookup', () {
+      const eventDoor = Workspace(membershipId: 'm-ed', orgId: 'o', orgName: 'Promoter Co', orgKind: 'organizer', role: WorkspaceRole.door, eventId: 'e1');
+      final guests = builtSectionFor(eventDoor, 'guests') as DoorGuestsScreen;
+      expect(guests.venueId, isNull);
     });
 
     test('the manager\'s Floor shows the bookings of the manager\'s own club', () {
@@ -44,23 +73,62 @@ void main() {
       expect((builtSectionFor(manager, 'floor') as FloorScreen).venueId, isNull);
     });
 
-    test('no other section of any role is built yet: they all say so, honestly', () {
+    test('exactly these tabs are built; every other tab says so, honestly', () {
+      final actual = <String>{};
       for (final role in WorkspaceRole.values) {
         for (final section in navigationFor(role).sections) {
-          final built = builtSectionFor(as(role), section.id);
-          final isDoorScreen = role == WorkspaceRole.door && (section.id == 'scan' || section.id == 'guests');
-          final isFloor = role == WorkspaceRole.manager && section.id == 'floor';
-          final isOwnerScreen = role == WorkspaceRole.owner && (section.id == 'home' || section.id == 'venues');
-          final isTeam = (role == WorkspaceRole.owner || role == WorkspaceRole.manager) && section.id == 'team';
-          final isOrganizerEvents = role == WorkspaceRole.organizer && (section.id == 'home' || section.id == 'events');
-          expect(built != null, isDoorScreen || isFloor || isOwnerScreen || isTeam || isOrganizerEvents, reason: '${role.name}/${section.id}');
+          if (builtSectionFor(as(role), section.id) != null) actual.add('${role.name}/${section.id}');
         }
+      }
+      expect(actual, builtTabs);
+    });
+
+    test('a server gets My Tables, Orders, Requests, Scan and Chat', () {
+      expect(builtSectionFor(as(WorkspaceRole.server), 'tables'), isA<MyTablesScreen>());
+      expect(builtSectionFor(as(WorkspaceRole.server), 'orders'), isA<OrdersScreen>());
+      expect(builtSectionFor(as(WorkspaceRole.server), 'requests'), isA<ServiceRequestsScreen>());
+      final scan = builtSectionFor(as(WorkspaceRole.server), 'scan');
+      expect(scan, isA<ServerScanScreen>());
+      expect((scan as ServerScanScreen).workspace.venueId, 'v1');
+      expect(builtSectionFor(as(WorkspaceRole.server), 'chat'), isA<ChatScreen>());
+    });
+
+    test('Scan is the server\'s: the door has its own scanner, and nobody else has this one', () {
+      for (final role in WorkspaceRole.values.where((r) => r != WorkspaceRole.server && r != WorkspaceRole.door)) {
+        expect(builtSectionFor(as(role), 'scan'), isNull, reason: role.name);
+      }
+      expect(builtSectionFor(as(WorkspaceRole.door), 'scan'), isA<DoorScanScreen>());
+    });
+
+    test('a manager\'s Floor can give a booking to a server: it is given the business', () {
+      const manager = Workspace(membershipId: 'm-m', orgId: 'o9', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.manager, venueId: 'v1', venueName: 'Club A');
+      expect((builtSectionFor(manager, 'floor') as FloorScreen).orgId, 'o9');
+    });
+
+    test('a manager gets Tonight and Orders for their own club, and a More hub', () {
+      final tonight = builtSectionFor(as(WorkspaceRole.manager), 'tonight');
+      expect(tonight, isA<TonightScreen>());
+      expect((tonight as TonightScreen).workspace.venueId, 'v1');
+      final orders = builtSectionFor(as(WorkspaceRole.manager), 'orders');
+      expect(orders, isA<OrdersScreen>());
+      expect((orders as OrdersScreen).workspace.venueId, 'v1');
+      expect(builtSectionFor(as(WorkspaceRole.manager), 'more'), isA<MoreScreen>());
+    });
+
+    test('a verifier\'s tabs are Review, Cash, Exceptions and Summary, each for their own club', () {
+      final review = builtSectionFor(as(WorkspaceRole.verifier), 'review');
+      expect(review, isA<PaymentReviewScreen>());
+      expect((review as PaymentReviewScreen).workspace.venueId, 'v1');
+      for (final id in ['cash', 'exceptions', 'summary']) {
+        expect(builtSectionFor(as(WorkspaceRole.verifier), id), isNotNull, reason: id);
       }
     });
 
-    test('a manager\'s other tabs are still placeholders: Orders needs bottle orders, which are not shown yet', () {
-      for (final id in ['tonight', 'orders', 'more']) {
-        expect(builtSectionFor(as(WorkspaceRole.manager), id), isNull, reason: id);
+    test('Tonight, Orders and Review are for those roles only', () {
+      for (final role in WorkspaceRole.values) {
+        if (role != WorkspaceRole.manager && role != WorkspaceRole.owner) expect(builtSectionFor(as(role), 'tonight'), isNull, reason: '${role.name}/tonight');
+        if (role != WorkspaceRole.manager && role != WorkspaceRole.server) expect(builtSectionFor(as(role), 'orders'), isNull, reason: '${role.name}/orders');
+        if (role != WorkspaceRole.verifier) expect(builtSectionFor(as(role), 'review'), isNull, reason: '${role.name}/review');
       }
     });
 
@@ -76,10 +144,6 @@ void main() {
       }
     });
 
-    test('a server\'s Scan is not the ticket scanner: it is for table bookings, which are not built here', () {
-      expect(builtSectionFor(as(WorkspaceRole.server), 'scan'), isNull);
-    });
-
     test('the organizer\'s Home and Events are the business\'s events; nobody else gets them', () {
       for (final id in ['home', 'events']) {
         final screen = builtSectionFor(as(WorkspaceRole.organizer), id);
@@ -92,8 +156,9 @@ void main() {
       expect(builtSectionFor(as(WorkspaceRole.owner), 'home'), isNot(isA<OrganizerEventsScreen>()));
     });
 
-    test('an organizer\'s Guests is not the door guest list', () {
-      expect(builtSectionFor(as(WorkspaceRole.organizer), 'guests'), isNull);
+    test('an organizer\'s Guests is their own read-only list, not the door guest list', () {
+      expect(builtSectionFor(as(WorkspaceRole.organizer), 'guests'), isA<OrganizerGuestsScreen>());
+      expect(builtSectionFor(as(WorkspaceRole.door), 'guests'), isA<DoorGuestsScreen>());
     });
 
     test('Door Sales is not built, so it is not a till that looks real', () {

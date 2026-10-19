@@ -51,7 +51,7 @@ class AboutScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             Text(
-              'Bottles Up',
+              'BottlesUp Business',
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -60,7 +60,7 @@ class AboutScreen extends ConsumerWidget {
             const SizedBox(height: 8),
 
             Text(
-              'Vendor Platform',
+              'For venues and event organizers',
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -105,7 +105,7 @@ class AboutScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Empowering vendors to seamlessly manage events, inventory, and bookings while delivering exceptional experiences to customers.',
+                    'Helping venues and event organizers manage events, inventory, and bookings while delivering exceptional experiences to customers.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       height: 1.6,
@@ -306,7 +306,7 @@ class AboutScreen extends ConsumerWidget {
                     onTap: () {
                       showLicensePage(
                         context: context,
-                        applicationName: 'Bottles Up Vendor',
+                        applicationName: 'BottlesUp Business',
                         applicationVersion: '1.0.0',
                         applicationIcon: Container(
                           width: 80,

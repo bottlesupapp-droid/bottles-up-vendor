@@ -248,6 +248,9 @@ String describeAccess(DateTime? start, DateTime? end) {
   return 'Until ${_fmt(end!)}';
 }
 
+/// One moment in the same words the access windows use.
+String describeAccessTime(DateTime at) => _fmt(at);
+
 /// A person's name, or their email when they have no profile name yet.
 String displayName(String? name, String? email) {
   final n = name?.trim();
@@ -409,3 +412,37 @@ Shift? parseShift(Map<String, dynamic> r) {
       current: [for (final m in members) if (m.state.isCurrent) m],
       history: [for (final m in members) if (!m.state.isCurrent) m],
     );
+
+/// Whether a member's role can be changed to another club role from the app. Owners and organizers are a platform matter, and an event
+/// role (door) has nothing to change to. The database still decides who may do it.
+bool canChangeRole(String role, MemberState state, {required String? venueId}) {
+  if (venueId == null || state == MemberState.revoked) return false;
+  return const {'manager', 'server', 'door', 'security', 'verifier'}.contains(role);
+}
+
+/// The roles to offer when changing [current]: the ones this person may appoint at the club, without the one already held.
+List<String> rolesToChangeTo(List<String> invitable, String current) => [for (final r in invitable) if (r != current) r];
+
+/// What a shift form holds. [start] and [end] are the person's own clock; if the end is not after the start it means the next day, so a
+/// shift can run past midnight without anyone doing date arithmetic.
+String? checkShiftForm({required String name, required DateTime? start, required DateTime? end}) {
+  final n = name.trim();
+  if (n.isEmpty) return 'Name the shift, for example "Friday night".';
+  if (n.length > 80) return 'Keep the name to 80 characters or fewer.';
+  if (start == null) return 'Choose when the shift starts.';
+  if (end == null) return 'Choose when the shift ends.';
+  if (!end.isAfter(start)) return 'The shift has to end after it starts.';
+  if (end.difference(start) > const Duration(hours: 24)) return 'A shift can be at most 24 hours long.';
+  return null;
+}
+
+/// "Fri 9 Oct 21:00 to 03:00": a shift's time in words.
+String describeShift(DateTime start, DateTime end) {
+  final s = start.toLocal();
+  final e = end.toLocal();
+  final sameDay = s.year == e.year && s.month == e.month && s.day == e.day;
+  final day = DateFormat('EEE d MMM').format(s);
+  final from = DateFormat('HH:mm').format(s);
+  final to = DateFormat('HH:mm').format(e);
+  return sameDay ? '$day $from to $to' : '$day $from to ${DateFormat('EEE d MMM').format(e)} $to';
+}

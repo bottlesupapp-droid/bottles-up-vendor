@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/models/venue_model.dart';
@@ -41,7 +42,10 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
             return _buildVenueList(venues);
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => _buildErrorState(error.toString()),
+          error: (error, stack) {
+            logProblem('venue directory', error);
+            return _buildErrorState(loadFailedMessage('the venues'));
+          },
         ),
       ),
     );

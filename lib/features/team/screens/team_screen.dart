@@ -13,6 +13,7 @@ import '../services/team_service.dart';
 import '../widgets/invite_result_card.dart';
 import '../widgets/team_badge.dart';
 import 'invite_screen.dart';
+import 'shifts_screen.dart';
 
 /// Team (owner and manager): who works for the business, who has been invited and in what state, and the actions to invite, send a
 /// new link, cancel, or remove access. What each person sees, and what they may do, is decided by the database: an owner sees
@@ -122,6 +123,57 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     }
   }
 
+  Future<void> _shifts(List<OrgVenue> venues) async {
+    await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => ShiftsScreen(venues: venues, pickDateTime: widget.pickDateTime, clock: widget.clock)));
+  }
+
+  Future<void> _changeRole(TeamMember m) async {
+    List<String> roles;
+    try {
+      roles = rolesToChangeTo(await ref.read(teamServiceProvider).invitableRoles(_orgId, m.venueId!), m.role);
+    } on TeamLoadException catch (e) {
+      if (mounted) _say(e.message);
+      return;
+    }
+    if (!mounted) return;
+    if (roles.isEmpty) {
+      _say('There is no other role you can give ${displayName(m.name, m.email)} here.');
+      return;
+    }
+    final role = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text('Change ${displayName(m.name, m.email)} from ${roleLabel(m.role)} to', style: Theme.of(ctx).textTheme.titleMedium),
+            for (final r in roles) ListTile(key: Key('role-option-$r'), contentPadding: EdgeInsets.zero, title: Text(roleLabel(r)), onTap: () => Navigator.of(ctx).pop(r)),
+          ],
+        ),
+      ),
+    );
+    if (role == null || !mounted) return;
+    final yes = await confirmRemove(
+      context,
+      title: 'Make ${displayName(m.name, m.email)} ${roleLabel(role).toLowerCase()}?',
+      body: 'Their ${roleLabel(m.role).toLowerCase()} access ends now and the new role starts now, at the same club. This is recorded.',
+      confirmLabel: 'Change role',
+    );
+    if (!yes || !mounted) return;
+    setState(() => _busyId = m.membershipId);
+    try {
+      await ref.read(teamServiceProvider).changeRole(m.membershipId, role);
+      if (!mounted) return;
+      _say('Role changed.');
+      _refresh();
+    } on TeamActionException catch (e) {
+      if (mounted) _say(e.message);
+    } finally {
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
+
   Widget _error(Object error) {
     final e = error is TeamLoadException ? error : const TeamLoadException(unavailable: false, accessEnded: false);
     return Center(
@@ -162,14 +214,23 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       children: [
         Text('Appoint managers and staff, give temporary access for a night or a shift, and remove access at any time.', style: theme.textTheme.bodyMedium),
         const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            key: const Key('invite-button'),
-            onPressed: venues == null || noVenues ? null : () => _invite(venues),
-            icon: const Icon(Icons.person_add_alt_1, size: 18),
-            label: const Text('Invite someone'),
-          ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            FilledButton.icon(
+              key: const Key('invite-button'),
+              onPressed: venues == null || noVenues ? null : () => _invite(venues),
+              icon: const Icon(Icons.person_add_alt_1, size: 18),
+              label: const Text('Invite someone'),
+            ),
+            OutlinedButton.icon(
+              key: const Key('shifts-button'),
+              onPressed: venues == null || noVenues ? null : () => _shifts(venues),
+              icon: const Icon(Icons.schedule, size: 18),
+              label: const Text('Shifts'),
+            ),
+          ],
         ),
         if (noVenues)
           Padding(
@@ -284,11 +345,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             if (canRemoveMember(m.role, m.state))
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
-                  key: Key('remove-${m.membershipId}'),
-                  style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF5350)),
-                  onPressed: () => _remove(m),
-                  child: const Text('Remove'),
+                child: Wrap(
+                  children: [
+                    if (canChangeRole(m.role, m.state, venueId: m.venueId))
+                      TextButton(key: Key('change-role-${m.membershipId}'), onPressed: _busyId == m.membershipId ? null : () => _changeRole(m), child: const Text('Change role')),
+                    TextButton(
+                      key: Key('remove-${m.membershipId}'),
+                      style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF5350)),
+                      onPressed: () => _remove(m),
+                      child: const Text('Remove'),
+                    ),
+                  ],
                 ),
               ),
           ],

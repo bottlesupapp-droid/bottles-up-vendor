@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:ionicons/ionicons.dart';
 
 import '../../auth/providers/supabase_auth_provider.dart';
+import '../logic/last_workspace.dart';
 import '../logic/workspace_routing.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
@@ -22,6 +23,11 @@ class WorkspaceSelectorScreen extends ConsumerStatefulWidget {
 
 class _WorkspaceSelectorScreenState extends ConsumerState<WorkspaceSelectorScreen> {
   bool _autoOpened = false;
+
+  void _open(Workspace workspace) {
+    ref.read(rememberWorkspaceProvider)(workspace.membershipId);
+    context.go(workspaceLandingPath(workspace));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +56,17 @@ class _WorkspaceSelectorScreenState extends ConsumerState<WorkspaceSelectorScree
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasWorkspaces) return _Empty(snapshot: snapshot);
+          // The one used last on this phone goes first. Access is the database's: this only orders the list.
+          final lastId = ref.watch(lastWorkspaceIdProvider).valueOrNull;
+          final shown = withLastUsedFirst(snapshot.workspaces, lastId);
           return ListView.separated(
             padding: const EdgeInsets.all(16),
-            itemCount: snapshot.workspaces.length,
+            itemCount: shown.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, i) => _WorkspaceCard(
-              workspace: snapshot.workspaces[i],
-              onOpen: () => context.go(workspaceLandingPath(snapshot.workspaces[i])),
+              workspace: shown[i],
+              lastUsed: isLastUsed(shown[i], shown, lastId),
+              onOpen: () => _open(shown[i]),
             ),
           );
         },
@@ -66,10 +76,13 @@ class _WorkspaceSelectorScreenState extends ConsumerState<WorkspaceSelectorScree
 }
 
 class _WorkspaceCard extends StatelessWidget {
-  const _WorkspaceCard({required this.workspace, required this.onOpen});
+  const _WorkspaceCard({required this.workspace, required this.onOpen, this.lastUsed = false});
 
   final Workspace workspace;
   final VoidCallback onOpen;
+
+  /// The one opened last on this phone.
+  final bool lastUsed;
 
   @override
   Widget build(BuildContext context) {
@@ -84,11 +97,12 @@ class _WorkspaceCard extends StatelessWidget {
         title: Text(workspace.role.label),
         subtitle: Text(
           [
+            if (lastUsed) 'Last used',
             '${workspace.orgName} · ${workspace.scopeLabel}',
             if (until != null) 'Access until ${DateFormat('MMM d, HH:mm').format(until.toLocal())}',
           ].join('\n'),
         ),
-        isThreeLine: until != null,
+        isThreeLine: until != null || lastUsed,
         trailing: const Icon(Ionicons.chevron_forward),
       ),
     );
@@ -107,7 +121,7 @@ class _Empty extends ConsumerWidget {
       case WorkspaceStatus.unavailable:
         message = 'Workspaces are not set up on this server yet.';
       case WorkspaceStatus.error:
-        message = 'Could not load your workspaces. ${snapshot.message ?? ''}'.trim();
+        message = 'We could not load your workspace. Check your connection and try again.';
       default:
         message = 'You do not have a workspace yet. Ask the venue owner or organizer to invite you.';
     }

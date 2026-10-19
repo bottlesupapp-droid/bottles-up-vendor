@@ -116,7 +116,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to save profile: ${e.toString()}'),
+            content: Text('We could not save profile. Your entries are still here. Try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),

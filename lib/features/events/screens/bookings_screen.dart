@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/bookings_provider.dart';
@@ -60,7 +61,7 @@ class BookingsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error loading bookings: $error'),
+              Text(couldNotLoad('bookings', error)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.invalidate(bookingsProvider),

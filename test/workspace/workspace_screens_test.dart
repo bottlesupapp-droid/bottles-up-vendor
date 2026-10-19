@@ -1,4 +1,5 @@
 import 'package:bottles_up_vendor/features/workspace/logic/workspace_routing.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/tonight_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/workspace/providers/workspace_providers.dart';
@@ -59,7 +60,7 @@ void main() {
 
       expect(find.text('Manager · Club Co'), findsOneWidget); // who you are acting as
       expect(find.text('Club A'), findsWidgets); // and where
-      expect(find.textContaining('Prepare, run and close the night'), findsOneWidget);
+      expect(find.byType(TonightScreen), findsOneWidget); // the manager's first tab
     });
 
     testWidgets('one workspace opens straight away, with no list', (tester) async {
@@ -113,11 +114,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('More'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Inventory, VIP guests, discounts, events and agreements, chat and settings.'), findsOneWidget);
+      expect(find.byKey(const Key('more-list')), findsOneWidget, reason: 'More opens the manager\'s hub');
     });
 
     testWidgets('a section that is not built says so plainly', (tester) async {
-      await tester.pumpWidget(harness(WorkspaceSnapshot.ready([manager]), start: '/w/m1/orders'));
+      await tester.pumpWidget(harness(WorkspaceSnapshot.ready([door]), start: '/w/m3/door-sales'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('not-built-yet')), findsOneWidget);
       expect(find.textContaining('Not built yet'), findsOneWidget);

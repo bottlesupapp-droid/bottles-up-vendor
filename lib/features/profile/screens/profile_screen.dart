@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +27,7 @@ class ProfileScreen extends ConsumerWidget {
         id: supabaseUser.id,
         email: supabaseUser.email ?? 'Unknown Email',
         phone: supabaseUser.userMetadata?['phone'],
-        businessName: supabaseUser.userMetadata?['business_name'] ?? 'Bottles Up Vendor',
+        businessName: supabaseUser.userMetadata?['business_name'] ?? 'BottlesUp Business',
         logoUrl: supabaseUser.userMetadata?['avatar_url'],
         onboardingCompleted: false,
         twoFaEnabled: false,
@@ -386,7 +387,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       title: Text(
-                        'About Bottles Up',
+                        'About BottlesUp Business',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -697,7 +698,7 @@ class ProfileScreen extends ConsumerWidget {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error deleting account: $e'),
+              content: Text(couldNot('delete account', e)),
               backgroundColor: theme.colorScheme.error,
             ),
           );

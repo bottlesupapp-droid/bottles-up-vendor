@@ -1,4 +1,4 @@
-# Bottles Up Vendor App
+# BottlesUp Business App (the vendor app)
 
 A Flutter-based vendor management application for the Bottles Up platform with Supabase backend and Stripe integration.
 

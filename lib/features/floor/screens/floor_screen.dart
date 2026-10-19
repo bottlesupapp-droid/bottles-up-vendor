@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../server_desk/logic/server_desk_rules.dart';
+import '../../server_desk/providers/server_desk_providers.dart';
+import '../../server_desk/services/server_desk_service.dart';
+import '../../server_desk/widgets/assign_server_row.dart';
+import '../../table_service/screens/table_detail_screen.dart';
+import '../../team/logic/team_rules.dart' show TeamMember;
+import '../../team/providers/team_providers.dart';
 import '../logic/bookings_rules.dart';
 import '../providers/floor_providers.dart';
 import '../services/floor_service.dart';
@@ -23,8 +30,9 @@ Future<void> _defaultContact(Uri uri) async {
 
 /// Floor (manager): the reservations of the manager's own club, night by night, read only. The database decides which club
 /// that is, whether this person may read it and which night each booking belongs to (a 1:00 AM table belongs to the night
-/// before). Amounts are what was booked, not what was collected; walk-ins, guest allowances, table assignment, check-in and
-/// bottle orders are not here yet.
+/// before). Amounts are what was booked, not what was collected; walk-ins, guest allowances, check-in and bottle orders are not
+/// here yet. When the business is known ([orgId]), each confirmed booking also shows which server has the table and lets the
+/// manager (or the owner) give it to another; the database checks they manage THIS club.
 class FloorScreen extends ConsumerStatefulWidget {
   const FloorScreen({
     super.key,
@@ -34,6 +42,8 @@ class FloorScreen extends ConsumerStatefulWidget {
     this.pickNight = _defaultPicker,
     this.contact = _defaultContact,
     this.showHeading = true,
+    this.orgId,
+    this.pickServer = showServerPicker,
   });
 
   /// The club this workspace is limited to. Null means the workspace is not tied to a club, and there is nothing to show.
@@ -47,6 +57,10 @@ class FloorScreen extends ConsumerStatefulWidget {
 
   /// The "Bookings" heading and venue name. Off when the screen sits under a venue's own header.
   final bool showHeading;
+
+  /// The business this club belongs to. When given, a booking can be given to a server of the club (their names come from the team).
+  final String? orgId;
+  final ServerPicker pickServer;
 
   @override
   ConsumerState<FloorScreen> createState() => _FloorScreenState();
@@ -67,6 +81,83 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
       _presetId = null;
       _range = from ? NightRange(iso, _range.to) : NightRange(_range.from, iso);
     });
+  }
+
+  final Set<String> _assigning = {};
+
+  Future<void> _giveToServer(BookingRow booking, FloorQuery query, List<ServerOption> options, BookingServer? current) async {
+    final choice = await widget.pickServer(context, options, current?.membershipId);
+    if (choice == null || !mounted) return;
+    if (choice.membershipId == current?.membershipId) return;
+    setState(() => _assigning.add(booking.bookingId));
+    final messenger = ScaffoldMessenger.of(context);
+    final service = ref.read(serverDeskServiceProvider);
+    try {
+      if (choice.membershipId == null) {
+        await service.unassignServer(booking.bookingId);
+      } else {
+        await service.assignServer(booking.bookingId, choice.membershipId!);
+      }
+    } on ServerDeskActionException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      // Read it again either way: after a refusal the row shows who really has the table.
+      ref.invalidate(bookingServersProvider(query));
+      if (mounted) setState(() => _assigning.remove(booking.bookingId));
+    }
+  }
+
+  /// The "Server" line under a confirmed booking, or nothing when it does not apply or cannot be known.
+  Widget? _serverRow(BookingRow b, FloorQuery query, AsyncValue<List<BookingServer>>? servers, AsyncValue<List<TeamMember>>? team) {
+    final orgId = widget.orgId;
+    if (orgId == null || servers == null || !statusInfo(b.status).confirmed) return null;
+    return servers.when(
+      loading: () => null,
+      error: (error, _) {
+        // A server without the migration simply does not offer this; any other failure is said once per booking.
+        if (error is ServerDeskLoadException && error.unavailable) return null;
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text('Servers could not be loaded.', key: Key('servers-error-${b.bookingId}'), style: Theme.of(context).textTheme.bodySmall),
+        );
+      },
+      data: (list) {
+        final current = list.where((a) => a.bookingId == b.bookingId).firstOrNull;
+        final members = team?.asData?.value;
+        final options = members == null ? const <ServerOption>[] : serverOptions(members, query.venueId);
+        return AssignServerRow(
+          bookingId: b.bookingId,
+          // While the team is still loading the name is not known yet; it must not be shown as "no longer has access".
+          label: current == null ? null : (members == null ? '…' : assignedServerLabel(current, members)),
+          unavailable: current != null && !current.available,
+          canChange: members != null,
+          busy: _assigning.contains(b.bookingId),
+          onChange: () => _giveToServer(b, query, options, current),
+        );
+      },
+    );
+  }
+
+  void _openTable(BookingRow b) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TableDetailScreen(bookingId: b.bookingId, title: '${b.tableName} · ${b.customerName}', clock: widget.clock),
+    ));
+  }
+
+  /// Under a confirmed booking: who serves the table (when the business is known) and a way into its orders and payments.
+  Widget? _footer(BookingRow b, FloorQuery query, AsyncValue<List<BookingServer>>? servers, AsyncValue<List<TeamMember>>? team) {
+    final row = _serverRow(b, query, servers, team);
+    if (!statusInfo(b.status).confirmed) return row;
+    final open = Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        key: Key('open-table-${b.bookingId}'),
+        onPressed: () => _openTable(b),
+        icon: const Icon(Icons.receipt_long_outlined, size: 18),
+        label: const Text('Orders and payments'),
+      ),
+    );
+    return row == null ? open : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [row, open]);
   }
 
   Future<void> _call(Uri uri) async {
@@ -94,6 +185,9 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
     final problem = validateRange(_range);
     final query = FloorQuery(venueId, _range);
     final async = problem == null ? ref.watch(floorBookingsProvider(query)) : null;
+    final orgId = widget.orgId;
+    final servers = (orgId != null && problem == null) ? ref.watch(bookingServersProvider(query)) : null;
+    final team = orgId != null ? ref.watch(teamMembersProvider(orgId)) : null;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -188,14 +282,14 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
                   ],
                 );
               },
-              data: _results,
+              data: (rows) => _results(rows, query, servers, team),
             ),
         ],
       ),
     );
   }
 
-  Widget _results(List<BookingRow> rows) {
+  Widget _results(List<BookingRow> rows, FloorQuery query, AsyncValue<List<BookingServer>>? servers, AsyncValue<List<TeamMember>>? team) {
     final theme = Theme.of(context);
     final shown = applyFilter(rows, _filter);
     final summary = summarize(rows);
@@ -267,11 +361,13 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
               Text('${g.guests} ${g.guests == 1 ? 'guest' : 'guests'} expected', style: theme.textTheme.bodySmall),
             ],
           ),
-          for (final b in g.rows) BookingCard(booking: b, onContact: _call),
+          for (final b in g.rows) BookingCard(booking: b, onContact: _call, footer: _footer(b, query, servers, team)),
         ],
         const SizedBox(height: 20),
         Text(
-          'Amounts are what was booked, not what has been collected. Walk-ins, guest allowances, table assignment, check-in and bottle orders are not available here yet.',
+          widget.orgId == null
+              ? 'Amounts are what was booked, not what has been collected. Walk-ins, guest allowances, table assignment, check-in and bottle orders are not available here yet.'
+              : 'Amounts are what was booked, not what has been collected. Walk-ins, guest allowances, check-in and bottle orders are not available here yet.',
           key: const Key('floor-footnote'),
           style: theme.textTheme.bodySmall,
         ),

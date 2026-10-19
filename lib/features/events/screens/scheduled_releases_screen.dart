@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
@@ -74,7 +75,7 @@ class ScheduledReleasesScreen extends ConsumerWidget {
             children: [
               const Icon(Ionicons.alert_circle_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error: $error'),
+              Text(couldNotLoad('this page', error)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.invalidate(scheduledReleasesProvider(eventId)),

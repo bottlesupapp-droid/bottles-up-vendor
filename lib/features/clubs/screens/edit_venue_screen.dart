@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -202,7 +203,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to upload: ${e.toString()}'),
+          content: Text('We could not upload. Your entries are still here. Try again.'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 4),
         ));
@@ -326,7 +327,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to save: $e'),
+          content: Text(couldNot('save', e)),
           backgroundColor: Colors.red,
         ));
       }

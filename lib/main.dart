@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/config/supabase_config.dart';
+import 'core/crash/crash_reporting.dart';
 import 'core/startup/startup_error_app.dart';
 import 'core/utils/error_handler.dart';
 
@@ -22,7 +23,8 @@ void main() {
         _logError(details.exception, details.stack);
       };
 
-      await _start();
+      // Crash reporting wraps the start-up when the build has a SENTRY_DSN; otherwise this is just _start().
+      await runWithCrashReporting(appRunner: _start);
     },
     (error, stack) {
       _logError(error, stack);
@@ -48,8 +50,8 @@ Future<void> _start() async {
   );
 }
 
-/// Log errors for debugging and crash reporting
-/// TODO: Replace debugPrint with Sentry/Crashlytics in production
+/// Log errors for debugging. Crash reporting itself (Sentry, when the build has a SENTRY_DSN) hooks the framework and zone
+/// handlers on its own, so uncaught errors are NOT sent from here a second time.
 void _logError(Object error, StackTrace? stack) {
   // Sanitize error message before logging
   final sanitized = ErrorHandler.sanitizeErrorMessage(error.toString());
@@ -62,11 +64,6 @@ void _logError(Object error, StackTrace? stack) {
   }
   debugPrint('═══════════════════════════════════════');
 
-  // TODO: Send to crash reporting service in production
-  // Example:
-  // Sentry.captureException(error, stackTrace: stack);
-  // or
-  // FirebaseCrashlytics.instance.recordError(error, stack);
 }
 
 class BottlesUpVendorApp extends ConsumerWidget {
@@ -77,7 +74,7 @@ class BottlesUpVendorApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     
     return MaterialApp.router(
-      title: 'Bottles Up Vendor',
+      title: 'BottlesUp Business',
       debugShowCheckedModeBanner: false,
       
       // Theming

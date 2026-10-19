@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -137,7 +138,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load event: $e')),
+          SnackBar(content: Text(couldNotLoad('event', e))),
         );
         context.pop();
       }
@@ -204,7 +205,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
+          SnackBar(content: Text(couldNot('pick image', e))),
         );
       }
     }
@@ -275,7 +276,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update event: $e')),
+          SnackBar(content: Text(couldNot('update event', e))),
         );
       }
     } finally {

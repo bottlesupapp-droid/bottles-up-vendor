@@ -47,7 +47,7 @@ class IssuedLink {
 typedef EmailSender = Future<EmailOutcome> Function(String invitationId, String token);
 
 /// The Team screen's calls to the website's database functions (`list_team`, `list_team_invitations`, `list_shifts`,
-/// `invitable_roles`, `invite_member`, `resend_invitation`, `revoke_invitation`, `revoke_membership`, defined in the website repo's
+/// `invitable_roles`, `invite_member`, `resend_invitation`, `revoke_invitation`, `revoke_membership`, `change_member_role`, `create_shift`, defined in the website repo's
 /// 20261006120000_tenancy_foundation.sql and 20261008100000_team_invitations.sql). They check in the database what this person may
 /// see and do: an owner sees everyone, a manager only the staff of their own club. Nothing here decides that.
 class TeamService {
@@ -143,6 +143,27 @@ class TeamService {
   Future<void> removeMember(String membershipId) => _act(
         () async => await _rpc('revoke_membership', params: {'p_membership': membershipId}),
         generic: 'Access could not be removed. Try again.',
+      );
+
+  /// Moves someone to another role at the same club in one step: the old access ends and the new one starts now. The database applies the
+  /// same rules as inviting and removing, so a manager is refused what only an owner may do.
+  Future<void> changeRole(String membershipId, String newRole) => _act(
+        () async => await _rpc('change_member_role', params: {'p_membership': membershipId, 'p_new_role': newRole}),
+        generic: 'The role could not be changed. Try again.',
+      );
+
+  /// A shift at a club (a night or part of one) that people can be invited to. Times are sent in UTC.
+  Future<String> createShift(String venueId, String name, DateTime startsAt, DateTime endsAt) => _act(
+        () async {
+          final data = await _rpc('create_shift', params: {
+            'p_venue': venueId,
+            'p_name': name.trim(),
+            'p_starts': startsAt.toUtc().toIso8601String(),
+            'p_ends': endsAt.toUtc().toIso8601String(),
+          });
+          return data.toString();
+        },
+        generic: 'The shift could not be saved. Try again.',
       );
 
   /// Emails the link to the address on the invitation. Never throws: the invitation already exists and the screen shows the link

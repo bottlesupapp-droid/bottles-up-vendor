@@ -8,12 +8,19 @@ Workspace ws(String id, WorkspaceRole role) =>
 
 WorkspaceSnapshot ready(List<Workspace> w) => WorkspaceSnapshot.ready(w);
 
-RedirectDecision decide(String path, WorkspaceSnapshot s, {bool loggedIn = true, String? pending}) =>
-    decideWorkspaceRedirect(isLoggedIn: loggedIn, path: path, snapshot: s, pendingToken: pending);
+/// [classic] defaults to a finished classic vendor, the people the older rules were written for.
+RedirectDecision decide(
+  String path,
+  WorkspaceSnapshot s, {
+  bool loggedIn = true,
+  String? pending,
+  ClassicVendorStatus classic = ClassicVendorStatus.classic,
+}) =>
+    decideWorkspaceRedirect(isLoggedIn: loggedIn, path: path, snapshot: s, pendingToken: pending, classicVendor: classic);
 
-void expectGo(RedirectDecision d, String location) {
-  expect(d.isFinal, isTrue);
-  expect(d.location, location);
+void expectGo(RedirectDecision d, String location, {String? reason}) {
+  expect(d.isFinal, isTrue, reason: reason);
+  expect(d.location, location, reason: reason);
 }
 
 void expectStay(RedirectDecision d) {
@@ -27,7 +34,7 @@ void main() {
   final one = ready([ws('m1', WorkspaceRole.manager)]);
   final two = ready([ws('m1', WorkspaceRole.manager), ws('m2', WorkspaceRole.owner)]);
 
-  group('people WITHOUT a workspace keep the existing vendor flow', () {
+  group('finished classic vendors WITHOUT a workspace keep the existing vendor flow', () {
     test('empty list', () => expectDefer(decide('/login', ready(const []))));
     test('still loading', () => expectDefer(decide('/login', const WorkspaceSnapshot.loading())));
     test('backend has no workspaces yet', () => expectDefer(decide('/dashboard', const WorkspaceSnapshot.unavailable())));
@@ -66,6 +73,127 @@ void main() {
     test('a workspace that has just been revoked disappears on the next snapshot', () {
       expectStay(decide('/w/m1/tonight', two));
       expectGo(decide('/w/m1/tonight', ready([ws('m2', WorkspaceRole.owner)])), WorkspaceRoutes.workspaces);
+    });
+  });
+
+  group('people with no workspace who are not classic vendors set up a business on the website', () {
+    const none = ClassicVendorStatus.none;
+    final empty = ready(const []);
+
+    test('wherever they land, once the backend has answered "no workspaces"', () {
+      for (final p in ['/login', '/register', '/', '/dashboard', '/workspaces', '/onboarding/staff', '/onboarding/venue', '/clubs', '/w/x/tonight']) {
+        expectGo(decide(p, empty, classic: none), WorkspaceRoutes.noWorkspace);
+      }
+    });
+
+    test('but NOT when asking for the workspaces failed: that is a failure page with Retry, never "set up your business"', () {
+      for (final p in ['/dashboard', '/login', '/', '/workspaces', '/clubs', '/w/x/tonight', WorkspaceRoutes.noWorkspace]) {
+        expectGo(decide(p, const WorkspaceSnapshot.error('offline'), classic: none), WorkspaceRoutes.workspaceError);
+      }
+    });
+
+    test('while the list is still being asked for they wait, instead of being pushed into the classic onboarding', () {
+      expectStay(decide('/login', const WorkspaceSnapshot.loading(), classic: none));
+      expectStay(decide('/onboarding/staff', const WorkspaceSnapshot.loading(), classic: none));
+    });
+
+    test('a backend without workspaces yet changes nothing (there is no website side to send them to)', () {
+      expectDefer(decide('/dashboard', const WorkspaceSnapshot.unavailable(), classic: none));
+    });
+
+    test('the setup page is theirs while the answer is empty, being asked again, or the backend has no workspaces, so "Check again" never bounces them', () {
+      for (final s in [empty, const WorkspaceSnapshot.loading(), const WorkspaceSnapshot.unavailable()]) {
+        expectStay(decide(WorkspaceRoutes.noWorkspace, s, classic: none));
+      }
+    });
+
+    test('a finished classic vendor who is on the setup page is not moved to the failure page by an error (the classic dashboard is theirs)', () {
+      expectStay(decide(WorkspaceRoutes.noWorkspace, const WorkspaceSnapshot.error('offline')));
+    });
+
+    test('the failure page stays while it is failing or retrying, and moves on once there is an answer', () {
+      expectStay(decide(WorkspaceRoutes.workspaceError, const WorkspaceSnapshot.error('offline'), classic: none));
+      expectStay(decide(WorkspaceRoutes.workspaceError, const WorkspaceSnapshot.loading(), classic: none));
+      expectGo(decide(WorkspaceRoutes.workspaceError, empty, classic: none), WorkspaceRoutes.noWorkspace);
+      expectGo(decide(WorkspaceRoutes.workspaceError, empty), '/dashboard', reason: 'a finished classic vendor goes to their dashboard');
+      expectDefer(decide(WorkspaceRoutes.workspaceError, const WorkspaceSnapshot.unavailable(), classic: none));
+    });
+
+    test('a person with a workspace is taken off the failure page once the list arrives', () {
+      expectGo(decide(WorkspaceRoutes.workspaceError, one, classic: none), WorkspaceRoutes.workspaces);
+    });
+
+    test('an invitation still goes through: the accept screen is not intercepted, a remembered token wins', () {
+      expectStay(decide('/accept-invite', empty, classic: none));
+      expectGo(decide('/login', empty, classic: none, pending: 'abc'), '/accept-invite?token=abc');
+    });
+
+    test('signed out is untouched', () {
+      expectDefer(decide('/login', empty, classic: none, loggedIn: false));
+      expectDefer(decide(WorkspaceRoutes.noWorkspace, empty, classic: none, loggedIn: false));
+    });
+  });
+
+  group('the vendors row has not been looked up yet', () {
+    const loading = ClassicVendorStatus.loading;
+
+    test('nothing is decided about somebody who may turn out to be a classic vendor', () {
+      expectDefer(decide('/login', ready(const []), classic: loading));
+      expectDefer(decide('/dashboard', ready(const []), classic: loading));
+      expectDefer(decide('/dashboard', const WorkspaceSnapshot.error('x'), classic: loading));
+    });
+
+    test('the no-workspace page does not bounce them either', () {
+      expectStay(decide(WorkspaceRoutes.noWorkspace, ready(const []), classic: loading));
+    });
+
+    test('a workspace still wins', () {
+      expectGo(decide('/login', one, classic: loading), WorkspaceRoutes.workspaces);
+    });
+  });
+
+  group('the no-workspace page and the other kinds of people', () {
+    test('a finished classic vendor is sent to the classic dashboard once the list is known to be empty', () {
+      expectGo(decide(WorkspaceRoutes.noWorkspace, ready(const [])), '/dashboard');
+    });
+
+    test('...but not before it is known', () {
+      expectStay(decide(WorkspaceRoutes.noWorkspace, const WorkspaceSnapshot.loading()));
+    });
+
+    test('somebody who now has a workspace leaves the page for the list', () {
+      for (final c in ClassicVendorStatus.values) {
+        expectGo(decide(WorkspaceRoutes.noWorkspace, one, classic: c), WorkspaceRoutes.workspaces);
+      }
+    });
+
+    test('having a workspace beats everything about the classic dashboard', () {
+      for (final c in ClassicVendorStatus.values) {
+        expectGo(decide('/dashboard', one, classic: c), WorkspaceRoutes.workspaces);
+        expectStay(decide('/w/m1/tonight', one, classic: c));
+      }
+    });
+  });
+
+  group('classicVendorStatus', () {
+    ClassicVendorStatus status({bool signedIn = true, bool checked = true, bool done = true}) => classicVendorStatus(
+          isAuthenticated: signedIn,
+          vendorChecked: checked,
+          hasCompletedClassicOnboarding: done,
+        );
+
+    test('only a finished classic onboarding makes a classic vendor', () {
+      expect(status(done: true), ClassicVendorStatus.classic);
+      expect(status(done: false), ClassicVendorStatus.none); // no row, or a row that never finished
+    });
+
+    test('not decided until the row has been looked up (a failed lookup stays undecided too)', () {
+      expect(status(checked: false, done: false), ClassicVendorStatus.loading);
+      expect(status(checked: false, done: true), ClassicVendorStatus.loading);
+    });
+
+    test('signed out is undecided', () {
+      expect(status(signedIn: false), ClassicVendorStatus.loading);
     });
   });
 

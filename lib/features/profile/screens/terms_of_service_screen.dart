@@ -57,7 +57,7 @@ class TermsOfServiceScreen extends ConsumerWidget {
             _buildSection(
               theme,
               '1. Introduction',
-              'Welcome to Bottles Up Vendor ("we," "our," or "us"). These Terms of Service ("Terms") govern your use of our vendor platform and services. By accessing or using our platform, you agree to be bound by these Terms.\n\nIf you do not agree to these Terms, please do not use our services.',
+              'Welcome to BottlesUp Business ("we," "our," or "us"). These Terms of Service ("Terms") govern your use of our business platform and services. By accessing or using our platform, you agree to be bound by these Terms.\n\nIf you do not agree to these Terms, please do not use our services.',
             ),
 
             _buildSection(

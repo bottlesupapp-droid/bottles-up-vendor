@@ -1,3 +1,4 @@
+import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
@@ -316,7 +317,7 @@ class SecurityScreen extends ConsumerWidget {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Error deleting account: $e'),
+                            content: Text(couldNot('delete account', e)),
                             backgroundColor: theme.colorScheme.error,
                           ),
                         );
