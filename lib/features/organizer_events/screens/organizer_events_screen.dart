@@ -1,6 +1,7 @@
 import '../../agreements/screens/agreements_screen.dart';
 import '../../business/widgets/business_status_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/date_time_picker.dart';
@@ -46,6 +47,16 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
   }
 
   /// The button next to a blocker: the club agreements are where a club is asked, and where its answer is seen.
+  Future<void> _copyLink(OrgEvent e) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await Clipboard.setData(ClipboardData(text: eventLink(e.eventId)));
+      messenger.showSnackBar(const SnackBar(content: Text('Link copied. Anyone with it can open the event page.')));
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text('The link could not be copied. It is ${eventLink(e.eventId)}')));
+    }
+  }
+
   void _openBlocker(BlockerAction action) {
     if (action != BlockerAction.agreements) return;
     Navigator.of(context).push(
@@ -133,7 +144,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
             for (final (title, group) in [('Drafts', g.drafts), ('Upcoming', g.upcoming), ('Past', g.past)])
               if (group.isNotEmpty) ...[
                 _heading(context, title),
-                for (final e in group) EventCard(event: e, info: infos[e.eventId], onBlockerAction: _openBlocker, onEdit: () => _openForm(e), onRemove: () => _remove(e)),
+                for (final e in group) EventCard(event: e, info: infos[e.eventId], onBlockerAction: _openBlocker, onEdit: () => _openForm(e), onRemove: () => _remove(e), onCopyLink: () => _copyLink(e)),
               ],
           ],
         );
