@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/connectivity/connection_banner.dart';
 import '../../../core/ui/glass_kit.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../logic/workspace_routing.dart';
@@ -48,6 +49,7 @@ class WorkspaceShell extends ConsumerWidget {
               onSwitch: () => context.go(WorkspaceRoutes.workspaces),
               onSignOut: () => ref.read(supabaseAuthProvider.notifier).signOut(),
             ),
+            const ConnectionBanner(),
             Expanded(child: child),
           ],
         ),

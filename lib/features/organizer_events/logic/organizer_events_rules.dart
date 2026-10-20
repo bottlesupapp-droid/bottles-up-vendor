@@ -12,6 +12,7 @@
 // `cover_image_url`; empty is sent as "none", so it can be cleared.
 
 import 'package:intl/intl.dart';
+import '../../owner/logic/owner_rules.dart' show defaultSiteUrl;
 
 class EventLimits {
   const EventLimits._();
@@ -53,6 +54,7 @@ class OrgEvent {
     this.capacity,
     this.coverImageUrl,
     this.ticketTierCount = 0,
+    this.rawStatus = '',
   });
 
   final String eventId;
@@ -68,7 +70,13 @@ class OrgEvent {
   final OrgEventStatus status;
   final int ticketTierCount;
 
+  /// The status exactly as the database said it ('' when the event was built without one).
+  final String rawStatus;
+
   bool get isDraft => status == OrgEventStatus.draft;
+
+  /// Live on the website: exactly 'published'. Any other word (an unknown or a future status) is NOT live, so no public link is offered for it.
+  bool get isLive => rawStatus == 'published';
 }
 
 String? _text(Object? v) => v is String && v.isNotEmpty ? v : null;
@@ -96,8 +104,12 @@ OrgEvent? parseOrgEvent(Map<String, dynamic> r) {
     coverImageUrl: _text(r['cover_image_url']),
     status: r['status'] == 'draft' ? OrgEventStatus.draft : OrgEventStatus.published,
     ticketTierCount: _int(r['ticket_tier_count']) ?? 0,
+    rawStatus: r['status'] is String ? r['status'] as String : '',
   );
 }
+
+/// The public page of an event on the website (`/events/<id>`), for sharing. The site address is the one the venue booking link uses.
+String eventLink(String eventId, {String site = defaultSiteUrl}) => '${site.endsWith('/') ? site.substring(0, site.length - 1) : site}/events/$eventId';
 
 // ---------------------------------------------------------------------------
 // The form

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/config/supabase_config.dart';
+import 'core/connectivity/connection_monitor.dart';
 import 'core/crash/crash_reporting.dart';
 import 'core/startup/startup_error_app.dart';
 import 'core/utils/error_handler.dart';
@@ -44,8 +45,13 @@ Future<void> _start() async {
   }
 
   runApp(
-    const ProviderScope(
-      child: BottlesUpVendorApp(),
+    ProviderScope(
+      overrides: [
+        // Tell the person when the phone cannot reach the server (brief section 33). Off in tests.
+        connectionMonitorEnabledProvider.overrideWithValue(true),
+        connectionProbeProvider.overrideWithValue(httpProbe(SupabaseConfig.url)),
+      ],
+      child: const BottlesUpVendorApp(),
     ),
   );
 }
