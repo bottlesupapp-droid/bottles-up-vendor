@@ -9,7 +9,6 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'fake_refund_backend.dart';
 

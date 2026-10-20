@@ -95,7 +95,7 @@ void main() {
         'list_venue_table_layout': {'p_venue': 'v1'},
         'venue_deposit_terms': {'p_venue': 'v1'},
       }.entries) {
-        final rows = await db.call(entry.key, params: entry.value as Map<String, dynamic>) as List;
+        final rows = await db.call(entry.key, params: entry.value) as List;
         expect(rows, isNotEmpty, reason: entry.key);
         expect((rows.first as Map).keys.toSet(), columns(entry.key).toSet(), reason: '${entry.key}: columns');
       }

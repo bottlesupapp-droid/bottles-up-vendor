@@ -16,7 +16,7 @@ class MoreEntry {
 const _team = MoreEntry(id: 'team', label: 'Team', subtitle: 'Staff, invitations and roles for the business.', icon: Ionicons.people_outline);
 const _inventory = MoreEntry(id: 'inventory', label: 'Inventory', subtitle: 'Stock counts, deliveries, wastage and low-stock alerts.', icon: Ionicons.cube_outline);
 const _vip = MoreEntry(id: 'vip', label: 'VIP guests', subtitle: 'Guests with standing perks, checked at the door.', icon: Ionicons.star_outline);
-const _discounts = MoreEntry(id: 'discounts', label: 'Discounts', subtitle: 'Promo codes staff may apply, with limits and approvals.', icon: Ionicons.pricetag_outline);
+const _discounts = MoreEntry(id: 'discounts', label: 'Discounts and free bottles', subtitle: 'The limits for staff, and the requests waiting for approval.', icon: Ionicons.pricetag_outline);
 const _refunds = MoreEntry(id: 'refunds', label: 'Refunds', subtitle: 'Your refund policy, and the refund requests to decide.', icon: Ionicons.arrow_undo_outline);
 const _complimentary = MoreEntry(id: 'complimentary', label: 'Complimentary bottles', subtitle: 'Offer a bottle with a claim link; every one is recorded.', icon: Ionicons.gift_outline);
 const _agreements = MoreEntry(id: 'agreements', label: 'Events and agreements', subtitle: 'Organizer events at your club and the terms agreed for each.', icon: Ionicons.document_text_outline);

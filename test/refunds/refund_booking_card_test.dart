@@ -5,7 +5,6 @@ import 'package:bottles_up_vendor/features/refunds/widgets/refund_booking_card.d
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'fake_refund_backend.dart';
 

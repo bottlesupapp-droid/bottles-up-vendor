@@ -16,6 +16,7 @@ import 'record_payment_screen.dart';
 import '../../seating/widgets/seating_panel.dart';
 import '../../booking_detail/widgets/booking_activity_tab.dart';
 import '../../booking_detail/widgets/booking_guests_tab.dart';
+import '../../discounts/widgets/booking_discounts_card.dart';
 import '../../refunds/widgets/refund_booking_card.dart';
 import '../../table_map/widgets/booking_terms_card.dart';
 
@@ -263,6 +264,10 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
   Widget _ordersTab(BookingMoney m, DateTime now, ThemeData theme) {
     final orders = ref.watch(tableOrdersProvider(TableOrdersQuery(widget.bookingId, m.balanceDueCents)));
     return _scroll([
+      if (m.canRecord) ...[
+        BookingDiscountsCard(bookingId: widget.bookingId, onChanged: _reload),
+        const SizedBox(height: 12),
+      ],
       Row(
         children: [
           Expanded(child: Text('Bottle orders', style: theme.textTheme.titleMedium)),

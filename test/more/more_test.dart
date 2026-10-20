@@ -28,7 +28,7 @@ const Set<String> builtMore = {
   'door/settings', 'security/settings', 'security/incidents',
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
-  'owner/refunds', 'manager/refunds',
+  'owner/refunds', 'manager/refunds', 'owner/discounts', 'manager/discounts',
 };
 
 void main() {
@@ -72,8 +72,8 @@ void main() {
     for (final e in moreEntriesFor(WorkspaceRole.manager)) {
       expect(find.byKey(Key('more-${e.id}')), findsOneWidget, reason: e.id);
     }
-    expect(find.descendant(of: find.byKey(const Key('more-discounts')), matching: find.textContaining('Not available yet.')), findsOneWidget);
-    expect(tester.widget<ListTile>(find.byKey(const Key('more-discounts'))).onTap, isNull);
+    expect(find.descendant(of: find.byKey(const Key('more-complimentary')), matching: find.textContaining('Not available yet.')), findsOneWidget);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-complimentary'))).onTap, isNull);
     expect(find.descendant(of: find.byKey(const Key('more-chat')), matching: find.textContaining('Not available yet')), findsNothing);
     await tester.tap(find.byKey(const Key('more-chat')));
     await tester.pumpAndSettle();

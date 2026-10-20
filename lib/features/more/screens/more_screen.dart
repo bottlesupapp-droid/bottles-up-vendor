@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../agreements/screens/agreements_screen.dart';
 import '../../chat/screens/chat_screen.dart';
+import '../../discounts/screens/discounts_screen.dart';
 import '../../door_staff/screens/club_door_staff_screen.dart';
 import '../../door_staff/screens/organizer_team_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
@@ -23,6 +24,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'inventory' => InventoryScreen(workspace: workspace),
       // VIP guests are the manager's and the owner's list; servers look a guest up from My Tables.
       'vip' => VipScreen(workspace: workspace),
+      // Discounts and free bottles: the owner sets the limits, the manager decides what is above a server's limit (the owner picks the club).
+      'discounts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DiscountsScreen(workspace: workspace),
       // Refunds are the club's: its refund policy and the requests to decide (the owner picks the club).
       'refunds' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => RefundsScreen(workspace: workspace),
       // Agreements: a club's requests and terms with organizers, and an organizer's requests to clubs.
