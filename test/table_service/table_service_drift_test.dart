@@ -16,6 +16,9 @@ void main() {
   final shapes = File(
     '../bottles-up-website-main/tests/db/prod_shapes/20261014120000_money_tables.sql',
   );
+  final accepted = File(
+    '../bottles-up-website-main/supabase/migrations/20261022100000_order_accepted_stage.sql',
+  );
   const why = 'website repo is not checked out next to this app';
   final present =
       orders.existsSync() && payments.existsSync() && shapes.existsSync();
@@ -30,20 +33,31 @@ void main() {
             .toList();
 
     test(
-      'the five service states are the ones production allows, in the order of service',
+      'the service states are the ones the database allows, in the order of service: the five production had, and Accepted from 20261022100000',
       () {
+        final all = [for (final s in ServiceState.values) s.value];
+        final withoutAccepted = [for (final v in all) if (v != 'accepted') v];
         final fromShape = quotedList(
           shapes.readAsStringSync(),
           RegExp(
             r"service_status text not null default 'awaiting_prep'\s*check \(service_status in \(([^)]*)\)\)",
           ),
         );
-        expect([for (final s in ServiceState.values) s.value], fromShape);
+        // What production had before Accepted, and what the function said then.
+        expect(withoutAccepted, fromShape);
         final fromFunction = quotedList(
           orders.readAsStringSync(),
           RegExp(r'p_status not in \(([^)]*)\) then'),
         );
-        expect([for (final s in ServiceState.values) s.value], fromFunction);
+        expect(withoutAccepted, fromFunction);
+        // The migration that adds Accepted: its constraint and the function it replaces carry all six, in the same order.
+        if (accepted.existsSync()) {
+          final migration = accepted.readAsStringSync();
+          final constraint = RegExp(r"check \(service_status = any \(array\[([^\]]*)\]\)\)").firstMatch(migration)!.group(1)!;
+          expect(RegExp(r"'([a-z_]+)'").allMatches(constraint).map((m) => m.group(1)!).toList(), all);
+          final allowed = RegExp(r"p_status is null or p_status not in \(([^)]*)\) then").firstMatch(migration)!.group(1)!;
+          expect(RegExp(r"'([a-z_]+)'").allMatches(allowed).map((m) => m.group(1)!).toList(), all);
+        }
       },
       skip: present ? false : why,
     );
@@ -432,8 +446,8 @@ void main() {
         final website = Platform.environment['WEBSITE_REPO'] ?? '../bottles-up-website-main';
         final addBottlesSql = File('$website/supabase/migrations/20261020150000_add_bottles_checks.sql');
         final partialSql = File('$website/supabase/migrations/20261020160000_partial_delivery.sql');
-        final haveNew = addBottlesSql.existsSync() && partialSql.existsSync();
-        final real = sql() + (haveNew ? addBottlesSql.readAsStringSync() + partialSql.readAsStringSync() : '');
+        final haveNew = addBottlesSql.existsSync() && partialSql.existsSync() && accepted.existsSync();
+        final real = sql() + (haveNew ? addBottlesSql.readAsStringSync() + partialSql.readAsStringSync() + accepted.readAsStringSync() : '');
         for (final raw in sentences) {
           if (!haveNew && newSentences.contains(raw)) continue;
           // A sentence with a number in it is written with % in the SQL.

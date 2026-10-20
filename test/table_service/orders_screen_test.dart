@@ -273,13 +273,13 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('move-l1')));
         await tester.pumpAndSettle();
-        expect(db.line('l1').state, 'preparing');
+        expect(db.line('l1').state, 'accepted');
         await tester.pageBack();
         await tester.pumpAndSettle();
         expect(
           find.descendant(
             of: find.byKey(const Key('move-l1')),
-            matching: find.text('Mark ready'),
+            matching: find.text('Start preparing'),
           ),
           findsOneWidget,
         );
@@ -306,7 +306,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('move-l1')),
-          matching: find.text('Start preparing'),
+          matching: find.text('Accept'),
         ),
         findsOneWidget,
       );
@@ -335,15 +335,15 @@ void main() {
       expect(db.calls.map((c) => c.$1), contains('desk_set_service_status'));
       expect(
         db.params.firstWhere((p) => p != null && p.containsKey('p_line')),
-        {'p_line': 'l1', 'p_status': 'preparing'},
+        {'p_line': 'l1', 'p_status': 'accepted'},
       );
-      expect(db.line('l1').state, 'preparing');
+      expect(db.line('l1').state, 'accepted');
       // The list was read again and shows the new state and the next button.
       expect(db.count('desk_orders'), 2);
       expect(
         find.descendant(
           of: find.byKey(const Key('move-l1')),
-          matching: find.text('Mark ready'),
+          matching: find.text('Start preparing'),
         ),
         findsOneWidget,
       );
@@ -356,17 +356,18 @@ void main() {
         await tester.tap(find.byKey(const Key('more-l1')));
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const Key('move-l1-preparing')),
+          find.byKey(const Key('move-l1-accepted')),
           findsNothing,
           reason: 'that one is the button',
         );
+        expect(find.byKey(const Key('move-l1-preparing')), findsOneWidget);
         expect(find.byKey(const Key('move-l1-ready')), findsOneWidget);
         expect(find.byKey(const Key('move-l1-picked_up')), findsOneWidget);
         expect(find.byKey(const Key('move-l1-served')), findsOneWidget);
         expect(
           find.byKey(const Key('move-l1-awaiting_prep')),
           findsNothing,
-          reason: 'it is New already',
+          reason: 'it is Submitted already',
         );
         await tester.tap(find.byKey(const Key('move-l1-picked_up')));
         await tester.pumpAndSettle();
@@ -381,14 +382,14 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('move-l3-awaiting_prep')),
-          matching: find.text('Back to New'),
+          matching: find.text('Back to Submitted'),
         ),
         findsOneWidget,
       );
       expect(
         find.descendant(
           of: find.byKey(const Key('move-l3-ready')),
-          matching: find.text('Back to Ready'),
+          matching: find.text('Back to Ready to collect'),
         ),
         findsOneWidget,
       );
@@ -512,7 +513,7 @@ void main() {
     );
 
     testWidgets(
-      'a colleague got there first: the person is told it was already so',
+      'a colleague moved the new order on first: the database\'s sentence is shown and nothing goes backwards',
       (tester) async {
         db.beforeCall = (f) {
           if (f == 'desk_set_service_status') db.line('l1').state = 'preparing';
@@ -520,7 +521,8 @@ void main() {
         await open(tester, host(serverWs));
         await tester.tap(find.byKey(const Key('move-l1')));
         await tester.pumpAndSettle();
-        expect(find.text('It was already preparing.'), findsOneWidget);
+        expect(find.text('This order has already been accepted or is further along.'), findsOneWidget);
+        expect(db.line('l1').state, 'preparing', reason: 'nothing was moved backwards');
       },
     );
 

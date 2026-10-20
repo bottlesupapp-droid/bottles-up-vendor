@@ -79,15 +79,15 @@ TableStatus status({
 void main() {
   group('the service states', () {
     test(
-      'five of them, as the database stores them, with the words the app uses',
+      'six of them, as the database stores them, with the words the app uses (the client\'s five, with "ready" as Ready to collect)',
       () {
         expect(
           [for (final s in ServiceState.values) s.value],
-          ['awaiting_prep', 'preparing', 'ready', 'picked_up', 'served'],
+          ['awaiting_prep', 'accepted', 'preparing', 'ready', 'picked_up', 'served'],
         );
         expect(
           [for (final s in ServiceState.values) s.label],
-          ['New', 'Preparing', 'Ready', 'On the way', 'Delivered'],
+          ['Submitted', 'Accepted', 'Preparing', 'Ready to collect', 'On the way', 'Delivered'],
         );
       },
     );
@@ -96,7 +96,8 @@ void main() {
       expect(
         [for (final s in ServiceState.values) s.moveLabel],
         [
-          'Back to New',
+          'Back to Submitted',
+          'Accept',
           'Start preparing',
           'Mark ready',
           'On the way',
@@ -106,7 +107,8 @@ void main() {
     });
 
     test('each has a next step, until delivered', () {
-      expect(ServiceState.awaitingPrep.next, ServiceState.preparing);
+      expect(ServiceState.awaitingPrep.next, ServiceState.accepted);
+      expect(ServiceState.accepted.next, ServiceState.preparing);
       expect(ServiceState.preparing.next, ServiceState.ready);
       expect(ServiceState.ready.next, ServiceState.pickedUp);
       expect(ServiceState.pickedUp.next, ServiceState.served);
@@ -459,14 +461,22 @@ void main() {
       },
     );
 
-    test('any state except the current one can be chosen', () {
+    test('any state except the current one can be chosen, and Accept only for an order that is still new', () {
       expect(moveTargets(line(state: ServiceState.preparing), manager: false), [
         ServiceState.awaitingPrep,
         ServiceState.ready,
         ServiceState.pickedUp,
         ServiceState.served,
-      ]);
+      ], reason: 'Accepted is not offered once the order has moved on: the database refuses it, so a stale tap cannot send it backwards');
       expect(moveTargets(line(), manager: true), [
+        ServiceState.accepted,
+        ServiceState.preparing,
+        ServiceState.ready,
+        ServiceState.pickedUp,
+        ServiceState.served,
+      ]);
+      expect(moveTargets(line(state: ServiceState.accepted), manager: true), [
+        ServiceState.awaitingPrep,
         ServiceState.preparing,
         ServiceState.ready,
         ServiceState.pickedUp,
@@ -491,7 +501,11 @@ void main() {
     });
 
     test('the first button is the next step', () {
-      expect(primaryMove(line(), manager: false), ServiceState.preparing);
+      expect(primaryMove(line(), manager: false), ServiceState.accepted);
+      expect(
+        primaryMove(line(state: ServiceState.accepted), manager: false),
+        ServiceState.preparing,
+      );
       expect(
         primaryMove(line(state: ServiceState.preparing), manager: false),
         ServiceState.ready,

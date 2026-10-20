@@ -103,7 +103,8 @@ void main() {
     });
 
     test('bottle service moves use the same words as the orders', () {
-      expect(activitySentence(entry('table_booking.bottle_service_status_updated', details: {'old_status': 'awaiting_prep', 'new_status': 'preparing'})), 'A bottle order moved from New to Preparing');
+      expect(activitySentence(entry('table_booking.bottle_service_status_updated', details: {'old_status': 'awaiting_prep', 'new_status': 'accepted'})), 'A bottle order moved from Submitted to Accepted');
+      expect(activitySentence(entry('table_booking.bottle_service_status_updated', details: {'old_status': 'accepted', 'new_status': 'preparing'})), 'A bottle order moved from Accepted to Preparing');
       expect(activitySentence(entry('table_booking.bottle_service_status_updated', details: {'old_status': 'picked_up', 'new_status': 'served'})), 'A bottle order moved from On the way to Delivered');
       expect(activitySentence(entry('table_booking.bottle_service_status_updated', details: {'old_status': 'x', 'new_status': 'served'})), 'A bottle order moved from another step to Delivered');
     });

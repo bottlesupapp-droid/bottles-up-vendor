@@ -170,7 +170,7 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('move-l1')));
       await tester.pumpAndSettle();
-      expect(db.line('l1').state, 'preparing');
+      expect(db.line('l1').state, 'accepted', reason: 'a new order is accepted first');
     },
   );
 
@@ -191,7 +191,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('move-l1')),
-          matching: find.text('Mark ready'),
+          matching: find.text('Start preparing'),
         ),
         findsOneWidget,
       );
@@ -201,6 +201,7 @@ void main() {
   testWidgets(
     'a colleague got there first: the person is told it was already so',
     (tester) async {
+      db.line('l1').state = 'accepted';
       db.beforeCall = (f) {
         if (f == 'desk_set_service_status') db.line('l1').state = 'preparing';
       };
@@ -209,6 +210,21 @@ void main() {
       await tester.tap(find.byKey(const Key('move-l1')));
       await tester.pumpAndSettle();
       expect(find.text('It was already preparing.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a colleague moved a NEW order on while this person was about to accept it: the database\'s sentence is shown and nothing moves backwards',
+    (tester) async {
+      db.beforeCall = (f) {
+        if (f == 'desk_set_service_status') db.line('l1').state = 'preparing';
+      };
+      await open(tester, host());
+      await tab(tester, 'Orders');
+      await tester.tap(find.byKey(const Key('move-l1')));
+      await tester.pumpAndSettle();
+      expect(find.text('This order has already been accepted or is further along.'), findsOneWidget);
+      expect(db.line('l1').state, 'preparing');
     },
   );
 

@@ -18,12 +18,14 @@ DateTime? _time(Object? v) => v is String ? DateTime.tryParse(v) : null;
 // Where an order stands, and how it is paid
 // ---------------------------------------------------------------------------
 
-/// The five service states the database allows on a bottle line. The brief names Submitted / Accepted / Preparing / On the way /
-/// Delivered; the database has no separate "accepted", and has "ready" between preparing and on the way, so the words are these.
+/// The six service states the database allows on a bottle line (website repo, 20261022100000_order_accepted_stage.sql added `accepted`). The client's order is
+/// Submitted, Accepted, Preparing, On the way, Delivered: "ready" is the small step between Preparing and On the way (the bottle is made and waits to be taken to the
+/// table), shown as "Ready to collect" so nothing is lost and everyone still sees the client's five.
 enum ServiceState {
-  awaitingPrep('awaiting_prep', 'New', 'Back to New'),
+  awaitingPrep('awaiting_prep', 'Submitted', 'Back to Submitted'),
+  accepted('accepted', 'Accepted', 'Accept'),
   preparing('preparing', 'Preparing', 'Start preparing'),
-  ready('ready', 'Ready', 'Mark ready'),
+  ready('ready', 'Ready to collect', 'Mark ready'),
   pickedUp('picked_up', 'On the way', 'On the way'),
   served('served', 'Delivered', 'Delivered');
 
@@ -265,7 +267,7 @@ bool orderMatches(OrderFilter f, OrderLine l) => switch (f) {
   OrderFilter.needsPayment =>
     l.payment == LinePayment.dueAtVenue && (l.balanceDueCents ?? 0) > 0,
   OrderFilter.preparing =>
-    l.state == ServiceState.preparing || l.state == ServiceState.ready,
+    l.state == ServiceState.accepted || l.state == ServiceState.preparing || l.state == ServiceState.ready,
   OrderFilter.onTheWay => l.state == ServiceState.pickedUp,
   OrderFilter.delivered => l.state == ServiceState.served,
 };
@@ -296,7 +298,8 @@ List<ServiceState> moveTargets(OrderLine l, {required bool manager}) {
   if (l.state == ServiceState.served && !manager) return const [];
   return [
     for (final s in ServiceState.values)
-      if (s != l.state) s,
+      // Accepting is for an order that has just come in: the database refuses it for one that has moved on, so it is not offered (a stale tap cannot move an order backwards).
+      if (s != l.state && !(s == ServiceState.accepted && l.state != ServiceState.awaitingPrep)) s,
   ];
 }
 
