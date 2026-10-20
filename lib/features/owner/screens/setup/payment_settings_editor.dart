@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/payment_rules.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
+import '../../../table_map/logic/table_map_rules.dart' show depositTermsLine;
+import '../../../table_map/providers/table_map_providers.dart';
+import '../../../table_map/screens/deposit_terms_screen.dart';
 import '../../widgets/setup_common.dart';
 
 /// Payment settings (owner or manager of the venue; brief 15 Oct, section 15). Bottle payments can be changed (it applies to bookings made from
@@ -46,6 +49,32 @@ class _PaymentSettingsEditorState extends ConsumerState<PaymentSettingsEditor> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Who receives the deposit and what it is for: the line that says so now, and the way to change it.
+  Widget _depositTerms(ThemeData theme) {
+    final terms = ref.watch(depositSettingsProvider(widget.venueId));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        terms.when(
+          loading: () => const Padding(padding: EdgeInsets.all(8), child: LinearProgressIndicator()),
+          error: (_, __) => Text('We could not load who receives the deposit.', key: const Key('deposit-terms-load-failed'), style: theme.textTheme.bodySmall),
+          data: (s) => Text(s.terms == null ? 'Who receives the deposit: not chosen yet (the venue keeps it).' : depositTermsLine(s.terms!), key: const Key('deposit-terms-line')),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            key: const Key('deposit-terms-open'),
+            onPressed: () async {
+              await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => DepositTermsScreen(venueId: widget.venueId)));
+              if (mounted) ref.invalidate(depositSettingsProvider(widget.venueId));
+            },
+            child: const Text('Who receives the deposit, and what it is for'),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -125,6 +154,8 @@ class _PaymentSettingsEditorState extends ConsumerState<PaymentSettingsEditor> {
                   alignment: Alignment.centerLeft,
                   child: TextButton(key: const Key('deposit-edit-tables'), onPressed: widget.onEditTables, child: const Text('Edit tables and deposits')),
                 ),
+              const SizedBox(height: 8),
+              _depositTerms(theme),
               const SizedBox(height: 8),
               Text(depositCreditLabel(saved.depositIsCredit), key: const Key('deposit-credit')),
               const SizedBox(height: 4),

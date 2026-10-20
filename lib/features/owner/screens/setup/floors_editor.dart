@@ -5,10 +5,11 @@ import '../../logic/venue_profile_rules.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
 import '../../widgets/setup_common.dart';
+import '../../../table_map/screens/placement_screen.dart';
 import 'floor_form_screen.dart';
 
 /// Floor plans (owner and manager): the pictures of the rooms (main room, terrace, VIP lounge) guests see when they choose a table.
-/// Removing a floor leaves its tables, just unplaced. Where each table sits on a floor is arranged by the BottlesUp team for now.
+/// Removing a floor leaves its tables, just unplaced. "Place tables" opens the editor where each table is put on the picture, dragged into position and resized.
 class FloorsEditor extends ConsumerStatefulWidget {
   const FloorsEditor({super.key, required this.venueId, required this.orgId});
 
@@ -30,6 +31,11 @@ class _FloorsEditorState extends ConsumerState<FloorsEditor> {
       _refresh();
       say(context, row == null ? 'Floor added.' : 'Floor saved.');
     }
+  }
+
+  Future<void> _placeTables(FloorRow f) async {
+    await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => PlacementScreen(venueId: widget.venueId, floor: f)));
+    if (mounted) _refresh();
   }
 
   Future<void> _remove(FloorRow f) async {
@@ -99,6 +105,7 @@ class _FloorsEditorState extends ConsumerState<FloorsEditor> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        TextButton(key: Key('place-tables-${f.floorId}'), onPressed: () => _placeTables(f), child: const Text('Place tables')),
                         TextButton(key: Key('edit-${f.floorId}'), onPressed: () => _openForm(f), child: const Text('Edit')),
                         TextButton(
                           key: Key('remove-${f.floorId}'),
