@@ -57,7 +57,8 @@ void main() {
     });
 
     test('payouts and paying at the venue are described honestly', () {
-      expect(payoutNote, contains('not available yet'));
+      expect(payoutNote, contains('set up and made by BottlesUp'));
+      expect(payoutNote, contains('Settlements and payouts'));
       expect(atVenueNote, contains('manager checks it'));
     });
   });
