@@ -17,6 +17,7 @@ const _team = MoreEntry(id: 'team', label: 'Team', subtitle: 'Staff, invitations
 const _inventory = MoreEntry(id: 'inventory', label: 'Inventory', subtitle: 'Stock counts, deliveries, wastage and low-stock alerts.', icon: Ionicons.cube_outline);
 const _vip = MoreEntry(id: 'vip', label: 'VIP guests', subtitle: 'Guests with standing perks, checked at the door.', icon: Ionicons.star_outline);
 const _discounts = MoreEntry(id: 'discounts', label: 'Discounts', subtitle: 'Promo codes staff may apply, with limits and approvals.', icon: Ionicons.pricetag_outline);
+const _refunds = MoreEntry(id: 'refunds', label: 'Refunds', subtitle: 'Your refund policy, and the refund requests to decide.', icon: Ionicons.arrow_undo_outline);
 const _complimentary = MoreEntry(id: 'complimentary', label: 'Complimentary bottles', subtitle: 'Offer a bottle with a claim link; every one is recorded.', icon: Ionicons.gift_outline);
 const _agreements = MoreEntry(id: 'agreements', label: 'Events and agreements', subtitle: 'Organizer events at your club and the terms agreed for each.', icon: Ionicons.document_text_outline);
 const _orgAgreements = MoreEntry(id: 'agreements', label: 'Venue agreements', subtitle: 'Ask a club to host your event and agree the terms.', icon: Ionicons.document_text_outline);
@@ -35,8 +36,8 @@ const _settings = MoreEntry(id: 'settings', label: 'Settings', subtitle: 'Who yo
 
 /// The entries of a role's More tab, in the order the brief lists them. Roles without a More tab have none.
 List<MoreEntry> moreEntriesFor(WorkspaceRole role) => switch (role) {
-      WorkspaceRole.owner => const [_money, _team, _inventory, _vip, _discounts, _complimentary, _agreements, _organizerDoor, _payouts, _chat, _settings],
-      WorkspaceRole.manager => const [_security, _inventory, _vip, _discounts, _complimentary, _agreements, _organizerDoor, _chat, _settings],
+      WorkspaceRole.owner => const [_money, _team, _inventory, _vip, _discounts, _complimentary, _refunds, _agreements, _organizerDoor, _payouts, _chat, _settings],
+      WorkspaceRole.manager => const [_security, _inventory, _vip, _discounts, _complimentary, _refunds, _agreements, _organizerDoor, _chat, _settings],
       WorkspaceRole.organizer => const [_orgAgreements, _orgTeam, _settlement, _notifications, _settings],
       WorkspaceRole.door => const [_shiftSummary, _promoCodes, _settings],
       WorkspaceRole.security => const [_incidents, _settings],

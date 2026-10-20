@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
 import '../../ops/services/ops_rpc.dart';
+import '../../refunds/providers/refund_providers.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../owner/widgets/setup_common.dart' show ProblemsBox;
 import '../../table_service/screens/table_detail_screen.dart';
@@ -257,6 +258,7 @@ class _WalkinScreenState extends ConsumerState<WalkinScreen> {
               Text('Terms', style: theme.textTheme.titleSmall),
               const SizedBox(height: 4),
               for (final line in walkinTerms(table, table.hourly ? _hours : null)) Padding(padding: const EdgeInsets.symmetric(vertical: 1), child: Text('• $line', style: theme.textTheme.bodyMedium)),
+              ..._refundTerms(theme),
               CheckboxListTile(
                 key: const Key('walkin-terms'),
                 contentPadding: EdgeInsets.zero,
@@ -278,6 +280,17 @@ class _WalkinScreenState extends ConsumerState<WalkinScreen> {
         );
       },
     );
+  }
+
+  /// The club's refund policy, read out with the other terms. It is a bonus: when it cannot be read the terms are the same as before (the booking still carries the policy the
+  /// club has, whichever way it is made).
+  List<Widget> _refundTerms(ThemeData theme) {
+    final policy = ref.watch(refundPolicyProvider(widget.venueId)).asData?.value;
+    if (policy == null || policy.lines.isEmpty) return const [];
+    return [
+      Padding(padding: const EdgeInsets.only(top: 6), child: Text('Refunds', key: const Key('walkin-refund-title'), style: theme.textTheme.titleSmall)),
+      for (final l in policy.lines) Padding(padding: const EdgeInsets.symmetric(vertical: 1), child: Text('• $l', key: const Key('walkin-refund-line'), style: theme.textTheme.bodyMedium)),
+    ];
   }
 
   Widget _stepper(String label, int value, int min, int max, void Function(int) onChanged, String key) => Row(
