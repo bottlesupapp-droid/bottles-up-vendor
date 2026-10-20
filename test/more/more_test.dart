@@ -28,7 +28,7 @@ const Set<String> builtMore = {
   'door/settings', 'security/settings', 'security/incidents',
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
-  'owner/refunds', 'manager/refunds', 'owner/discounts', 'manager/discounts',
+  'owner/refunds', 'manager/refunds', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts',
 };
 
 void main() {

@@ -7,6 +7,7 @@ import '../../door_staff/screens/club_door_staff_screen.dart';
 import '../../door_staff/screens/organizer_team_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
 import '../../money/screens/owner_money_screen.dart';
+import '../../payouts/screens/payouts_screen.dart';
 import '../../refunds/screens/refunds_screen.dart';
 import '../../security/screens/incidents_screen.dart';
 import '../../security/screens/security_hub_screen.dart';
@@ -24,6 +25,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'inventory' => InventoryScreen(workspace: workspace),
       // VIP guests are the manager's and the owner's list; servers look a guest up from My Tables.
       'vip' => VipScreen(workspace: workspace),
+      // Payouts are the business's own (an owner's club money, an organizer's account): read only, set up and paid by BottlesUp.
+      'payouts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.organizer => PayoutsScreen(workspace: workspace),
       // Discounts and free bottles: the owner sets the limits, the manager decides what is above a server's limit (the owner picks the club).
       'discounts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DiscountsScreen(workspace: workspace),
       // Refunds are the club's: its refund policy and the requests to decide (the owner picks the club).

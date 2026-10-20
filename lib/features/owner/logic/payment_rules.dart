@@ -58,6 +58,6 @@ String depositLine(TableTypeRow t) => t.depositCents > 0 ? '${t.name}: ${formatD
 /// Whether choosing [picked] would change anything. The Save button is offered only then.
 bool paymentChanged(PaymentRules? saved, BottlePaymentMode? picked) => picked != null && saved?.mode != picked;
 
-const String payoutNote = 'Payout setup (bank details, what is owed and paid out) is not available yet. It waits for the payout terms to be agreed.';
+const String payoutNote = 'Payouts are set up and made by BottlesUp, not here. See where your payout account stands and every payout under More > Settlements and payouts (the owner\'s More tab).';
 
 const String atVenueNote = 'Paying at the venue: your staff record each payment on the booking (cash, the venue\'s terminal, or a BottlesUp payment) with a receipt, and a manager checks it.';

@@ -13,7 +13,7 @@ import '../../widgets/setup_common.dart';
 
 /// Payment settings (owner or manager of the venue; brief 15 Oct, section 15). Bottle payments can be changed (it applies to bookings made from
 /// now on; existing bookings keep the way they were made). Deposits are shown per table with the way to change them (the tables editor); whether the
-/// deposit counts toward the bottle bill is shown and explained but not changeable here. Payouts say plainly that they are not available yet.
+/// deposit counts toward the bottle bill is shown and explained but not changeable here. Payouts say who makes them and where to see them.
 class PaymentSettingsEditor extends ConsumerStatefulWidget {
   const PaymentSettingsEditor({super.key, required this.venueId, required this.orgId, this.onEditTables});
 
