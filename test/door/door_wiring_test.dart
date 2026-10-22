@@ -1,5 +1,6 @@
 import 'package:bottles_up_vendor/features/chat/screens/chat_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_guests_screen.dart';
+import 'package:bottles_up_vendor/features/door_sales/screens/door_sales_screen.dart';
 import 'package:bottles_up_vendor/features/more/screens/more_screen.dart';
 import 'package:bottles_up_vendor/features/organizer_guests/screens/organizer_guests_screen.dart';
 import 'package:bottles_up_vendor/features/door/screens/door_scan_screen.dart';
@@ -30,7 +31,7 @@ Workspace as(WorkspaceRole role) => Workspace(
 
 /// Every tab that is built, as role/tab. Add to this when a tab is built; nothing else in this file changes.
 const Set<String> builtTabs = {
-  'door/scan', 'door/guests',
+  'door/scan', 'door/guests', 'door/door-sales',
   'manager/tonight', 'manager/floor', 'manager/orders', 'manager/team',
   'owner/home', 'owner/venues', 'owner/tonight', 'owner/reports',
   'organizer/home', 'organizer/events', 'organizer/chat', 'organizer/guests',
@@ -161,8 +162,13 @@ void main() {
       expect(builtSectionFor(as(WorkspaceRole.door), 'guests'), isA<DoorGuestsScreen>());
     });
 
-    test('Door Sales is not built, so it is not a till that looks real', () {
-      expect(builtSectionFor(as(WorkspaceRole.door), 'door-sales'), isNull);
+    test('Door Sales is the door\'s own tab (and nobody else\'s), for the membership it works under', () {
+      final screen = builtSectionFor(as(WorkspaceRole.door), 'door-sales');
+      expect(screen, isA<DoorSalesScreen>());
+      expect((screen as DoorSalesScreen).membershipId, 'm-door');
+      for (final role in WorkspaceRole.values.where((r) => r != WorkspaceRole.door)) {
+        expect(builtSectionFor(as(role), 'door-sales'), isNull, reason: '${role.name} sells no tickets at the door');
+      }
     });
   });
 }

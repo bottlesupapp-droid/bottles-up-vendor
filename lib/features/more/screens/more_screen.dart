@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../agreements/screens/agreements_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../discounts/screens/discounts_screen.dart';
+import '../../door_sales/screens/shift_summary_screen.dart';
 import '../../door_staff/screens/club_door_staff_screen.dart';
 import '../../door_staff/screens/organizer_team_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
@@ -45,6 +46,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'money' when workspace.role == WorkspaceRole.owner => OwnerMoneyScreen(workspace: workspace),
       // Incidents are the security staff's: report one, and read the ones they reported.
       'incidents' when workspace.role == WorkspaceRole.security => IncidentsScreen(workspace: workspace),
+      // The door's own shift at the chosen event: what they scanned in and what they sold, cash and card machine apart.
+      'shift-summary' when workspace.role == WorkspaceRole.door => ShiftSummaryScreen(membershipId: workspace.membershipId),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };

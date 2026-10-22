@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../door/screens/door_guests_screen.dart';
 import '../../door/screens/door_scan_screen.dart';
+import '../../door_sales/screens/door_sales_screen.dart';
 import '../../floor/screens/floor_screen.dart';
 import '../../organizer_events/screens/organizer_events_screen.dart';
 import '../../owner/screens/owner_home_screen.dart';
@@ -69,6 +70,8 @@ Widget? builtSectionFor(Workspace workspace, String sectionId) {
         return DoorScanScreen(membershipId: workspace.membershipId);
       case 'guests':
         return DoorGuestsScreen(membershipId: workspace.membershipId, venueId: workspace.venueId);
+      case 'door-sales':
+        return DoorSalesScreen(membershipId: workspace.membershipId);
     }
   }
   if (workspace.role == WorkspaceRole.server) {
@@ -149,7 +152,6 @@ class WorkspaceSectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final workspace = ref.watch(workspaceStateProvider).byMembershipId(membershipId);
     final section = workspace == null ? null : navigationFor(workspace.role).byId(sectionId);
-    final theme = Theme.of(context);
 
     if (section == null) {
       return const Center(child: Text('This section is not part of your role.'));
@@ -157,7 +159,21 @@ class WorkspaceSectionScreen extends ConsumerWidget {
 
     final built = builtSectionFor(workspace!, section.id);
     if (built != null) return built;
+    return NotBuiltYetSection(workspace: workspace, section: section);
+  }
+}
 
+/// What a tab says while it has no screen: what it will hold, and plainly that it is not built. (Every tab of every role has a screen now; this stays for the next section that is added
+/// before its screen is.)
+class NotBuiltYetSection extends StatelessWidget {
+  const NotBuiltYetSection({super.key, required this.workspace, required this.section});
+
+  final Workspace workspace;
+  final WorkspaceSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 140),
       children: [
