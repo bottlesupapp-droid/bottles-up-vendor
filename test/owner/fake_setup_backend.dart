@@ -40,6 +40,12 @@ class FakeSetupBackend {
     'name', 'size', 'description', 'price_cents', 'category', 'image_url', 'is_available', 'is_sold_out', 'stock_quantity', 'sort_order',
   };
 
+  /// The place names the pretend database knows (the real one knows every IANA name).
+  static const knownZones = {
+    'America/St_Johns', 'America/Halifax', 'America/Toronto', 'America/Winnipeg', 'America/Regina', 'America/Edmonton', 'America/Vancouver', 'America/New_York', 'America/Chicago',
+    'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Asia/Kolkata',
+  };
+
   PostgrestException refuse(String message) => PostgrestException(message: message, code: 'P0001');
 
   String id(String prefix) => '$prefix${_next++}';
@@ -139,6 +145,16 @@ class FakeSetupBackend {
         if (i < 0) throw refuse('floor not found');
         floors.removeAt(i);
         return null;
+      case 'save_venue_time_zone':
+        // the website's 20261027100000_venue_time_zone.sql: a place name the database knows, or empty for the default; it answers the zone now in force
+        if ((p.keys.toList()..sort()).join(',') != 'p_venue,p_zone') throw StateError('the database takes p_venue and p_zone, the app sent ${p.keys}');
+        final raw = (p['p_zone'] as String?)?.trim();
+        final zone = raw == null || raw.isEmpty ? null : raw;
+        if (zone != null && (!RegExp(r'^[A-Za-z]+(/[A-Za-z0-9_+-]+)+$').hasMatch(zone) || !knownZones.contains(zone))) {
+          throw refuse('that time zone is not one the system knows (use a place name such as America/Toronto)');
+        }
+        profileRow = {...?profileRow, 'time_zone': zone};
+        return zone ?? 'America/Toronto';
       case 'update_venue_profile':
         final d = p['p_details'] as Map<String, dynamic>;
         for (final k in d.keys) {

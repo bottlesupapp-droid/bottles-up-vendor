@@ -22,13 +22,22 @@ class ProfileLimits {
 // ---------------------------------------------------------------------------
 
 class VenueProfile {
-  const VenueProfile({required this.id, required this.name, this.description, this.address, this.coverImageUrl});
+  const VenueProfile({required this.id, required this.name, this.description, this.address, this.coverImageUrl, this.timeZone, this.timeZoneSupported = false});
 
   final String id;
   final String name;
   final String? description;
   final String? address;
   final String? coverImageUrl;
+
+  /// The zone the venue chose, or null when it has not chosen one (it then reads as [defaultTimeZone]).
+  final String? timeZone;
+
+  /// The server knows about venue time zones (website 20261027100000). On a server that does not, the editor shows no time zone field at all rather than one that cannot be saved.
+  final bool timeZoneSupported;
+
+  /// The zone in force: the chosen one, otherwise the default.
+  String get effectiveTimeZone => timeZone ?? defaultTimeZone;
 }
 
 String? _text(Object? v) => v is String && v.isNotEmpty ? v : null;
@@ -39,8 +48,62 @@ VenueProfile? parseVenueProfile(Map<String, dynamic>? r) {
   final id = _text(r['id']);
   final name = _text(r['name']);
   if (id == null || name == null) return null;
-  return VenueProfile(id: id, name: name, description: _text(r['description']), address: _text(r['address']), coverImageUrl: _text(r['cover_image_url']));
+  return VenueProfile(
+    id: id,
+    name: name,
+    description: _text(r['description']),
+    address: _text(r['address']),
+    coverImageUrl: _text(r['cover_image_url']),
+    timeZone: _text(r['time_zone']),
+    // The key is there (even when empty) only when the server has the column.
+    timeZoneSupported: r.containsKey('time_zone'),
+  );
 }
+
+// ---------------------------------------------------------------------------
+// The venue's time zone
+// ---------------------------------------------------------------------------
+
+/// What every venue reads as until it chooses (the website's `venue_timezone`, 20261027100000 and 20261023100000).
+const String defaultTimeZone = 'America/Toronto';
+
+class TimeZoneChoice {
+  const TimeZoneChoice(this.zone, this.label);
+
+  /// The place name the database stores (an IANA name, so daylight saving follows the place).
+  final String zone;
+  final String label;
+}
+
+/// The zones a venue can pick in the app: where BottlesUp's clubs are likely to be. The database accepts any real place name; a venue already set to another one keeps it (see [timeZoneChoicesFor]).
+const List<TimeZoneChoice> venueTimeZoneChoices = [
+  TimeZoneChoice('America/St_Johns', 'Newfoundland (St. John\'s)'),
+  TimeZoneChoice('America/Halifax', 'Atlantic (Halifax)'),
+  TimeZoneChoice('America/Toronto', 'Eastern (Toronto)'),
+  TimeZoneChoice('America/Winnipeg', 'Central (Winnipeg)'),
+  TimeZoneChoice('America/Regina', 'Saskatchewan (no daylight saving)'),
+  TimeZoneChoice('America/Edmonton', 'Mountain (Edmonton)'),
+  TimeZoneChoice('America/Vancouver', 'Pacific (Vancouver)'),
+  TimeZoneChoice('America/New_York', 'Eastern (New York)'),
+  TimeZoneChoice('America/Chicago', 'Central (Chicago)'),
+  TimeZoneChoice('America/Denver', 'Mountain (Denver)'),
+  TimeZoneChoice('America/Los_Angeles', 'Pacific (Los Angeles)'),
+  TimeZoneChoice('Europe/London', 'London'),
+];
+
+/// A person's words for a zone: the label of a zone in the list, otherwise the place name itself.
+String timeZoneLabel(String zone) {
+  for (final c in venueTimeZoneChoices) {
+    if (c.zone == zone) return c.label;
+  }
+  return zone;
+}
+
+/// The choices to offer for a venue now set to [current]: the list, plus the venue's own zone when it is not in it (so opening and saving never changes a zone the app does not list).
+List<TimeZoneChoice> timeZoneChoicesFor(String current) => [
+      ...venueTimeZoneChoices,
+      if (!venueTimeZoneChoices.any((c) => c.zone == current)) TimeZoneChoice(current, current),
+    ];
 
 class ProfileForm {
   const ProfileForm({this.name = '', this.description = '', this.address = '', this.coverImageUrl = ''});
