@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/config/app_info.dart';
 import '../../../core/theme/app_theme.dart';
+import '../providers/site_contact_provider.dart';
+import 'contact_support_screen.dart' show contactLinkOpenerProvider;
 
+/// About: what the app is, the version it really is, how to reach BottlesUp and its social pages exactly as the BottlesUp team has set them in the CMS (a contact it has not filled in is not shown),
+/// and the legal pages. Nothing about the company is written into the app.
 class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      // Handle error
+  Future<void> _open(WidgetRef ref, Uri uri) async {
+    try {
+      await ref.read(contactLinkOpenerProvider)(uri);
+    } catch (_) {
+      // nothing on this device can open it: the address is on the screen to copy
     }
   }
 
@@ -75,7 +81,7 @@ class AboutScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'Version 1.0.0 (Build 1)',
+                appVersionLabel,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.w600,
@@ -159,14 +165,8 @@ class AboutScreen extends ConsumerWidget {
                   _buildFeatureItem(
                     theme,
                     Ionicons.card_outline,
-                    'Secure Payments',
-                    'Fast and secure payment processing',
-                  ),
-                  _buildFeatureItem(
-                    theme,
-                    Ionicons.headset_outline,
-                    '24/7 Support',
-                    'Round-the-clock customer support',
+                    'Payments',
+                    'Record what guests pay and follow what is owed',
                     isLast: true,
                   ),
                 ],
@@ -175,78 +175,44 @@ class AboutScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // Company Info
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: AppTheme.darkCardDecoration,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Company Information',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildInfoRow(theme, 'Company', 'Bottles Up Inc.'),
-                  _buildInfoRow(theme, 'Founded', '2024'),
-                  _buildInfoRow(theme, 'Location', 'New York, USA'),
-                  _buildInfoRow(theme, 'Email', 'info@bottlesup.com'),
-                  _buildInfoRow(theme, 'Phone', '+1-800-BOTTLES', isLast: true),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Social Media
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: AppTheme.darkCardDecoration,
-              child: Column(
-                children: [
-                  Text(
-                    'Connect With Us',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildSocialButton(
-                        theme,
-                        Ionicons.logo_facebook,
-                        'Facebook',
-                        () => _launchUrl('https://facebook.com/bottlesup'),
-                      ),
-                      _buildSocialButton(
-                        theme,
-                        Ionicons.logo_twitter,
-                        'Twitter',
-                        () => _launchUrl('https://twitter.com/bottlesup'),
-                      ),
-                      _buildSocialButton(
-                        theme,
-                        Ionicons.logo_instagram,
-                        'Instagram',
-                        () => _launchUrl('https://instagram.com/bottlesup'),
-                      ),
-                      _buildSocialButton(
-                        theme,
-                        Ionicons.logo_linkedin,
-                        'LinkedIn',
-                        () => _launchUrl('https://linkedin.com/company/bottlesup'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
+            // Contact and social pages: only what the BottlesUp team has published in the CMS
+            ref.watch(siteContactProvider).maybeWhen(
+                  data: (c) => c.isEmpty
+                      ? const SizedBox.shrink()
+                      : Column(
+                          children: [
+                            Container(
+                              key: const Key('about-contact'),
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: AppTheme.darkCardDecoration,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Contact', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 16),
+                                  if (c.email != null) _buildInfoRow(theme, 'Email', c.email!, isLast: c.phone == null && c.address == null),
+                                  if (c.phone != null) _buildInfoRow(theme, 'Phone', c.phone!, isLast: c.address == null),
+                                  if (c.address != null) _buildInfoRow(theme, 'Location', c.address!, isLast: true),
+                                  if (c.socials.isNotEmpty) ...[
+                                    const SizedBox(height: 16),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 8,
+                                      children: [
+                                        for (final link in c.socials)
+                                          ActionChip(key: Key('about-social-${link.name.toLowerCase()}'), label: Text(link.name), onPressed: () => _open(ref, link.url)),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
 
             // Legal Links
             Container(
@@ -265,9 +231,7 @@ class AboutScreen extends ConsumerWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                       size: 18,
                     ),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/legal/terms');
-                    },
+                    onTap: () => context.push('/legal/terms'),
                   ),
                   Divider(
                     height: 1,
@@ -284,9 +248,7 @@ class AboutScreen extends ConsumerWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                       size: 18,
                     ),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/legal/privacy');
-                    },
+                    onTap: () => context.push('/legal/privacy'),
                   ),
                   Divider(
                     height: 1,
@@ -307,7 +269,7 @@ class AboutScreen extends ConsumerWidget {
                       showLicensePage(
                         context: context,
                         applicationName: 'BottlesUp Business',
-                        applicationVersion: '1.0.0',
+                        applicationVersion: appVersion,
                         applicationIcon: Container(
                           width: 80,
                           height: 80,
@@ -332,7 +294,7 @@ class AboutScreen extends ConsumerWidget {
 
             // Copyright
             Text(
-              '© 2025 Bottles Up Inc.',
+              '© BottlesUp',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -417,10 +379,14 @@ class AboutScreen extends ConsumerWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            Text(
-              value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                value,
+                textAlign: TextAlign.end,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -434,43 +400,6 @@ class AboutScreen extends ConsumerWidget {
           const SizedBox(height: 12),
         ],
       ],
-    );
-  }
-
-  Widget _buildSocialButton(
-    ThemeData theme,
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 70,
-        height: 70,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: theme.colorScheme.primary,
-              size: 28,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

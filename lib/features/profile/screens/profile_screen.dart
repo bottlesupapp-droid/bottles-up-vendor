@@ -1,5 +1,6 @@
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
+import '../../../core/config/app_info.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
@@ -393,7 +394,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       subtitle: Text(
-                        'Version 1.0.0 • App info',
+                        'Version $appVersion • App info',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
