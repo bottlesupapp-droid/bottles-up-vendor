@@ -15,7 +15,7 @@ const List<DataSection> dataCollected = [
     'On your phone only: which workspace you used last, so it is listed first next time.',
   ]),
   DataSection('What you enter about the night', [
-    'Bookings and their guests: names, and an email address or phone number only where you type one (a walk-in, or a guest list).',
+    'Bookings and their guests: names, and an email address or phone number only where you type one (a walk-in, a guest list, or a ticket sold at the door).',
     'Orders, deliveries, payments you record (amount, how it was paid, the till\'s receipt number), refunds, discounts and free bottles, tables held or moved, notes, chat messages, incident reports, inventory counts and cash handovers.',
     'Who did each thing and when. This history is kept so that a manager can see it and nothing is silently changed.',
   ]),
