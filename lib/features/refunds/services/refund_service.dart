@@ -47,11 +47,13 @@ class RefundService {
         throw const OpsActionException('We could not tell whether the decision was recorded. Look at the request before trying again.');
       }, generic: 'The decision could not be recorded. Check your connection and look at the request before trying again.');
 
-  /// The venue paid the money back at the club: records it with the terminal or receipt reference, and the booking's paid amount goes down.
-  Future<void> completeClubRefund(String requestId, String reference) => _rpc.act(() async {
-        final problem = validateClubReference(reference);
+  /// The venue paid the money back at the club: records it with the terminal or receipt reference and/or the receipt photo (already uploaded to [receiptPath]), and the booking's paid
+  /// amount goes down. A repeated call changes nothing.
+  Future<void> completeClubRefund(String requestId, String reference, {String? receiptPath}) => _rpc.act(() async {
+        final problem = validateClubReference(reference, hasPhoto: receiptPath != null);
         if (problem != null) throw OpsActionException(problem);
-        await _rpc.call('desk_complete_club_refund', {'p_request': requestId, 'p_pos_reference': reference.trim(), 'p_receipt_path': null});
+        final ref = reference.trim();
+        await _rpc.call('desk_complete_club_refund', {'p_request': requestId, 'p_pos_reference': ref.isEmpty ? null : ref, 'p_receipt_path': receiptPath});
       }, generic: 'The refund could not be recorded. Check your connection and look at the request before trying again.');
 
   // --- cancelling a booking ------------------------------------------------------

@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:bottles_up_vendor/features/owner/logic/owner_rules.dart';
 import 'package:bottles_up_vendor/features/owner/providers/owner_providers.dart';
 import 'package:bottles_up_vendor/features/refunds/providers/refund_providers.dart';
 import 'package:bottles_up_vendor/features/refunds/screens/refunds_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/providers/table_service_providers.dart';
+import 'package:bottles_up_vendor/features/table_service/screens/record_payment_screen.dart';
+import 'package:bottles_up_vendor/features/table_service/services/receipt_service.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +18,12 @@ import 'fake_refund_backend.dart';
 
 late FakeRefundBackend db;
 
+/// What the camera or gallery hands over (null = the person cancelled), and what was filed in storage.
+Uint8List? picked;
+final List<String> uploads = [];
+Object? uploadFails;
+int _uuid = 0;
+
 const manager = Workspace(membershipId: 'w2', orgId: 'o1', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.manager, venueId: 'v1', venueName: 'Club A');
 const owner = Workspace(membershipId: 'w1', orgId: 'o1', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.owner);
 
@@ -21,6 +31,16 @@ Widget host({Workspace ws = manager}) => ProviderScope(
       key: UniqueKey(),
       overrides: [
         refundServiceProvider.overrideWithValue(db.service),
+        receiptPhotoPickerProvider.overrideWithValue((context, {required camera}) async => picked),
+        receiptServiceProvider.overrideWithValue(ReceiptService(
+          uploader: (path, bytes, type) async {
+            final broken = uploadFails;
+            if (broken != null) throw broken;
+            uploads.add(path);
+          },
+          signer: (path) async => 'https://signed.example/$path',
+          newId: () => 'photo-${++_uuid}',
+        )),
         ownerVenuesProvider.overrideWith((ref, orgId) async => [const OrgVenue(id: 'v1', name: 'Club A', status: 'published')]),
       ],
       child: MaterialApp(theme: ThemeData.dark(), home: Scaffold(body: RefundsScreen(workspace: ws))),
@@ -51,6 +71,10 @@ void main() {
   setUp(() {
     db = FakeRefundBackend();
     db.addBooking('b1', hours: 30);
+    picked = Uint8List.fromList([0xFF, 0xD8, 0xFF, 1, 2, 3]);
+    uploads.clear();
+    uploadFails = null;
+    _uuid = 0;
   });
 
   testWidgets('lists the waiting requests first, each with the guest, the booking, the reason and what the policy suggests', (tester) async {
@@ -264,12 +288,110 @@ void main() {
       expect(find.byKey(Key('record-club-${rq.id}')), findsNothing);
     });
 
+    testWidgets('a photo of the receipt alone is evidence: it is filed under the booking, sent with no reference, and the paid-back refund then shows it', (tester) async {
+      final rq = approvedAtClub();
+      await open(tester);
+      await tapKey(tester, 'record-club-${rq.id}');
+      await tapKey(tester, 'club-photo-camera');
+      expect(find.byKey(const Key('club-photo-preview')), findsOneWidget);
+      await tapKey(tester, 'club-save');
+      expect(uploads, ['b1/photo-1.jpg']);
+      expect(db.paramsOf('desk_complete_club_refund').single, {'p_request': rq.id, 'p_pos_reference': null, 'p_receipt_path': 'b1/photo-1.jpg'});
+      expect(db.bookings['b1']!.paid, 5000);
+      await tapKey(tester, 'refund-filter-all');
+      expect(find.byKey(Key('view-receipt-${rq.id}')), findsOneWidget);
+      await tapKey(tester, 'view-receipt-${rq.id}');
+      expect(find.byKey(const Key('receipt-close')), findsOneWidget, reason: 'the receipt opens through a short-lived address');
+    });
+
+    testWidgets('a reference and a photo together are both sent; the completed refund shows the reference', (tester) async {
+      final rq = approvedAtClub();
+      await open(tester);
+      await tapKey(tester, 'record-club-${rq.id}');
+      await enter(tester, 'club-reference', 'TERM-5');
+      await tapKey(tester, 'club-photo-gallery');
+      await tapKey(tester, 'club-save');
+      expect(db.paramsOf('desk_complete_club_refund').single, {'p_request': rq.id, 'p_pos_reference': 'TERM-5', 'p_receipt_path': 'b1/photo-1.jpg'});
+      await tapKey(tester, 'refund-filter-all');
+      expect(lineOf(tester, rq.id), '\$50.00 paid back at the club · reference TERM-5');
+    });
+
+    testWidgets('a reference alone shows no receipt button on the completed refund', (tester) async {
+      final rq = approvedAtClub();
+      await open(tester);
+      await tapKey(tester, 'record-club-${rq.id}');
+      await enter(tester, 'club-reference', 'TERM-5');
+      await tapKey(tester, 'club-save');
+      await tapKey(tester, 'refund-filter-all');
+      expect(find.byKey(Key('view-receipt-${rq.id}')), findsNothing);
+      expect(uploads, isEmpty, reason: 'nothing to upload');
+    });
+
+    testWidgets('cancelling the camera keeps what is there; Remove drops the photo, and then a reference is needed again', (tester) async {
+      final rq = approvedAtClub();
+      await open(tester);
+      await tapKey(tester, 'record-club-${rq.id}');
+      picked = null;
+      await tapKey(tester, 'club-photo-camera');
+      expect(find.byKey(const Key('club-photo-preview')), findsNothing);
+      picked = Uint8List.fromList([0xFF, 0xD8, 0xFF, 1, 2, 3]);
+      await tapKey(tester, 'club-photo-camera');
+      expect(find.byKey(const Key('club-photo-preview')), findsOneWidget);
+      await tapKey(tester, 'club-photo-remove');
+      expect(find.byKey(const Key('club-photo-preview')), findsNothing);
+      await tapKey(tester, 'club-save');
+      expect(find.text('Add the terminal or receipt reference, or a photo of the receipt, as evidence.'), findsOneWidget);
+      expect(uploads, isEmpty);
+      expect(db.paramsOf('desk_complete_club_refund'), isEmpty);
+    });
+
+    testWidgets('a file that is not a photo is refused before anything is uploaded', (tester) async {
+      final rq = approvedAtClub();
+      await open(tester);
+      await tapKey(tester, 'record-club-${rq.id}');
+      picked = Uint8List.fromList([1, 2, 3, 4, 5, 6]);
+      await tapKey(tester, 'club-photo-camera');
+      expect(find.byKey(const Key('club-photo-preview')), findsNothing);
+      expect(find.byKey(const Key('club-problem')), findsOneWidget);
+      expect(uploads, isEmpty);
+    });
+
+    testWidgets('the upload failing keeps the dialog and the photo, and nothing is recorded', (tester) async {
+      final rq = approvedAtClub();
+      await open(tester);
+      await tapKey(tester, 'record-club-${rq.id}');
+      await tapKey(tester, 'club-photo-camera');
+      uploadFails = Exception('socket closed');
+      await tapKey(tester, 'club-save');
+      expect(find.textContaining('could not be uploaded'), findsOneWidget);
+      expect(find.textContaining('socket'), findsNothing);
+      expect(find.byKey(const Key('club-photo-preview')), findsOneWidget);
+      expect(db.paramsOf('desk_complete_club_refund'), isEmpty);
+      uploadFails = null;
+      await tapKey(tester, 'club-save');
+      expect(db.paramsOf('desk_complete_club_refund'), hasLength(1));
+    });
+
+    testWidgets('a retry after the database refused does not upload the photo a second time', (tester) async {
+      final rq = approvedAtClub();
+      await open(tester);
+      await tapKey(tester, 'record-club-${rq.id}');
+      await tapKey(tester, 'club-photo-camera');
+      db.role = 'server';
+      await tapKey(tester, 'club-save');
+      expect(find.text('You don\'t have access to do that.'), findsOneWidget);
+      db.role = 'manager';
+      await tapKey(tester, 'club-save');
+      expect(uploads, ['b1/photo-1.jpg'], reason: 'one file, however many tries');
+      expect(db.bookings['b1']!.paid, 5000);
+    });
+
     testWidgets('without a reference nothing is sent', (tester) async {
       final rq = approvedAtClub();
       await open(tester);
       await tapKey(tester, 'record-club-${rq.id}');
       await tapKey(tester, 'club-save');
-      expect(find.text('Add the terminal or receipt reference as evidence.'), findsOneWidget);
+      expect(find.text('Add the terminal or receipt reference, or a photo of the receipt, as evidence.'), findsOneWidget);
       expect(db.paramsOf('desk_complete_club_refund'), isEmpty);
     });
 

@@ -251,6 +251,8 @@ class RefundRequest {
     this.method,
     this.decisionNote,
     this.failureNote,
+    this.reference,
+    this.receiptPath,
     required this.createdAt,
   });
 
@@ -271,7 +273,13 @@ class RefundRequest {
   final RefundMethod? method;
   final String? decisionNote;
   final String? failureNote;
+
+  /// The terminal or receipt reference a refund paid back at the club was recorded with, and the photo of the receipt (a path in the private receipts bucket).
+  final String? reference;
+  final String? receiptPath;
   final DateTime createdAt;
+
+  bool get hasReceiptPhoto => receiptPath != null;
 
   bool get canDecide => status == RefundStatus.requested;
   bool get needsClubPayment => status == RefundStatus.approved && method == RefundMethod.club;
@@ -303,6 +311,8 @@ RefundRequest? parseRefundRequest(Map<String, dynamic> r) {
     method: RefundMethod.fromDb(_text(r['method'])),
     decisionNote: _text(r['decision_note']),
     failureNote: _text(r['failure_note']),
+    reference: _text(r['refund_reference']),
+    receiptPath: _text(r['refund_receipt_path']),
     createdAt: created.toLocal(),
   );
 }
@@ -324,7 +334,7 @@ String requestStatusLine(RefundRequest r) {
         : '$amount approved: BottlesUp returns it to the guest\'s card',
     RefundStatus.declined => 'Declined${r.decisionNote == null ? '' : ': ${r.decisionNote}'}',
     RefundStatus.processing => '$amount is being returned to the guest\'s card',
-    RefundStatus.completed => '$amount paid back${r.method == RefundMethod.club ? ' at the club' : ' to the guest\'s card'}',
+    RefundStatus.completed => '$amount paid back${r.method == RefundMethod.club ? ' at the club' : ' to the guest\'s card'}${r.reference == null ? '' : ' · reference ${r.reference}'}',
     RefundStatus.failed => 'The card refund did not go through${r.failureNote == null ? '' : ': ${r.failureNote}'}. BottlesUp has been told.',
   };
 }
@@ -466,10 +476,11 @@ String decisionMessage(bool approved, RefundMethod? method, int? cents) => !appr
         ? 'Approved: ${formatDollars(cents ?? 0)}. Pay it back at the club, then record it here.'
         : 'Approved: ${formatDollars(cents ?? 0)}. BottlesUp will return it to the guest\'s card.';
 
-/// What is wrong with the evidence for a refund paid back at the club (a terminal or receipt reference); null when it can be sent.
-String? validateClubReference(String reference) {
+/// What is wrong with the evidence for a refund paid back at the club; null when it can be sent. The evidence is a terminal or receipt reference, a photo of the receipt, or both:
+/// the database needs at least one.
+String? validateClubReference(String reference, {bool hasPhoto = false}) {
   final r = reference.trim();
-  if (r.isEmpty) return 'Add the terminal or receipt reference as evidence.';
+  if (r.isEmpty && !hasPhoto) return 'Add the terminal or receipt reference, or a photo of the receipt, as evidence.';
   if (r.length > 200) return 'The reference is too long (200 characters at most).';
   return null;
 }

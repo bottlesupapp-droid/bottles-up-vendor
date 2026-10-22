@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 RefundPolicyForm form(List<(String, String)> rules, {bool after = true, String note = ''}) =>
     RefundPolicyForm(tiers: [for (final r in rules) TierForm(hours: r.$1, percent: r.$2)], noRefundAfterCheckIn: after, note: note);
 
-RefundRequest request({String status = 'requested', String? method, int? approved, int available = 10000, int suggested = 5000, int? percent = 50, String? note, String? failure, String kind = 'guest'}) =>
+RefundRequest request({String status = 'requested', String? method, int? approved, int available = 10000, int suggested = 5000, int? percent = 50, String? note, String? failure, String kind = 'guest', String? reference, String? receipt}) =>
     parseRefundRequest({
       'request_id': 'rq1',
       'booking_id': 'b1',
@@ -23,6 +23,8 @@ RefundRequest request({String status = 'requested', String? method, int? approve
       'method': method,
       'decision_note': note,
       'failure_note': failure,
+      'refund_reference': reference,
+      'refund_receipt_path': receipt,
       'created_at': '2026-10-21T12:00:00Z',
     })!;
 
@@ -217,6 +219,13 @@ void main() {
       expect(parseRefundRequest({...base, 'created_at': 'yesterday'}), isNull);
     });
 
+    test('the reference and the receipt photo of a refund paid back at the club are read', () {
+      final r = request(status: 'completed', method: 'club', approved: 100, reference: 'TERM-1', receipt: 'b1/photo.jpg');
+      expect([r.reference, r.receiptPath, r.hasReceiptPhoto], ['TERM-1', 'b1/photo.jpg', true]);
+      final none = request(status: 'completed', method: 'club', approved: 100);
+      expect([none.reference, none.receiptPath, none.hasReceiptPhoto], [null, null, false]);
+    });
+
     test('a request made by staff is not shown as the guest\'s', () {
       expect(request(kind: 'staff').byGuest, isFalse);
     });
@@ -257,6 +266,7 @@ void main() {
       expect(requestStatusLine(request(status: 'declined')), 'Declined');
       expect(requestStatusLine(request(status: 'processing', method: 'online', approved: 5000)), '\$50.00 is being returned to the guest\'s card');
       expect(requestStatusLine(request(status: 'completed', method: 'club', approved: 5000)), '\$50.00 paid back at the club');
+      expect(requestStatusLine(request(status: 'completed', method: 'club', approved: 5000, reference: 'TERM-1')), '\$50.00 paid back at the club · reference TERM-1');
       expect(requestStatusLine(request(status: 'completed', method: 'online', approved: 5000)), '\$50.00 paid back to the guest\'s card');
       expect(requestStatusLine(request(status: 'failed', method: 'online', approved: 5000, failure: 'Card closed')), 'The card refund did not go through: Card closed. BottlesUp has been told.');
     });
@@ -386,7 +396,10 @@ void main() {
 
     test('the club needs a reference of up to 200 characters as evidence', () {
       expect(validateClubReference('TERM-123'), isNull);
-      expect(validateClubReference('  '), 'Add the terminal or receipt reference as evidence.');
+      expect(validateClubReference('  '), 'Add the terminal or receipt reference, or a photo of the receipt, as evidence.');
+      expect(validateClubReference('  ', hasPhoto: true), isNull, reason: 'a photo is evidence on its own');
+      expect(validateClubReference('TERM-1', hasPhoto: true), isNull);
+      expect(validateClubReference('x' * 201, hasPhoto: true), 'The reference is too long (200 characters at most).');
       expect(validateClubReference('x' * 200), isNull);
       expect(validateClubReference('x' * 201), 'The reference is too long (200 characters at most).');
     });

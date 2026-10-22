@@ -302,6 +302,27 @@ void main() {
       expect(db.bookings['b1']!.paid, 5000);
     });
 
+    test('a photo alone is evidence: it is sent without a reference, and the request then carries the photo', () async {
+      final rq = approvedAtClub();
+      await db.service.completeClubRefund(rq.id, '  ', receiptPath: 'b1/photo.jpg');
+      expect(db.paramsOf('desk_complete_club_refund').single, {'p_request': rq.id, 'p_pos_reference': null, 'p_receipt_path': 'b1/photo.jpg'});
+      final r = await loaded(rq.id);
+      expect([r.reference, r.receiptPath], [null, 'b1/photo.jpg']);
+    });
+
+    test('a reference and a photo together are both kept', () async {
+      final rq = approvedAtClub();
+      await db.service.completeClubRefund(rq.id, 'TERM-9', receiptPath: 'b1/photo.jpg');
+      final r = await loaded(rq.id);
+      expect([r.reference, r.receiptPath], ['TERM-9', 'b1/photo.jpg']);
+    });
+
+    test('a photo filed under another booking is refused by the database in its own words', () async {
+      final rq = approvedAtClub();
+      expect(await refusal(() => db.service.completeClubRefund(rq.id, 'TERM-9', receiptPath: 'other-booking/photo.jpg')), 'The receipt photo does not belong to this booking.');
+      expect(db.bookings['b1']!.paid, 10000, reason: 'nothing was recorded');
+    });
+
     test('a repeated tap records it once', () async {
       final rq = approvedAtClub();
       await db.service.completeClubRefund(rq.id, 'TERM-123');
@@ -311,7 +332,7 @@ void main() {
 
     test('a reference is needed, and is checked before anything is sent', () async {
       final rq = approvedAtClub();
-      expect(await refusal(() => db.service.completeClubRefund(rq.id, '  ')), 'Add the terminal or receipt reference as evidence.');
+      expect(await refusal(() => db.service.completeClubRefund(rq.id, '  ')), 'Add the terminal or receipt reference, or a photo of the receipt, as evidence.');
       expect(await refusal(() => db.service.completeClubRefund(rq.id, 'x' * 201)), 'The reference is too long (200 characters at most).');
       expect(db.paramsOf('desk_complete_club_refund'), isEmpty);
     });

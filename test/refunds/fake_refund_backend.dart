@@ -53,6 +53,8 @@ class FakeRefundRequest {
   String? note;
   String? failure;
   String? refundId;
+  String? reference;
+  String? receipt;
 }
 
 /// The website's refund functions (20261023100000_refund_policy_and_requests.sql) and the cancel-table-booking edge function as a fake with the same checks, in the same order, and
@@ -274,6 +276,8 @@ class FakeRefundBackend {
               'decided_at': null,
               'created_at': r.createdAt.toIso8601String(),
               'completed_at': null,
+              'refund_reference': r.reference,
+              'refund_receipt_path': r.receipt,
             },
         ];
       case 'desk_decide_refund':
@@ -289,10 +293,13 @@ class FakeRefundBackend {
         if (r.status != 'approved' || r.method != 'club') throw refuse('only an approved refund that is paid back at the club can be recorded here');
         if (ref.isEmpty && path.isEmpty) throw refuse('add the terminal or receipt reference, or a photo of the receipt, as evidence');
         if (ref.length > 200) throw refuse('the reference is too long');
+        if (path.isNotEmpty && (path.length > 300 || !path.startsWith('${r.booking}/') || path.contains('..'))) throw refuse('the receipt photo does not belong to this booking');
         final b = bookings[r.booking]!;
         b.paid = (b.paid - r.approved!) < 0 ? 0 : b.paid - r.approved!;
         r.status = 'completed';
         r.refundId = 'rf${++_next}';
+        r.reference = ref.isEmpty ? null : ref;
+        r.receipt = path.isEmpty ? null : path;
         return r.refundId;
     }
     throw StateError('unexpected call $function');

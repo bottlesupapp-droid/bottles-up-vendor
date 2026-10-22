@@ -5,6 +5,7 @@ import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/venue_picker.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/widgets/desk_chip.dart';
+import '../../table_service/widgets/receipt_view.dart';
 import '../../workspace/models/workspace.dart';
 import '../logic/refund_rules.dart';
 import '../providers/refund_providers.dart';
@@ -158,6 +159,11 @@ class _RefundsScreenState extends ConsumerState<RefundsScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton(key: Key('decide-${r.requestId}'), onPressed: () => _decide(r), child: const Text('Decide')),
+              ),
+            if (r.hasReceiptPhoto)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(key: Key('view-receipt-${r.requestId}'), onPressed: () => showReceipt(context, ref, r.receiptPath!), icon: const Icon(Icons.receipt_long_outlined, size: 18), label: const Text('View the receipt photo')),
               ),
             if (r.needsClubPayment)
               Align(
