@@ -16,12 +16,18 @@ void main() {
   group('agrees with the website', () {
     String sql() => migration.readAsStringSync();
 
+    // Two functions were corrected after 20261023100000 was applied in production (a receipt photo must belong to its booking; the list returns the evidence): their current text is in the
+    // correction, which is never an edit of the applied file.
+    final correction = File('../bottles-up-website-main/supabase/migrations/20261028100000_refund_receipt_evidence.sql');
+
     String fn(String name) {
-      final s = sql();
-      final start = s.indexOf('create function public.$name(');
-      expect(start, isNot(-1), reason: 'function $name is in the website\'s migration');
-      final end = s.indexOf('\n\$\$;', start);
-      return s.substring(start, end);
+      for (final (text, pattern) in [(correction.existsSync() ? correction.readAsStringSync() : '', RegExp('create (or replace )?function public\\.$name\\(')), (sql(), RegExp('create function public\\.$name\\('))]) {
+        final m = pattern.firstMatch(text);
+        if (m == null) continue;
+        final end = text.indexOf('\n\$\$;', m.start);
+        return text.substring(m.start, end);
+      }
+      fail('function $name is in the website\'s migrations');
     }
 
     List<String> params(String name) {
