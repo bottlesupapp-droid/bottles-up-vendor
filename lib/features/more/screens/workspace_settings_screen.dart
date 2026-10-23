@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../owner/logic/owner_rules.dart' show siteUrl;
 import '../../workspace/models/workspace.dart';
+import '../widgets/delete_account_section.dart';
 
 /// Opens a web address in the browser. Replaced in tests.
 typedef OpenLink = Future<bool> Function(Uri uri);
@@ -19,10 +20,10 @@ String? _signedInEmail() {
   }
 }
 
-/// Settings for a workspace: who is signed in and in which role, and the privacy policy. Switching workspace and signing out live in the
+/// Settings for a workspace: who is signed in and in which role, the privacy policy and what the app collects, and deleting the account. Switching workspace and signing out live in the
 /// Account menu at the top of every workspace screen, and this screen says so.
 class WorkspaceSettingsScreen extends StatelessWidget {
-  const WorkspaceSettingsScreen({super.key, required this.workspace, this.email, this.openLink = _openInBrowser, this.site});
+  const WorkspaceSettingsScreen({super.key, required this.workspace, this.email, this.openLink = _openInBrowser, this.site, this.deleteAccount, this.onAccountDeleted});
 
   final Workspace workspace;
 
@@ -32,6 +33,10 @@ class WorkspaceSettingsScreen extends StatelessWidget {
 
   /// The website's address, given in tests.
   final String? site;
+
+  /// Deleting the account and where to go afterwards: the real ones unless a test gives its own.
+  final Future<void> Function()? deleteAccount;
+  final void Function(BuildContext context)? onAccountDeleted;
 
   Future<void> _privacy(BuildContext context) async {
     final base = (site ?? siteUrl).replaceAll(RegExp(r'/+$'), '');
@@ -86,6 +91,7 @@ class WorkspaceSettingsScreen extends StatelessWidget {
           key: const Key('settings-account-note'),
           style: theme.textTheme.bodySmall,
         ),
+        DeleteAccountSection(workspace: workspace, email: signedIn, deleteAccount: deleteAccount, onDeleted: onAccountDeleted),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
+import '../../more/widgets/delete_account_section.dart' show classicDeleteAccountText;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:go_router/go_router.dart';
@@ -273,7 +274,7 @@ class SecurityScreen extends ConsumerWidget {
                     builder: (context) => AlertDialog(
                       title: const Text('Delete Account?'),
                       content: const Text(
-                        'This action cannot be undone. All your data, including profile, events, and bookings will be permanently deleted.',
+                        classicDeleteAccountText,
                       ),
                       actions: [
                         TextButton(
@@ -317,7 +318,7 @@ class SecurityScreen extends ConsumerWidget {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(couldNot('delete account', e)),
+                            content: Text(e is AccountDeletionException ? e.message : couldNot('delete your account', e)),
                             backgroundColor: theme.colorScheme.error,
                           ),
                         );
