@@ -4,7 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../workspace/logic/workspace_routing.dart' show pendingInviteToken;
 import '../providers/supabase_auth_provider.dart';
+import '../services/social_sign_in_service.dart';
+import '../widgets/social_sign_in_buttons.dart';
 import '../../../core/utils/auth_rate_limiter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -167,6 +170,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
+  /// Google or Apple. A person who came by an invitation link may have no account yet, so for them a first sign-in is allowed to make one (the invitation then gives it a place); for everyone
+  /// else the app only signs in to an account that already exists.
+  Future<void> _socialSignIn(SocialProvider provider) =>
+      ref.read(supabaseAuthProvider.notifier).signInWithSocial(provider, allowNewAccount: pendingInviteToken.value != null);
+
   Future<void> _verifyOTP() async {
     final otp = _otpControllers.map((c) => c.text).join();
 
@@ -319,7 +327,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                   const SizedBox(height: 24),
 
+                  // Google and Apple
+                  SocialSignInButtons(enabled: !authState.isLoading, onPressed: _socialSignIn),
 
+                  const SizedBox(height: 24),
 
                   // Sign Up Link
                   Row(

@@ -35,6 +35,8 @@ dependencies:
   intl: ^0.20.2
   uuid: ^4.5.1
   crypto: ^3.0.6
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.2
   
   # Forms & Validation
   reactive_forms: ^17.0.1
