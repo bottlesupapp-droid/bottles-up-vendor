@@ -4,19 +4,22 @@ import '../logic/server_desk_rules.dart';
 
 /// Asks for a reason (the database refuses to escalate or cancel without one). Returns the trimmed text, or null if the person
 /// backs out. The text is checked here first so the person is told what is wrong before anything is sent.
-Future<String?> showReasonDialog(BuildContext context, {required String title, required String hint, required String confirmLabel}) {
+Future<String?> showReasonDialog(BuildContext context,
+    {required String title, required String hint, required String confirmLabel, String? Function(String text) validate = validateReason, int? maxLength}) {
   return showDialog<String>(
     context: context,
-    builder: (_) => _ReasonDialog(title: title, hint: hint, confirmLabel: confirmLabel),
+    builder: (_) => _ReasonDialog(title: title, hint: hint, confirmLabel: confirmLabel, validate: validate, maxLength: maxLength),
   );
 }
 
 class _ReasonDialog extends StatefulWidget {
-  const _ReasonDialog({required this.title, required this.hint, required this.confirmLabel});
+  const _ReasonDialog({required this.title, required this.hint, required this.confirmLabel, required this.validate, this.maxLength});
 
   final String title;
   final String hint;
   final String confirmLabel;
+  final String? Function(String text) validate;
+  final int? maxLength;
 
   @override
   State<_ReasonDialog> createState() => _ReasonDialogState();
@@ -33,7 +36,7 @@ class _ReasonDialogState extends State<_ReasonDialog> {
   }
 
   void _confirm() {
-    final problem = validateReason(_controller.text);
+    final problem = widget.validate(_controller.text);
     if (problem != null) {
       setState(() => _problem = problem);
       return;
@@ -51,6 +54,7 @@ class _ReasonDialogState extends State<_ReasonDialog> {
         autofocus: true,
         maxLines: 3,
         minLines: 1,
+        maxLength: widget.maxLength,
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(hintText: widget.hint, errorText: _problem),
         onChanged: (_) {

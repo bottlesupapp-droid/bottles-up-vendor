@@ -8,3 +8,6 @@ final bookingDetailServiceProvider = Provider<BookingDetailService>((ref) => Boo
 final bookingGuestsProvider = FutureProvider.autoDispose.family<BookingGuests, String>((ref, bookingId) => ref.watch(bookingDetailServiceProvider).guests(bookingId));
 
 final bookingActivityProvider = FutureProvider.autoDispose.family<List<ActivityEntry>, String>((ref, bookingId) => ref.watch(bookingDetailServiceProvider).activity(bookingId));
+
+/// The guest's bottle sign for one booking, or null when there is none.
+final bookingSignProvider = FutureProvider.autoDispose.family<String?, String>((ref, bookingId) => ref.watch(bookingDetailServiceProvider).sign(bookingId));

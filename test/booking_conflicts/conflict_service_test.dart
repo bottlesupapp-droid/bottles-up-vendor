@@ -1,4 +1,5 @@
 import 'package:bottles_up_vendor/features/booking_conflicts/logic/conflict_rules.dart';
+import 'package:bottles_up_vendor/features/booking_conflicts/providers/conflict_providers.dart';
 import 'package:bottles_up_vendor/features/ops/services/ops_rpc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -24,6 +25,14 @@ void main() {
     db.add('k1');
     db.add('k2', status: 'resolved');
     db.add('k3', venue: 'v2');
+  });
+
+  test('a query for the open ones and a query that also wants the settled ones are different questions (they must not share an answer)', () {
+    expect(const ConflictsQuery('v1') == const ConflictsQuery('v1'), isTrue);
+    expect(const ConflictsQuery('v1').hashCode, const ConflictsQuery('v1').hashCode);
+    expect(const ConflictsQuery('v1') == const ConflictsQuery('v1', includeSettled: true), isFalse);
+    expect(const ConflictsQuery('v1') == const ConflictsQuery('v2'), isFalse);
+    expect(const ConflictsQuery('v1', includeSettled: true) == const ConflictsQuery('v1', includeSettled: true), isTrue);
   });
 
   group('the list', () {

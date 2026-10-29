@@ -35,6 +35,27 @@ class ChatService {
         await _rpc.call('chat_pin', {'p_conversation': conversationId, 'p_message': messageId});
       }, generic: 'This could not be pinned. Check your connection and try again.');
 
+  /// A manager's alert to the club's staff: a message in the club's staff chat, pinned at the top so everybody sees it first (it replaces the instruction pinned before it). The text is
+  /// checked first; the database decides who may send and pin (managers and owners of the club). A message that was sent but could not be pinned is said plainly, not hidden.
+  Future<void> sendAlert(String venueId, String text, String clientKey) => _rpc.act(() async {
+        final problem = validateAlert(text);
+        if (problem != null) throw OpsActionException(problem);
+        final List<ChatConversation> chats;
+        try {
+          chats = await conversations();
+        } on OpsLoadException {
+          throw const OpsActionException('The club\'s staff chat could not be found. Check your connection and try again.');
+        }
+        final staffChat = chats.where((c) => c.isVenue && c.venueId == venueId).firstOrNull;
+        if (staffChat == null) throw const OpsActionException('The club\'s staff chat is not set up yet.');
+        final id = await send(staffChat.id, text.trim(), clientKey);
+        try {
+          await pin(staffChat.id, id);
+        } on OpsActionException {
+          throw const OpsActionException('The alert was sent to the staff chat but could not be pinned. Open the chat to pin it.');
+        }
+      }, generic: 'The alert could not be sent. Check your connection and try again.');
+
   /// The colleagues a person can message at one club: names and roles, never an email address.
   Future<List<ChatPerson>> people(String venueId) => _rpc.list('chat_people', {'p_venue': venueId}, parseChatPerson, 'colleagues');
 

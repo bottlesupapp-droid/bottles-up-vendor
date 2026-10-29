@@ -271,7 +271,7 @@ class _BookingConflictsScreenState extends ConsumerState<BookingConflictsScreen>
             Text(paidLine(c), style: theme.textTheme.bodySmall),
             const SizedBox(height: 6),
             Text(conflictSentence(c), key: Key('conflict-line-${c.conflictId}')),
-            if (!c.isOpen && c.resolutionNote != null)
+            if (c.resolutionNote != null) // only a settled one has words: the database does not allow an open one to
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text('“${c.resolutionNote}”', key: Key('conflict-note-${c.conflictId}'), style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
