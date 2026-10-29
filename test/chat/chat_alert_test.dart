@@ -40,6 +40,7 @@ void main() {
       await db.service.sendAlert('v1', '  Fire door at the back is blocked  ', 'alert-1');
       final chat = db.conv('staff');
       expect(chat.messages.single.body, 'Fire door at the back is blocked');
+      expect(db.calledWith('chat_send').single['p_body'], 'Fire door at the back is blocked', reason: 'the app sends it trimmed; it does not rely on the database to do it');
       expect(chat.pinnedId, chat.messages.single.id);
       expect(db.conv('other').messages, isEmpty, reason: 'another club\'s chat is untouched');
       expect(db.conv('dm').messages, isEmpty);
