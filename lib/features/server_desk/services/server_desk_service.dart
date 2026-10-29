@@ -117,6 +117,13 @@ class ServerDeskService {
     );
   }
 
+  /// A manager hands an open request to a server of the club. The database refuses anyone who is not a manager, a person who is not staff at
+  /// this club and one who no longer has access, each with its own sentence.
+  Future<void> reassign(String requestId, String membershipId) => _act(
+        () async => await _rpc('update_service_request', params: reassignParams(requestId, membershipId)),
+        generic: 'The request could not be handed on. Check your connection and try again.',
+      );
+
   /// Who has which booking, for the club's nights [range] (both included).
   Future<List<BookingServer>> bookingServers(String venueId, NightRange range) {
     final problem = validateRange(range);
