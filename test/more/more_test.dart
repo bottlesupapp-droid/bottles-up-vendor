@@ -1,6 +1,7 @@
 import 'package:bottles_up_vendor/features/chat/providers/chat_providers.dart';
 import 'package:bottles_up_vendor/features/chat/screens/chat_screen.dart';
 import 'package:bottles_up_vendor/features/more/logic/more_entries.dart';
+import 'package:bottles_up_vendor/features/door_sales/screens/shift_summary_screen.dart';
 import 'package:bottles_up_vendor/features/more/screens/more_screen.dart';
 import 'package:bottles_up_vendor/features/more/screens/workspace_settings_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
@@ -28,6 +29,7 @@ const Set<String> builtMore = {
   'door/settings', 'security/settings', 'security/incidents',
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
+  'owner/refunds', 'manager/refunds', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts', 'door/shift-summary',
 };
 
 void main() {
@@ -71,8 +73,8 @@ void main() {
     for (final e in moreEntriesFor(WorkspaceRole.manager)) {
       expect(find.byKey(Key('more-${e.id}')), findsOneWidget, reason: e.id);
     }
-    expect(find.descendant(of: find.byKey(const Key('more-discounts')), matching: find.textContaining('Not available yet.')), findsOneWidget);
-    expect(tester.widget<ListTile>(find.byKey(const Key('more-discounts'))).onTap, isNull);
+    expect(find.descendant(of: find.byKey(const Key('more-complimentary')), matching: find.textContaining('Not available yet.')), findsOneWidget);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-complimentary'))).onTap, isNull);
     expect(find.descendant(of: find.byKey(const Key('more-chat')), matching: find.textContaining('Not available yet')), findsNothing);
     await tester.tap(find.byKey(const Key('more-chat')));
     await tester.pumpAndSettle();
@@ -81,7 +83,7 @@ void main() {
     expect(find.byKey(const Key('chat-row-c1')), findsOneWidget);
   });
 
-  testWidgets('the door\'s More lists shift summary, promo codes and settings; the first two are plainly not available yet', (tester) async {
+  testWidgets('the door\'s More lists shift summary, promo codes and settings; the shift summary opens, promo codes are plainly not available yet', (tester) async {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -89,9 +91,21 @@ void main() {
     for (final id in ['shift-summary', 'promo-codes', 'settings']) {
       expect(find.byKey(Key('more-$id')), findsOneWidget, reason: id);
     }
-    expect(find.descendant(of: find.byKey(const Key('more-shift-summary')), matching: find.textContaining('Not available yet.')), findsOneWidget);
-    expect(tester.widget<ListTile>(find.byKey(const Key('more-promo-codes'))).onTap, isNull);
+    expect(find.descendant(of: find.byKey(const Key('more-shift-summary')), matching: find.textContaining('Not available yet.')), findsNothing);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-shift-summary'))).onTap, isNotNull);
+    expect(find.descendant(of: find.byKey(const Key('more-promo-codes')), matching: find.textContaining('Not available yet.')), findsOneWidget);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-promo-codes'))).onTap, isNull, reason: 'ticket discounts are not built, so there is nothing to apply');
     expect(tester.widget<ListTile>(find.byKey(const Key('more-settings'))).onTap, isNotNull);
+  });
+
+  test('the shift summary is the door\'s own, and nobody else gets it', () {
+    final screen = moreDestinationFor(ws(WorkspaceRole.door), 'shift-summary');
+    expect(screen, isA<ShiftSummaryScreen>());
+    expect((screen as ShiftSummaryScreen).membershipId, 'w');
+    for (final role in WorkspaceRole.values.where((r) => r != WorkspaceRole.door)) {
+      expect(moreDestinationFor(ws(role), 'shift-summary'), isNull, reason: role.name);
+    }
+    expect(moreDestinationFor(ws(WorkspaceRole.door), 'promo-codes'), isNull);
   });
 
   test('Payments and earnings is the owner\'s, Incidents is security\'s, and nobody else gets either', () {

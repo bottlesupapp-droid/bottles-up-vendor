@@ -38,22 +38,35 @@ class OpsActionException implements Exception {
 OpsLoadException opsLoadFailureFor(Object error, String what) =>
     error is OpsLoadException ? error : OpsLoadException(unavailable: false, accessEnded: false, what: what);
 
+/// A call to one of the website's edge functions, returning what it answered. Throws a `FunctionException` when it answers with an error status.
+typedef EdgeInvoker = Future<dynamic> Function(String name, Map<String, dynamic> body);
+
 /// The calls to the website's database functions, with one way of failing: a list that cannot be read becomes an [OpsLoadException], an
 /// action that is refused becomes an [OpsActionException] carrying the database's own sentence. The database decides who may do what;
 /// nothing built on this decides anything about access.
 class OpsRpc {
-  OpsRpc({SupabaseClient? client, RpcCaller? rpc})
+  OpsRpc({SupabaseClient? client, RpcCaller? rpc, EdgeInvoker? invoker})
       : _client = client,
-        _rpcOverride = rpc;
+        _rpcOverride = rpc,
+        _invokerOverride = invoker;
 
   final SupabaseClient? _client;
   final RpcCaller? _rpcOverride;
+  final EdgeInvoker? _invokerOverride;
   SupabaseClient get _db => _client ?? Supabase.instance.client;
 
   Future<dynamic> call(String function, [Map<String, dynamic>? params]) async {
     final override = _rpcOverride;
     if (override != null) return override(function, params: params);
     return await _db.rpc(function, params: params);
+  }
+
+  /// An edge function, called as the signed-in person. What it answered is returned as it came; a refusal is a `FunctionException` for the caller to read.
+  Future<dynamic> invoke(String name, Map<String, dynamic> body) async {
+    final override = _invokerOverride;
+    if (override != null) return override(name, body);
+    final response = await _db.functions.invoke(name, body: body);
+    return response.data;
   }
 
   static List<Map<String, dynamic>> rows(dynamic data) => data is List

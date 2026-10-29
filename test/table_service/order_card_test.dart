@@ -75,7 +75,7 @@ void main() {
         expect(find.text('AB12CD'), findsOneWidget);
         expect(find.text('\$100.00'), findsOneWidget);
         expect(find.text('Waiting 30 min'), findsOneWidget);
-        expect(find.text('New'), findsOneWidget);
+        expect(find.text('Submitted'), findsOneWidget);
         expect(find.text('Paid'), findsOneWidget);
       },
     );
@@ -182,8 +182,9 @@ void main() {
       tester,
     ) async {
       final moves = await show(tester, line());
+      expect(find.text('Accept'), findsOneWidget, reason: 'a new order is accepted first');
       await tester.tap(find.byKey(const Key('move-l1')));
-      expect(moves, [ServiceState.preparing]);
+      expect(moves, [ServiceState.accepted]);
     });
 
     testWidgets('while a move is on its way, nothing can be tapped', (
@@ -217,8 +218,9 @@ void main() {
                 matching: find.byType(Text),
               ),
             )).data!;
-        expect(label('move-l1-awaiting_prep'), 'Back to New');
+        expect(label('move-l1-awaiting_prep'), 'Back to Submitted');
         expect(label('move-l1-preparing'), 'Back to Preparing');
+        expect(find.byKey(const Key('move-l1-accepted')), findsNothing, reason: 'Accept is only for an order that is still new');
         expect(label('move-l1-served'), 'Delivered');
         expect(
           find.byKey(const Key('move-l1-picked_up')),

@@ -1,8 +1,10 @@
 import 'package:bottles_up_vendor/features/workspace/logic/workspace_routing.dart';
 import 'package:bottles_up_vendor/features/table_service/screens/tonight_screen.dart';
+import 'package:bottles_up_vendor/features/workspace/models/role_navigation.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/workspace/providers/workspace_providers.dart';
+import 'package:bottles_up_vendor/features/workspace/screens/workspace_section_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/screens/accept_invitation_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/workspace_routes.dart';
 import 'package:bottles_up_vendor/features/workspace/screens/workspace_selector_screen.dart';
@@ -117,11 +119,22 @@ void main() {
       expect(find.byKey(const Key('more-list')), findsOneWidget, reason: 'More opens the manager\'s hub');
     });
 
-    testWidgets('a section that is not built says so plainly', (tester) async {
-      await tester.pumpWidget(harness(WorkspaceSnapshot.ready([door]), start: '/w/m3/door-sales'));
-      await tester.pumpAndSettle();
+    testWidgets('a section that has no screen yet says so plainly, and what it will hold', (tester) async {
+      // Every tab of every role has a screen now (Door Sales was the last), so the fallback is shown directly.
+      final section = navigationFor(WorkspaceRole.door).byId('door-sales')!;
+      await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(), home: Scaffold(body: NotBuiltYetSection(workspace: door, section: section))));
       expect(find.byKey(const Key('not-built-yet')), findsOneWidget);
       expect(find.textContaining('Not built yet'), findsOneWidget);
+      expect(find.text(section.summary), findsOneWidget);
+    });
+
+    testWidgets('every tab of every role has a screen, so none of them shows the not built notice', (tester) async {
+      for (final role in WorkspaceRole.values) {
+        for (final s in navigationFor(role).sections) {
+          final w = Workspace(membershipId: 'm', orgId: 'o', orgName: 'C', orgKind: 'venue_owner', role: role, venueId: 'v', venueName: 'V');
+          expect(builtSectionFor(w, s.id), isNotNull, reason: '${role.name}/${s.id}');
+        }
+      }
     });
 
     testWidgets('the switch button only exists when there is something to switch to', (tester) async {

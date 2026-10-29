@@ -215,8 +215,10 @@ class VenueSetupService {
       if (loader != null) {
         row = await loader(venueId);
       } else {
-        final data = await _db.from('site_venues').select('id, name, description, address, cover_image_url').eq('id', venueId).maybeSingle();
-        row = data == null ? null : Map<String, dynamic>.from(data);
+        row = await readProfileRow((columns) async {
+          final data = await _db.from('site_venues').select(columns).eq('id', venueId).maybeSingle();
+          return data == null ? null : Map<String, dynamic>.from(data);
+        });
       }
       final profile = parseVenueProfile(row);
       // A venue the person cannot reach is simply not returned by row level security.
@@ -229,8 +231,26 @@ class VenueSetupService {
     }
   }
 
+  /// Sets the venue's time zone (a place name such as America/Vancouver), or puts the default back when [zone] is null. Returns the zone now in force.
+  Future<String> saveTimeZone(String venueId, String? zone) => _act(() async {
+        final answer = await _rpc('save_venue_time_zone', params: {'p_venue': venueId, 'p_zone': zone});
+        return answer is String && answer.isNotEmpty ? answer : (zone ?? defaultTimeZone);
+      });
+
   /// Saves the fields in [details] (see [profilePayload]); the database changes only the keys it is sent.
   Future<void> saveProfile(String venueId, Map<String, dynamic> details) => _act(
         () async => await _rpc('update_venue_profile', params: {'p_venue': venueId, 'p_details': details}),
       );
+}
+
+/// Reads the venue's row for the profile. It asks for the time zone too; a server that does not have that column yet (website 20261027100000) answers "undefined column", and the row is
+/// then read without it, so the profile editor still opens (and shows no time zone field). [select] runs the query for the given columns.
+Future<Map<String, dynamic>?> readProfileRow(Future<Map<String, dynamic>?> Function(String columns) select) async {
+  const base = 'id, name, description, address, cover_image_url';
+  try {
+    return await select('$base, time_zone');
+  } on PostgrestException catch (e) {
+    if (e.code != '42703') rethrow;
+    return await select(base);
+  }
 }

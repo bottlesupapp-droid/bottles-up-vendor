@@ -7,6 +7,7 @@ import '../logic/table_service_rules.dart';
 
 Color serviceStateColor(ServiceState s) => switch (s) {
   ServiceState.awaitingPrep => const Color(0xFFFFB300),
+  ServiceState.accepted => const Color(0xFFFFD54F),
   ServiceState.preparing => const Color(0xFF42A5F5),
   ServiceState.ready => const Color(0xFF26C6DA),
   ServiceState.pickedUp => const Color(0xFFAB47BC),

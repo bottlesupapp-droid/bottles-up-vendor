@@ -2,11 +2,31 @@ import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
+import '../../ops/services/ops_rpc.dart' show EdgeInvoker, OpsRpc;
 import '../../../shared/models/user_model.dart';
 
+/// Deleting the account failed. [message] is a plain sentence for the person; the reason went to the log.
+class AccountDeletionException implements Exception {
+  const AccountDeletionException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'AccountDeletionException($message)';
+}
+
 class SupabaseAuthService {
-  final SupabaseClient _client = SupabaseConfig.client;
-  final GoTrueClient _auth = SupabaseConfig.auth;
+  /// [invoker] calls one of the website's edge functions as the signed-in person; [clearSession] forgets the sign-in on this phone without asking the server (the account
+  /// is gone by then). Both are replaced in tests.
+  SupabaseAuthService({EdgeInvoker? invoker, Future<void> Function()? clearSession})
+      : _invoker = invoker,
+        _clearSession = clearSession;
+
+  final EdgeInvoker? _invoker;
+  final Future<void> Function()? _clearSession;
+
+  SupabaseClient get _client => SupabaseConfig.client;
+  GoTrueClient get _auth => SupabaseConfig.auth;
 
   // Get current user stream
   Stream<AuthState> get authStateChanges => _auth.onAuthStateChange;
@@ -40,17 +60,40 @@ class SupabaseAuthService {
     }
   }
 
-  // Delete account
+  /// Deletes the signed-in person's account, whatever kind it is: the website's `delete-account` function removes the sign-in itself, and everything that hangs off it (the
+  /// classic vendors row, the workspace memberships) goes with it. The records people made (bookings, orders, payments, scans, messages) stay with the business, no longer
+  /// pointing at the account (website migrations 20261029100000 and 20261030100000). It used to call the database function delete_account(), which only deleted the classic
+  /// `vendors` row and so did nothing for an account without one.
+  ///
+  /// Throws [AccountDeletionException] and leaves the person signed in when it did not go through; when it did, the sign-in is forgotten on this phone.
   Future<void> deleteAccount() async {
+    dynamic answer;
     try {
-      // Call the database function to delete the account
-      // This function deletes the vendor record, which triggers the auth user deletion
-      await _client.rpc('delete_account');
-
-      // Sign out
-      await signOut();
+      answer = await OpsRpc(invoker: _invoker).invoke('delete-account', const <String, dynamic>{});
+    } on FunctionException catch (e) {
+      logProblem('delete account', e);
+      if (e.status == 401) {
+        throw const AccountDeletionException('Your sign-in has expired. Sign in again, then try again.');
+      }
+      throw const AccountDeletionException('We could not delete your account. Check your connection and try again.');
     } catch (e) {
-      throw Exception(couldNot('delete account', e));
+      logProblem('delete account', e);
+      throw const AccountDeletionException('We could not delete your account. Check your connection and try again.');
+    }
+    if (answer is! Map || answer['success'] != true) {
+      logProblem('delete account', 'unexpected answer: $answer');
+      throw const AccountDeletionException('We could not confirm that your account was deleted. Check your connection and try again.');
+    }
+    // It is gone: forget the sign-in on this phone. The server is not asked (it no longer knows this person); a failure here changes nothing for the person.
+    try {
+      final clear = _clearSession;
+      if (clear != null) {
+        await clear();
+      } else {
+        await _auth.signOut(scope: SignOutScope.local);
+      }
+    } catch (e) {
+      logProblem('forget the sign-in after deleting the account', e);
     }
   }
 

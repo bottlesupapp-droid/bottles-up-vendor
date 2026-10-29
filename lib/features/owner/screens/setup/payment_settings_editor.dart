@@ -4,11 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../logic/payment_rules.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
+import '../../../refunds/providers/refund_providers.dart';
+import '../../../refunds/screens/refund_policy_screen.dart';
+import '../../../table_map/logic/table_map_rules.dart' show depositTermsLine;
+import '../../../table_map/providers/table_map_providers.dart';
+import '../../../table_map/screens/deposit_terms_screen.dart';
 import '../../widgets/setup_common.dart';
 
 /// Payment settings (owner or manager of the venue; brief 15 Oct, section 15). Bottle payments can be changed (it applies to bookings made from
 /// now on; existing bookings keep the way they were made). Deposits are shown per table with the way to change them (the tables editor); whether the
-/// deposit counts toward the bottle bill is shown and explained but not changeable here. Payouts say plainly that they are not available yet.
+/// deposit counts toward the bottle bill is shown and explained but not changeable here. Payouts say who makes them and where to see them.
 class PaymentSettingsEditor extends ConsumerStatefulWidget {
   const PaymentSettingsEditor({super.key, required this.venueId, required this.orgId, this.onEditTables});
 
@@ -46,6 +51,58 @@ class _PaymentSettingsEditorState extends ConsumerState<PaymentSettingsEditor> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// The venue's refund policy: the first line a guest reads, and the way to change it.
+  Widget _refundPolicy(ThemeData theme) {
+    final policy = ref.watch(refundPolicyProvider(widget.venueId));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        policy.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => Text('We could not load the refund policy.', key: const Key('refund-policy-load-failed'), style: theme.textTheme.bodySmall),
+          data: (p) => Text(p.hasPolicy ? 'Refund policy: ${p.lines.isEmpty ? 'set' : p.lines.first}' : 'Refund policy: not set yet (refunds are decided case by case).', key: const Key('refund-policy-line')),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            key: const Key('refund-policy-open'),
+            onPressed: () async {
+              await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => RefundPolicyScreen(venueId: widget.venueId)));
+              if (mounted) ref.invalidate(refundPolicyProvider(widget.venueId));
+            },
+            child: const Text('Refund policy'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Who receives the deposit and what it is for: the line that says so now, and the way to change it.
+  Widget _depositTerms(ThemeData theme) {
+    final terms = ref.watch(depositSettingsProvider(widget.venueId));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        terms.when(
+          loading: () => const Padding(padding: EdgeInsets.all(8), child: LinearProgressIndicator()),
+          error: (_, __) => Text('We could not load who receives the deposit.', key: const Key('deposit-terms-load-failed'), style: theme.textTheme.bodySmall),
+          data: (s) => Text(s.terms == null ? 'Who receives the deposit: not chosen yet (the venue keeps it).' : depositTermsLine(s.terms!), key: const Key('deposit-terms-line')),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            key: const Key('deposit-terms-open'),
+            onPressed: () async {
+              await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => DepositTermsScreen(venueId: widget.venueId)));
+              if (mounted) ref.invalidate(depositSettingsProvider(widget.venueId));
+            },
+            child: const Text('Who receives the deposit, and what it is for'),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -125,6 +182,9 @@ class _PaymentSettingsEditorState extends ConsumerState<PaymentSettingsEditor> {
                   alignment: Alignment.centerLeft,
                   child: TextButton(key: const Key('deposit-edit-tables'), onPressed: widget.onEditTables, child: const Text('Edit tables and deposits')),
                 ),
+              const SizedBox(height: 8),
+              _depositTerms(theme),
+              _refundPolicy(theme),
               const SizedBox(height: 8),
               Text(depositCreditLabel(saved.depositIsCredit), key: const Key('deposit-credit')),
               const SizedBox(height: 4),

@@ -150,6 +150,9 @@ String activitySentence(ActivityEntry e) {
     case 'booking.unseated':
       final reason = d['reason'];
       return reason == null ? 'Seating was undone' : 'Seating was undone: $reason';
+    case 'booking.moved':
+      final why = d['reason'];
+      return why == null ? 'The booking was moved to another table' : 'The booking was moved to another table: $why';
     case 'booking.server_assigned':
       return 'The table was given to a server';
     case 'booking.server_reassigned':

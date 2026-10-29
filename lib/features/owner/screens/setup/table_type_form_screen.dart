@@ -5,6 +5,9 @@ import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
 import '../../widgets/photo_field.dart';
+import '../../../table_map/logic/table_map_rules.dart' show admissionsLine;
+import '../../../table_map/providers/table_map_providers.dart';
+import '../../../table_map/widgets/included_admissions_dialog.dart';
 import '../../widgets/setup_common.dart';
 
 /// Add or edit one kind of table. Pops true once it is saved. Each problem is said before anything is sent; a refusal from the
@@ -105,6 +108,34 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
         });
       }
     }
+  }
+
+  /// What a booking of this table includes. Saved on its own (it is not part of the table form), so it needs a table that already exists.
+  Widget _admissions() {
+    final row = widget.row!;
+    final layout = ref.watch(tableLayoutProvider(widget.venueId));
+    final current = layout.asData?.value.where((t) => t.typeId == row.typeId).firstOrNull?.includedAdmissions;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        key: const Key('included-admissions'),
+        contentPadding: EdgeInsets.zero,
+        title: Text(layout.hasValue ? admissionsLine(current) : 'Admissions included'),
+        subtitle: const Text('How many guests a booking of this table includes.'),
+        trailing: const Icon(Icons.edit_outlined),
+        enabled: layout.hasValue,
+        onTap: () async {
+          final saved = await showDialog<bool>(
+            context: context,
+            builder: (_) => IncludedAdmissionsDialog(venueId: widget.venueId, tableTypeId: row.typeId, tableName: row.name, maxGuests: row.maxGuests, current: current),
+          );
+          if (saved == true && mounted) {
+            ref.invalidate(tableLayoutProvider(widget.venueId));
+            say(context, 'Saved. New bookings of this table carry it; bookings that exist keep what they were made with.');
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -294,8 +325,9 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
             child: Text(_saving ? 'Saving…' : 'Save table'),
           ),
           const SizedBox(height: 8),
+          if (widget.row != null) _admissions(),
           Text(
-            'Where a table sits on the floor plan, and its seating, view and amenities, are set up on the website for now; editing here never changes them.',
+            'Where a table sits on the floor plan is set under Rooms and floor plan. Its seating, view and amenities are set up on the website for now; editing here never changes them.',
             style: theme.textTheme.bodySmall,
           ),
         ],

@@ -9,7 +9,7 @@ import '../../widgets/setup_common.dart';
 
 /// Add or change one floor: a name and its floor plan picture. Pops true once it is saved. Each problem is said before anything is
 /// sent; a refusal from the database is shown here, in the form, so nothing typed is lost. Where each table sits on the floor is
-/// arranged by the BottlesUp team for now.
+/// set from the floor list (Place tables).
 class FloorFormScreen extends ConsumerStatefulWidget {
   const FloorFormScreen({super.key, required this.venueId, required this.orgId, this.floor});
 

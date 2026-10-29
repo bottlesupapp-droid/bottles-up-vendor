@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../agreements/screens/agreements_screen.dart';
 import '../../chat/screens/chat_screen.dart';
+import '../../discounts/screens/discounts_screen.dart';
+import '../../door_sales/screens/shift_summary_screen.dart';
 import '../../door_staff/screens/club_door_staff_screen.dart';
 import '../../door_staff/screens/organizer_team_screen.dart';
 import '../../inventory/screens/inventory_screen.dart';
 import '../../money/screens/owner_money_screen.dart';
+import '../../payouts/screens/payouts_screen.dart';
+import '../../refunds/screens/refunds_screen.dart';
 import '../../security/screens/incidents_screen.dart';
 import '../../security/screens/security_hub_screen.dart';
 import '../../team/screens/team_screen.dart';
@@ -22,6 +26,12 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'inventory' => InventoryScreen(workspace: workspace),
       // VIP guests are the manager's and the owner's list; servers look a guest up from My Tables.
       'vip' => VipScreen(workspace: workspace),
+      // Payouts are the business's own (an owner's club money, an organizer's account): read only, set up and paid by BottlesUp.
+      'payouts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.organizer => PayoutsScreen(workspace: workspace),
+      // Discounts and free bottles: the owner sets the limits, the manager decides what is above a server's limit (the owner picks the club).
+      'discounts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DiscountsScreen(workspace: workspace),
+      // Refunds are the club's: its refund policy and the requests to decide (the owner picks the club).
+      'refunds' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => RefundsScreen(workspace: workspace),
       // Agreements: a club's requests and terms with organizers, and an organizer's requests to clubs.
       'agreements' => AgreementsScreen(workspace: workspace),
       // Security is the manager's: the club's alerts, tasks and incident reports.
@@ -36,6 +46,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'money' when workspace.role == WorkspaceRole.owner => OwnerMoneyScreen(workspace: workspace),
       // Incidents are the security staff's: report one, and read the ones they reported.
       'incidents' when workspace.role == WorkspaceRole.security => IncidentsScreen(workspace: workspace),
+      // The door's own shift at the chosen event: what they scanned in and what they sold, cash and card machine apart.
+      'shift-summary' when workspace.role == WorkspaceRole.door => ShiftSummaryScreen(membershipId: workspace.membershipId),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };

@@ -8,9 +8,9 @@ import '../../services/venue_setup_service.dart';
 import '../../widgets/photo_field.dart';
 import '../../widgets/setup_common.dart';
 
-/// Venue profile (owner and manager): the name, description, address and cover photo guests see. The database lets only the venue's
-/// owner or manager do this, and changes only the fields sent: never the venue's status or slug (the BottlesUp team takes a venue
-/// live), and not its gallery.
+/// Venue profile (owner and manager): the name, description, address and cover photo guests see, and the venue's time zone (what the refund policy counts the hours before arrival in; shown
+/// only when the server has it). The database lets only the venue's owner or manager do this, and changes only the fields sent: never the venue's status or slug (the BottlesUp team takes a
+/// venue live), and not its gallery.
 class VenueProfileEditor extends ConsumerWidget {
   const VenueProfileEditor({super.key, required this.venueId, required this.orgId});
 
@@ -48,6 +48,10 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late final _description = TextEditingController(text: _initial.description);
   late final _address = TextEditingController(text: _initial.address);
   late String _cover = _initial.coverImageUrl;
+  late String _zone = widget.profile.effectiveTimeZone;
+
+  /// The zone that is saved now (it changes when the zone is saved but the profile after it is refused, so a retry does not save the zone again).
+  late String _zoneSaved = widget.profile.effectiveTimeZone;
   List<String> _problems = const [];
   bool _saving = false;
   bool _uploading = false;
@@ -69,7 +73,12 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     if (problems.isNotEmpty) return;
     setState(() => _saving = true);
     try {
-      await ref.read(venueSetupServiceProvider).saveProfile(widget.venueId, profilePayload(_form));
+      final service = ref.read(venueSetupServiceProvider);
+      // The zone first: if it is refused nothing else has been saved. A zone left as the default is not written (it stays "not chosen").
+      if (widget.profile.timeZoneSupported && _zone != _zoneSaved) {
+        _zoneSaved = await service.saveTimeZone(widget.venueId, _zone);
+      }
+      await service.saveProfile(widget.venueId, profilePayload(_form));
       if (!mounted) return;
       ref.invalidate(ownerVenuesProvider(widget.orgId));
       ref.invalidate(venueSetupProvider(widget.venueId));
@@ -102,6 +111,23 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
         ),
         const SizedBox(height: 12),
         TextField(key: const Key('field-address'), controller: _address, decoration: const InputDecoration(labelText: 'Address (optional)', border: OutlineInputBorder())),
+        if (widget.profile.timeZoneSupported) ...[
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            key: const Key('field-timezone'),
+            initialValue: _zone,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Time zone', border: OutlineInputBorder()),
+            items: [for (final c in timeZoneChoicesFor(widget.profile.effectiveTimeZone)) DropdownMenuItem(value: c.zone, child: Text(c.label, overflow: TextOverflow.ellipsis))],
+            onChanged: _saving ? null : (z) => setState(() => _zone = z ?? _zone),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'The refund policy counts the hours before guests arrive in this zone. Every club is read as Toronto until it chooses.',
+            key: const Key('timezone-note'),
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
         const SizedBox(height: 16),
         PhotoField(
           key: const Key('cover-photo'),

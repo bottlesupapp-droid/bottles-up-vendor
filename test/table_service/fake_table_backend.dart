@@ -428,6 +428,7 @@ class FakeTableBackend {
     if (status == null ||
         !const [
           'awaiting_prep',
+          'accepted',
           'preparing',
           'ready',
           'picked_up',
@@ -452,6 +453,9 @@ class FakeTableBackend {
     if (line.state == status) return false;
     if (level == 'server' && line.state == 'served') {
       throw refuse('a delivered item can only be changed by a manager');
+    }
+    if (status == 'accepted' && line.state != 'awaiting_prep') {
+      throw refuse('this order has already been accepted or is further along');
     }
     if (status == 'served' && line.pay == 'due_at_venue') {
       if (b.balance > 0) {
@@ -926,6 +930,7 @@ class FakeTableBackend {
             ln
                 .where(
                   (l) => const [
+                    'accepted',
                     'preparing',
                     'ready',
                     'picked_up',

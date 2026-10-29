@@ -32,6 +32,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- App link: an invitation link from the email (https://www.bottlesupapp.com/accept-invite?token=...) opens this app on the invitation screen when the phone has verified the site
+                 (the website must serve /.well-known/assetlinks.json for this package and the Play App Signing certificate: docs/APP_LINKS_SETUP.md in the monorepo). Until then, or without the app,
+                 the link opens the website page as before. Flutter hands the address to the app's router, which already has /accept-invite (also for a person who is not signed in yet). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="www.bottlesupapp.com" android:pathPrefix="/accept-invite"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

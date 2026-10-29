@@ -1,4 +1,8 @@
 import '../../chat/screens/chat_screen.dart';
+import '../../discounts/logic/discount_rules.dart' show PendingConcession;
+import '../../discounts/providers/discount_providers.dart';
+import '../../discounts/screens/discounts_screen.dart';
+import '../../table_map/screens/table_map_screen.dart';
 import '../../walkin/screens/walkin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -99,6 +103,15 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     ref.invalidate(tonightProvider(_query));
   }
 
+  /// The floor map for the night on screen; what Tonight shows is read again afterwards.
+  Future<void> _openTables(String venueId) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => TableMapScreen(venueId: venueId, venueName: widget.workspace.venueName, night: _night, tonight: _tonight)),
+    );
+    if (!mounted) return;
+    ref.invalidate(tonightProvider(_query));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -121,6 +134,8 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     // Security is a bonus too: an older server has no security functions and the rest still shows.
     final security = ref.watch(securitySummaryProvider(_query)).asData?.value;
     final stock = ref.watch(stockProvider(venueId)).asData?.value;
+    // Discounts and free bottles waiting for approval are a bonus too: where the server does not have them yet the tile is simply not there.
+    final waitingApprovals = ref.watch(pendingConcessionsProvider(venueId)).asData?.value;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -157,6 +172,12 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                 onPressed: _night == _tonight ? () => _addWalkin(venueId) : null,
                 icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
                 label: const Text('Add walk-in'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('open-table-map'),
+                onPressed: () => _openTables(venueId),
+                icon: const Icon(Icons.map_outlined, size: 18),
+                label: const Text('Tables'),
               ),
               OutlinedButton.icon(
                 key: const Key('message-team'),
@@ -260,6 +281,14 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                         onTap: () => _push('Flagged payments', ExceptionsScreen(workspace: widget.workspace)),
                       ),
                     ],
+                    if (waitingApprovals != null)
+                      _tile(
+                        const Key('tile-approvals'),
+                        'Discounts and free bottles waiting for approval',
+                        waitingApprovals.length,
+                        note: approvalsNote(waitingApprovals),
+                        onTap: () => _push('Discounts', DiscountsScreen(workspace: widget.workspace)),
+                      ),
                     if (stock != null && lowStockCount(stock) > 0)
                       _tile(
                         const Key('tile-low-stock'),
@@ -359,4 +388,12 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
       ),
     );
   }
+}
+
+/// What to say under the count of waiting requests: how many this person can decide themselves (never their own, and a manager only within the manager's limit).
+String? approvalsNote(List<PendingConcession> waiting) {
+  if (waiting.isEmpty) return null;
+  final mine = waiting.where((p) => p.canDecide).length;
+  if (mine == waiting.length) return null;
+  return mine == 0 ? 'None of them is yours to decide.' : '$mine of them you can decide.';
 }

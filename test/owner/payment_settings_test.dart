@@ -146,10 +146,11 @@ void main() {
     expect(find.byType(Checkbox), findsNothing);
   });
 
-  testWidgets('payouts say they are not available yet', (tester) async {
+  testWidgets('payouts say BottlesUp makes them and where to see them', (tester) async {
     await open(tester);
     expect(find.byKey(const Key('payout-note')), findsOneWidget);
-    expect(find.textContaining('not available yet'), findsOneWidget);
+    expect(find.textContaining('set up and made by BottlesUp'), findsOneWidget);
+    expect(find.textContaining('Settlements and payouts'), findsOneWidget);
   });
 
   testWidgets('a setting the app does not know is said, and nothing is pre-selected', (tester) async {
