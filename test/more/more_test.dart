@@ -1,3 +1,4 @@
+import 'package:bottles_up_vendor/features/booking_conflicts/screens/booking_conflicts_screen.dart';
 import 'package:bottles_up_vendor/features/chat/providers/chat_providers.dart';
 import 'package:bottles_up_vendor/features/chat/screens/chat_screen.dart';
 import 'package:bottles_up_vendor/features/more/logic/more_entries.dart';
@@ -29,7 +30,7 @@ const Set<String> builtMore = {
   'door/settings', 'security/settings', 'security/incidents',
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
-  'owner/refunds', 'manager/refunds', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts', 'door/shift-summary',
+  'owner/refunds', 'manager/refunds', 'owner/conflicts', 'manager/conflicts', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts', 'door/shift-summary',
 };
 
 void main() {
@@ -68,7 +69,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(ProviderScope(
       overrides: [chatServiceProvider.overrideWithValue(db.service), chatPollIntervalProvider.overrideWithValue(const Duration(hours: 1))],
-      child: MaterialApp(home: Scaffold(body: MoreScreen(workspace: ws(WorkspaceRole.manager)))),
+      child: MaterialApp(home: Scaffold(body: MoreScreen(workspace: ws(WorkspaceRole.manager), showUnbuilt: true))),
     ));
     for (final e in moreEntriesFor(WorkspaceRole.manager)) {
       expect(find.byKey(Key('more-${e.id}')), findsOneWidget, reason: e.id);
@@ -87,7 +88,7 @@ void main() {
     tester.view.physicalSize = const Size(800, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: MoreScreen(workspace: ws(WorkspaceRole.door)))));
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: MoreScreen(workspace: ws(WorkspaceRole.door), showUnbuilt: true))));
     for (final id in ['shift-summary', 'promo-codes', 'settings']) {
       expect(find.byKey(Key('more-$id')), findsOneWidget, reason: id);
     }
@@ -96,6 +97,39 @@ void main() {
     expect(find.descendant(of: find.byKey(const Key('more-promo-codes')), matching: find.textContaining('Not available yet.')), findsOneWidget);
     expect(tester.widget<ListTile>(find.byKey(const Key('more-promo-codes'))).onTap, isNull, reason: 'ticket discounts are not built, so there is nothing to apply');
     expect(tester.widget<ListTile>(find.byKey(const Key('more-settings'))).onTap, isNotNull);
+  });
+
+  testWidgets('by default a part that is not built has no row at all: nobody meets a row that goes nowhere', (tester) async {
+    tester.view.physicalSize = const Size(800, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    for (final role in [WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security]) {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: MoreScreen(key: UniqueKey(), workspace: ws(role)))));
+      for (final e in moreEntriesFor(role)) {
+        final built = moreDestinationFor(ws(role), e.id) != null;
+        expect(find.byKey(Key('more-${e.id}')), built ? findsOneWidget : findsNothing, reason: '${role.name}/${e.id}');
+      }
+      expect(find.textContaining('Not available yet'), findsNothing, reason: role.name);
+    }
+    expect(showUnbuiltMoreEntries, isFalse);
+  });
+
+  testWidgets('the four parts that are not built are the ones left out', (tester) async {
+    final hidden = <String>{};
+    for (final role in WorkspaceRole.values) {
+      for (final e in moreEntriesFor(role)) {
+        if (!builtMore.contains('${role.name}/${e.id}')) hidden.add('${role.name}/${e.id}');
+      }
+    }
+    expect(hidden, {'owner/complimentary', 'manager/complimentary', 'organizer/settlement', 'organizer/notifications', 'door/promo-codes'});
+  });
+
+  test('the double-booked tables page is the club manager\'s and the owner\'s, and nobody else gets it', () {
+    expect(moreDestinationFor(ws(WorkspaceRole.manager), 'conflicts'), isA<BookingConflictsScreen>());
+    expect(moreDestinationFor(ws(WorkspaceRole.owner), 'conflicts'), isA<BookingConflictsScreen>());
+    for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
+      expect(moreDestinationFor(ws(role), 'conflicts'), isNull, reason: role.name);
+    }
   });
 
   test('the shift summary is the door\'s own, and nobody else gets it', () {

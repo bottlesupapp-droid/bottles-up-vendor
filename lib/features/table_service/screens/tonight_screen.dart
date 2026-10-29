@@ -1,4 +1,6 @@
 import '../../chat/screens/chat_screen.dart';
+import '../../booking_conflicts/providers/conflict_providers.dart';
+import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
 import '../../discounts/logic/discount_rules.dart' show PendingConcession;
 import '../../discounts/providers/discount_providers.dart';
 import '../../discounts/screens/discounts_screen.dart';
@@ -136,6 +138,8 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     final stock = ref.watch(stockProvider(venueId)).asData?.value;
     // Discounts and free bottles waiting for approval are a bonus too: where the server does not have them yet the tile is simply not there.
     final waitingApprovals = ref.watch(pendingConcessionsProvider(venueId)).asData?.value;
+    // Guests who paid after their table had gone to someone else are a bonus too: where the server does not have them yet the tile is simply not there.
+    final doubleBooked = ref.watch(bookingConflictsProvider(ConflictsQuery(venueId))).asData?.value;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -281,6 +285,14 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                         onTap: () => _push('Flagged payments', ExceptionsScreen(workspace: widget.workspace)),
                       ),
                     ],
+                    if (doubleBooked != null)
+                      _tile(
+                        const Key('tile-conflicts'),
+                        'Double-booked tables',
+                        doubleBooked.length,
+                        note: doubleBooked.isEmpty ? null : 'Guests who paid after their table had gone. They have no confirmation yet.',
+                        onTap: () => _push('Double-booked tables', BookingConflictsScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
                     if (waitingApprovals != null)
                       _tile(
                         const Key('tile-approvals'),
