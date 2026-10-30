@@ -55,7 +55,7 @@ enum RequestStatus {
   }
 }
 
-/// The moves a person can make. `reassign` (a manager handing a request on) is the database's; no screen offers it yet.
+/// The moves a person can make with a reason or nothing more. Handing a request to someone else (`reassign`, a manager's) needs a person instead: see [reassignParams].
 enum RequestAction {
   acknowledge('acknowledge', 'Take it', needsReason: false),
   start('start', 'Start', needsReason: false),
@@ -199,6 +199,22 @@ String holderLabel(ServiceRequestRow r) {
   if (r.assignedToMe) return 'You';
   if (r.assignedMembershipId != null) return 'A colleague';
   return 'Nobody yet';
+}
+
+/// A manager (or the owner) can hand any OPEN request to a server of the club, including one that was passed up to them. The database checks it again:
+/// only a manager, only a person who is staff at this club and still has access.
+bool canHandOver(ServiceRequestRow r, {required bool manager}) => manager && r.status.isOpen;
+
+/// Who has it, for a manager, who is told names: "You", the person's name or e-mail when the team list knows them, otherwise as [holderLabel].
+String holderLabelFor(ServiceRequestRow r, Iterable<TeamMember> team) {
+  if (r.assignedToMe) return 'You';
+  final id = r.assignedMembershipId;
+  if (id != null) {
+    for (final m in team) {
+      if (m.membershipId == id) return _personLabel(m);
+    }
+  }
+  return holderLabel(r);
 }
 
 /// How long a request has been waiting: "just now", "5 min", "1 h 20 min", "3 days".
@@ -360,6 +376,13 @@ Map<String, dynamic> askParams(String bookingId, ServiceKind kind, String? note)
     };
 
 /// Arguments of `update_service_request`.
+/// Handing a request to a person. The database puts it back to New, so the new person has to take it themselves.
+Map<String, dynamic> reassignParams(String requestId, String membershipId) => {
+      'p_request': requestId,
+      'p_action': 'reassign',
+      'p_assignee': membershipId,
+    };
+
 Map<String, dynamic> actParams(String requestId, RequestAction action, String? note) => {
       'p_request': requestId,
       'p_action': action.value,

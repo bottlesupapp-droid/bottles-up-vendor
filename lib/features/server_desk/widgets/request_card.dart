@@ -12,6 +12,9 @@ class RequestCard extends StatelessWidget {
     required this.actions,
     required this.busy,
     required this.onAction,
+    this.holder,
+    this.onHandOver,
+    this.handOverEnabled = true,
   });
 
   final ServiceRequestRow request;
@@ -23,6 +26,15 @@ class RequestCard extends StatelessWidget {
   /// A move on this request is on its way: the buttons wait, so a second tap cannot send it twice.
   final bool busy;
   final ValueChanged<RequestAction> onAction;
+
+  /// Who has it, when the screen knows a name to show (a manager sees names; a server sees "You" or "A colleague").
+  final String? holder;
+
+  /// A manager can hand an open request to someone else. Null means this person cannot, and no button is shown.
+  final VoidCallback? onHandOver;
+
+  /// False while the team is still loading or could not be loaded: there is nobody to choose from yet.
+  final bool handOverEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +69,7 @@ class RequestCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               open
-                  ? 'Waiting ${waitingLabel(r.createdAt, now)} · ${holderLabel(r)}'
+                  ? 'Waiting ${waitingLabel(r.createdAt, now)} · ${holder ?? holderLabel(r)}'
                   : (closedAt == null ? r.status.label : '${r.status.label} ${waitingLabel(closedAt, now)} ago'),
               key: Key('when-${r.requestId}'),
               style: theme.textTheme.bodySmall,
@@ -90,6 +102,15 @@ class RequestCard extends StatelessWidget {
                           child: Text(actions[i].label),
                         ),
                   ],
+                ),
+              ),
+            if (onHandOver != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  key: Key('handover-${r.requestId}'),
+                  onPressed: (busy || !handOverEnabled) ? null : onHandOver,
+                  child: const Text('Give to someone else'),
                 ),
               ),
           ],
