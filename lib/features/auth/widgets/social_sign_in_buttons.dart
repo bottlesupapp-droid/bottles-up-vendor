@@ -13,12 +13,13 @@ List<SocialProvider> socialProvidersFor(TargetPlatform platform) => [
     ];
 
 /// "or", then "Continue with Google" and, on iPhone, "Continue with Apple" (Apple's own button, which App Review looks for). Draws nothing when the phone can offer neither. While [enabled] is
-/// false (a sign-in is running) the buttons cannot be pressed.
+/// false (a sign-in is running) the buttons cannot be pressed. [showDivider] false leaves out the "or" line for a page that introduces the buttons with its own heading.
 class SocialSignInButtons extends StatelessWidget {
-  const SocialSignInButtons({super.key, required this.onPressed, this.enabled = true});
+  const SocialSignInButtons({super.key, required this.onPressed, this.enabled = true, this.showDivider = true});
 
   final void Function(SocialProvider provider) onPressed;
   final bool enabled;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
@@ -28,15 +29,17 @@ class SocialSignInButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(children: [
-          const Expanded(child: Divider()),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('or', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ),
-          const Expanded(child: Divider()),
-        ]),
-        const SizedBox(height: 16),
+        if (showDivider) ...[
+          Row(children: [
+            const Expanded(child: Divider()),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('or', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ),
+            const Expanded(child: Divider()),
+          ]),
+          const SizedBox(height: 16),
+        ],
         if (providers.contains(SocialProvider.google))
           OutlinedButton.icon(
             key: const Key('social-google'),
