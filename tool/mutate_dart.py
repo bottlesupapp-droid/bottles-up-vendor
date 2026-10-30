@@ -13,6 +13,7 @@ SPEC.py defines
   MUTANTS = [(id, 'lib/x.dart', 'exact old text', 'new text'), ...]   (the old text must occur exactly once in that file;
             an old text of '@57' means: replace the whole of line 57)
   GENERATE = {'lib/x.dart': ['relational', 'logical', 'boolean']}      (optional) mutants made automatically from operators
+  KEEP    = ['ios/Runner/Info.plist']                                  (optional) single files from the folders the copy leaves out (ios, android, ...) that a test reads
 The baseline (no change) runs first in every copy and must pass, otherwise nothing is reported. Each run has a hard timeout and is
 killed with its whole process group, so a hung test cannot leave stray processes.
 
@@ -83,12 +84,15 @@ def run(cmd, cwd, timeout=TIMEOUT):
             pass
 
 
-def make_copy(i):
+def make_copy(i, keep=()):
     dst = os.path.join(APPS, f'{NAME}-mut{i}')
     if os.path.exists(dst):
         shutil.rmtree(dst)
     ignore = shutil.ignore_patterns(*EXCLUDES)
     shutil.copytree(APP, dst, ignore=ignore, symlinks=True)
+    for rel in keep:  # single files from the excluded folders (e.g. ios/Runner/Info.plist) that a test reads
+        os.makedirs(os.path.dirname(os.path.join(dst, rel)), exist_ok=True)
+        shutil.copy2(os.path.join(APP, rel), os.path.join(dst, rel))
     return dst
 
 
@@ -173,7 +177,7 @@ def main():
     copies = []
 
     def worker(i):
-        dst = make_copy(i)
+        dst = make_copy(i, spec.get('KEEP', ()))
         copies.append(dst)
         code, out = run(['flutter', 'test', '--no-pub', *tests], dst)
         if code != 0:
