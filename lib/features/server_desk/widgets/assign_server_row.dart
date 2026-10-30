@@ -14,7 +14,14 @@ class ServerChoice {
 /// Shows the servers of the club and lets the manager pick one, or take the server off. Returns null if they back out.
 typedef ServerPicker = Future<ServerChoice?> Function(BuildContext context, List<ServerOption> options, String? currentMembershipId);
 
-Future<ServerChoice?> showServerPicker(BuildContext context, List<ServerOption> options, String? currentMembershipId) {
+Future<ServerChoice?> showServerPicker(BuildContext context, List<ServerOption> options, String? currentMembershipId) =>
+    _showPicker(context, options, currentMembershipId, title: 'Who serves this table?', noneLabel: 'Take the server off this table');
+
+/// The same sheet for a service request: a manager picks who should take it. There is no "nobody" row: a request is handed to a person.
+Future<ServerChoice?> showRequestHolderPicker(BuildContext context, List<ServerOption> options, String? currentMembershipId) =>
+    _showPicker(context, options, currentMembershipId, title: 'Who should take this request?', noneLabel: null);
+
+Future<ServerChoice?> _showPicker(BuildContext context, List<ServerOption> options, String? currentMembershipId, {required String title, required String? noneLabel}) {
   return showModalBottomSheet<ServerChoice>(
     context: context,
     isScrollControlled: true,
@@ -26,7 +33,7 @@ Future<ServerChoice?> showServerPicker(BuildContext context, List<ServerOption> 
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Who serves this table?', style: Theme.of(sheet).textTheme.titleMedium),
+              Text(title, style: Theme.of(sheet).textTheme.titleMedium),
               const SizedBox(height: 8),
               if (options.isEmpty)
                 const Text('There are no servers on the team yet. Invite one from the Team tab.', key: Key('picker-empty')),
@@ -39,11 +46,11 @@ Future<ServerChoice?> showServerPicker(BuildContext context, List<ServerOption> 
                   trailing: o.membershipId == currentMembershipId ? const Icon(Icons.check) : null,
                   onTap: () => Navigator.of(sheet).pop(ServerChoice(o.membershipId)),
                 ),
-              if (currentMembershipId != null)
+              if (currentMembershipId != null && noneLabel != null)
                 ListTile(
                   key: const Key('pick-none'),
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Take the server off this table'),
+                  title: Text(noneLabel),
                   onTap: () => Navigator.of(sheet).pop(const ServerChoice(null)),
                 ),
             ],

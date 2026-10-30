@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../team/providers/team_providers.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
 import '../logic/server_desk_rules.dart';
 import '../providers/server_desk_providers.dart';
 import '../services/server_desk_service.dart';
+import '../widgets/assign_server_row.dart';
 import '../widgets/reason_dialog.dart';
 import '../widgets/request_card.dart';
 
@@ -24,13 +26,22 @@ Future<String?> _defaultReasonPicker(BuildContext context, RequestAction action)
 /// a request passed up to a manager is read only for them. The database decides all of that and the buttons only offer what it
 /// would accept.
 class ServiceRequestsScreen extends ConsumerStatefulWidget {
-  const ServiceRequestsScreen({super.key, required this.workspace, this.clock = DateTime.now, this.pickReason = _defaultReasonPicker});
+  const ServiceRequestsScreen({
+    super.key,
+    required this.workspace,
+    this.clock = DateTime.now,
+    this.pickReason = _defaultReasonPicker,
+    this.pickHolder = showRequestHolderPicker,
+  });
 
   final Workspace workspace;
 
   /// The device clock, replaced in tests.
   final DateTime Function() clock;
   final ReasonPicker pickReason;
+
+  /// Lets a manager choose who should take a request. Replaced in tests.
+  final ServerPicker pickHolder;
 
   @override
   ConsumerState<ServiceRequestsScreen> createState() => _ServiceRequestsScreenState();
@@ -63,6 +74,27 @@ class _ServiceRequestsScreenState extends ConsumerState<ServiceRequestsScreen> {
     }
   }
 
+  /// A manager hands an open request to a server of the club. It goes back to New: the new person takes it themselves.
+  Future<void> _handOver(ServiceRequestRow r, List<ServerOption> options) async {
+    final choice = await widget.pickHolder(context, options, r.assignedMembershipId);
+    final to = choice?.membershipId;
+    if (to == null || !mounted || to == r.assignedMembershipId) return;
+    setState(() => _busy.add(r.requestId));
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    try {
+      await ref.read(serverDeskServiceProvider).reassign(r.requestId, to);
+      final name = options.where((o) => o.membershipId == to).map((o) => o.label).firstOrNull ?? 'them';
+      messenger.showSnackBar(SnackBar(content: Text('Handed to $name. They need to take it.')));
+    } on ServerDeskActionException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      // Always read the list again: after a refusal the list shows who has it now.
+      ref.invalidate(serviceRequestsProvider(_query));
+      if (mounted) setState(() => _busy.remove(r.requestId));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -78,6 +110,9 @@ class _ServiceRequestsScreenState extends ConsumerState<ServiceRequestsScreen> {
 
     final async = ref.watch(serviceRequestsProvider(_query));
     final now = widget.clock();
+    // Names and the people a request can be handed to come from the team; only a manager needs them.
+    final members = _manager ? ref.watch(teamMembersProvider(widget.workspace.orgId)).asData?.value : null;
+    final options = members == null ? const <ServerOption>[] : serverOptions(members, venueId);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -137,6 +172,9 @@ class _ServiceRequestsScreenState extends ConsumerState<ServiceRequestsScreen> {
                       actions: availableActions(r, manager: _manager),
                       busy: _busy.contains(r.requestId),
                       onAction: (a) => _act(r, a),
+                      holder: holderLabelFor(r, members ?? const []),
+                      onHandOver: canHandOver(r, manager: _manager) ? () => _handOver(r, options) : null,
+                      handOverEnabled: members != null,
                     ),
                 ],
               );

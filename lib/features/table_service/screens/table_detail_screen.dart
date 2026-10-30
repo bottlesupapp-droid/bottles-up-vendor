@@ -14,6 +14,7 @@ import '../widgets/receipt_view.dart';
 import 'add_bottles_screen.dart';
 import 'record_payment_screen.dart';
 import '../../seating/widgets/seating_panel.dart';
+import '../../booking_detail/widgets/booking_sign_card.dart';
 import '../../booking_detail/widgets/booking_activity_tab.dart';
 import '../../booking_detail/widgets/booking_guests_tab.dart';
 import '../../discounts/widgets/booking_discounts_card.dart';
@@ -222,6 +223,8 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
 
   Widget _overview(BookingMoney m, ThemeData theme) => _scroll([
         SeatingPanel(bookingId: widget.bookingId, title: widget.title, canUnseat: m.isManager),
+        // The guest's sign is for the people who serve the table: the manager and its own server (the database refuses a payment verifier, so none is asked for).
+        if (m.level == 'manager' || m.level == 'server') BookingSignCard(bookingId: widget.bookingId),
         Card(
           key: const Key('money-card'),
           child: Padding(

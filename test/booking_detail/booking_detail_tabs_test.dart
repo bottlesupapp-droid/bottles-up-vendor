@@ -11,6 +11,9 @@ import '../table_service/fake_table_backend.dart';
 
 late FakeTableBackend tables;
 final List<(String, Map<String, dynamic>?)> calls = [];
+// the overview also asks for the guest's bottle sign: kept apart, because these tests are about the guests and the activity
+final List<Map<String, dynamic>?> signCalls = [];
+String? signAnswer;
 Object? guestsFailure;
 Object? activityFailure;
 Map<String, dynamic> guestsAnswer = {};
@@ -40,6 +43,10 @@ Widget host() => ProviderScope(
       overrides: [
         tableServiceServiceProvider.overrideWithValue(tables.service),
         bookingDetailServiceProvider.overrideWithValue(BookingDetailService(caller: (fn, {params}) async {
+          if (fn == 'desk_booking_sign') {
+            signCalls.add(params);
+            return signAnswer;
+          }
           calls.add((fn, params));
           if (fn == 'desk_booking_guests') {
             if (guestsFailure != null) throw guestsFailure!;
@@ -77,6 +84,8 @@ void main() {
     tables.addBooking('b1', name: 'Ada Lovelace', code: 'AB12CD', total: 10000, paid: 6000, guests: 4);
     tables.assignments['b1'] = 'm-me';
     calls.clear();
+    signCalls.clear();
+    signAnswer = null;
     guestsFailure = null;
     activityFailure = null;
     guestsAnswer = theGuests();
@@ -106,6 +115,36 @@ void main() {
       await open(tester);
       expect(find.byKey(const Key('money-card')), findsOneWidget);
       expect(calls, isEmpty);
+    });
+
+    testWidgets('the overview shows the guest\'s bottle sign to a manager, and asks for it by booking', (tester) async {
+      signAnswer = 'Happy Birthday';
+      await open(tester);
+      expect(find.byKey(const Key('sign-card')), findsOneWidget);
+      expect(find.text('Happy Birthday'), findsOneWidget);
+      expect(signCalls, [{'p_booking': 'b1'}]);
+    });
+
+    testWidgets('...and to the table\'s own server', (tester) async {
+      tables.role = 'server';
+      signAnswer = 'Happy Birthday';
+      await open(tester);
+      expect(find.text('Happy Birthday'), findsOneWidget);
+    });
+
+    testWidgets('a payment verifier is never shown it, and it is not even asked for (the database would refuse)', (tester) async {
+      tables.role = 'verifier';
+      signAnswer = 'Happy Birthday';
+      await open(tester);
+      expect(find.byKey(const Key('sign-card')), findsNothing);
+      expect(find.byKey(const Key('sign-error-card')), findsNothing);
+      expect(signCalls, isEmpty);
+    });
+
+    testWidgets('no sign, no card', (tester) async {
+      await open(tester);
+      expect(find.byKey(const Key('sign-card')), findsNothing);
+      expect(signCalls, [{'p_booking': 'b1'}]);
     });
 
     testWidgets('the booking\'s name, table and code stay above every tab', (tester) async {

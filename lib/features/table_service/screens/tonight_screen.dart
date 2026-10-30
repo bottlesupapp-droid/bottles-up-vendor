@@ -1,4 +1,11 @@
+import '../../chat/logic/chat_rules.dart' show alertMaxLength, validateAlert;
+import '../../chat/providers/chat_providers.dart';
 import '../../chat/screens/chat_screen.dart';
+import '../../floor/screens/floor_screen.dart';
+import '../../ops/services/ops_rpc.dart' show OpsActionException;
+import '../../server_desk/widgets/reason_dialog.dart';
+import '../../booking_conflicts/providers/conflict_providers.dart';
+import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
 import '../../discounts/logic/discount_rules.dart' show PendingConcession;
 import '../../discounts/providers/discount_providers.dart';
 import '../../discounts/screens/discounts_screen.dart';
@@ -94,6 +101,35 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     );
   }
 
+  /// An alert to the club's staff: a message in the staff chat, pinned at the top. Managers and owners only (the database checks).
+  Future<void> _sendAlert() async {
+    final venueId = widget.workspace.venueId;
+    if (venueId == null) return;
+    final text = await showReasonDialog(
+      context,
+      title: 'Alert the staff',
+      hint: 'What does the team need to know now?',
+      confirmLabel: 'Send alert',
+      validate: validateAlert,
+      maxLength: alertMaxLength,
+    );
+    if (text == null || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    try {
+      await ref.read(chatServiceProvider).sendAlert(venueId, text, 'alert-${widget.clock().microsecondsSinceEpoch}');
+      messenger.showSnackBar(const SnackBar(content: Text('Alert sent. It is pinned at the top of the staff chat.')));
+    } on OpsActionException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
+  /// Tables are given to servers on the Floor, one booking at a time ("Give to a server").
+  void _assignStaff(String venueId) => _push(
+        'Assign staff',
+        FloorScreen(venueId: venueId, venueName: widget.workspace.venueName, orgId: widget.workspace.orgId, clock: widget.clock, showHeading: false),
+      );
+
   /// Walk-ins are booked for tonight; afterwards what Tonight shows is read again.
   Future<void> _addWalkin(String venueId) async {
     await Navigator.of(context).push<bool>(
@@ -136,6 +172,8 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     final stock = ref.watch(stockProvider(venueId)).asData?.value;
     // Discounts and free bottles waiting for approval are a bonus too: where the server does not have them yet the tile is simply not there.
     final waitingApprovals = ref.watch(pendingConcessionsProvider(venueId)).asData?.value;
+    // Guests who paid after their table had gone to someone else are a bonus too: where the server does not have them yet the tile is simply not there.
+    final doubleBooked = ref.watch(bookingConflictsProvider(ConflictsQuery(venueId))).asData?.value;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -184,6 +222,18 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                 onPressed: () => _push('Messages', ChatScreen(workspace: widget.workspace, clock: widget.clock)),
                 icon: const Icon(Icons.chat_bubble_outline, size: 18),
                 label: const Text('Message team'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('assign-staff'),
+                onPressed: () => _assignStaff(venueId),
+                icon: const Icon(Icons.assignment_ind_outlined, size: 18),
+                label: const Text('Assign staff'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('send-alert'),
+                onPressed: _sendAlert,
+                icon: const Icon(Icons.campaign_outlined, size: 18),
+                label: const Text('Send alert'),
               ),
             ],
           ),
@@ -281,6 +331,14 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                         onTap: () => _push('Flagged payments', ExceptionsScreen(workspace: widget.workspace)),
                       ),
                     ],
+                    if (doubleBooked != null)
+                      _tile(
+                        const Key('tile-conflicts'),
+                        'Double-booked tables',
+                        doubleBooked.length,
+                        note: doubleBooked.isEmpty ? null : 'Guests who paid after their table had gone. They have no confirmation yet.',
+                        onTap: () => _push('Double-booked tables', BookingConflictsScreen(workspace: widget.workspace, clock: widget.clock)),
+                      ),
                     if (waitingApprovals != null)
                       _tile(
                         const Key('tile-approvals'),
