@@ -187,3 +187,14 @@ String chatPreviewLine(ChatConversation c) {
   final sender = c.lastSender;
   return c.isDirect || sender == null ? text : '$sender: $text';
 }
+
+/// The longest alert a manager can send to the club's staff. It is pinned at the top of the chat, so it is kept short (the chat itself takes 2000).
+const int alertMaxLength = 300;
+
+/// A sentence about what is wrong with an alert's text, or null when it is fine.
+String? validateAlert(String text) {
+  final t = text.trim();
+  if (t.isEmpty) return 'Write the alert first.';
+  if (t.length > alertMaxLength) return 'Keep the alert to $alertMaxLength characters or fewer.';
+  return null;
+}

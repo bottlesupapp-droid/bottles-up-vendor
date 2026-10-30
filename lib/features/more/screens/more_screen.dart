@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../agreements/screens/agreements_screen.dart';
+import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../discounts/screens/discounts_screen.dart';
 import '../../door_sales/screens/shift_summary_screen.dart';
@@ -32,6 +33,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'discounts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DiscountsScreen(workspace: workspace),
       // Refunds are the club's: its refund policy and the requests to decide (the owner picks the club).
       'refunds' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => RefundsScreen(workspace: workspace),
+      // Double-booked tables: guests who paid after their table had gone to someone else, for the manager to sort out (the owner picks the club).
+      'conflicts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => BookingConflictsScreen(workspace: workspace),
       // Agreements: a club's requests and terms with organizers, and an organizer's requests to clubs.
       'agreements' => AgreementsScreen(workspace: workspace),
       // Security is the manager's: the club's alerts, tasks and incident reports.
@@ -52,12 +55,19 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       _ => null,
     };
 
+/// Rows for parts that are not built yet are left out of the menu, so nobody opening the app (a client, a store reviewer) meets a row that goes nowhere. Switch it on while building to see
+/// every part of the brief again, each plainly marked "Not available yet". (The parts: Complimentary bottles, the door's Promo codes, an organizer's Settlement and Notifications.)
+const bool showUnbuiltMoreEntries = false;
+
 /// The More tab of an owner, a manager, an organizer, a door or a security role: the parts that do not have a tab of their own. A part that is not built says so,
 /// plainly, instead of opening an empty page.
 class MoreScreen extends StatelessWidget {
-  const MoreScreen({super.key, required this.workspace});
+  const MoreScreen({super.key, required this.workspace, this.showUnbuilt = showUnbuiltMoreEntries});
 
   final Workspace workspace;
+
+  /// Whether rows for parts that are not built are shown (as "Not available yet"). Off in the app; tests switch it on to see them.
+  final bool showUnbuilt;
 
   void _open(BuildContext context, MoreEntry entry, Widget page) {
     Navigator.of(context).push(
@@ -73,7 +83,10 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final entries = moreEntriesFor(workspace.role);
+    final entries = [
+      for (final e in moreEntriesFor(workspace.role))
+        if (showUnbuilt || moreDestinationFor(workspace, e.id) != null) e,
+    ];
     return ListView(
       key: const Key('more-list'),
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 140),
