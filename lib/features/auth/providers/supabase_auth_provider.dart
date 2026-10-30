@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/user_model.dart';
+import '../services/social_sign_in_service.dart';
 import '../services/supabase_auth_service.dart';
 
 // Auth state
@@ -46,10 +47,18 @@ class SupabaseAuthState {
 // Auth provider
 class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
   final SupabaseAuthService _authService;
+  final SocialSignInService _social;
 
-  SupabaseAuthNotifier(this._authService) : super(const SupabaseAuthState()) {
+  /// True while a Google or Apple sign-in is being checked: Supabase opens the session before the check (is this an account that already existed?) is done, and the app must not act on
+  /// a session the check is about to undo.
+  bool _holdSessions = false;
+
+  SupabaseAuthNotifier(this._authService, {SocialSignInService? social})
+      : _social = social ?? SocialSignInService(),
+        super(const SupabaseAuthState()) {
     // Listen to auth state changes
     _authService.authStateChanges.listen((AuthState authState) {
+      if (_holdSessions) return;
       if (authState.session?.user != null) {
         _loadVendorUser(authState.session!.user);
       } else {
@@ -83,6 +92,31 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
         error: e.toString(),
       );
     }
+  }
+
+  /// Sign in with Google or Apple. Only into an account that already exists: see [SocialSignInService]. [allowNewAccount] is for a person who came to accept an invitation.
+  Future<void> signInWithSocial(SocialProvider provider, {bool allowNewAccount = false}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    _holdSessions = true;
+    try {
+      await _social.signIn(provider, allowNewAccount: allowNewAccount);
+    } on SocialSignInException catch (e) {
+      _holdSessions = false;
+      // Closing the Google or Apple sheet is the person's choice, not an error.
+      state = e.cancelled ? const SupabaseAuthState() : SupabaseAuthState(error: e.message);
+      return;
+    } catch (e) {
+      _holdSessions = false;
+      state = SupabaseAuthState(error: 'We could not sign you in with ${provider.label}. Please try again.');
+      return;
+    }
+    _holdSessions = false;
+    final user = _authService.currentUser;
+    if (user == null) {
+      state = const SupabaseAuthState();
+      return;
+    }
+    await _loadVendorUser(user);
   }
 
   // There is no register(): business accounts are created on the website (see business_signup.dart), so this app
@@ -205,9 +239,11 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
 }
 
 // Auth provider
+final socialSignInServiceProvider = Provider<SocialSignInService>((ref) => SocialSignInService());
+
 final supabaseAuthProvider = StateNotifierProvider<SupabaseAuthNotifier, SupabaseAuthState>((ref) {
   final authService = ref.watch(supabaseAuthServiceProvider);
-  return SupabaseAuthNotifier(authService);
+  return SupabaseAuthNotifier(authService, social: ref.watch(socialSignInServiceProvider));
 });
 
 // Convenience providers
