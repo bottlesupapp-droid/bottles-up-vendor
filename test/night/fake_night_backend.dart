@@ -41,6 +41,68 @@ Map<String, dynamic> sampleFullReport() => {
       },
     };
 
+/// The owner's combined report as owner_night_report gives it for a business with two clubs: Club A closed the night (its report is the kept one, closed with one
+/// exception), Club B is still live. The totals are the two clubs added, as the SQL does.
+Map<String, dynamic> sampleConsolidated() {
+  final a = <String, dynamic>{
+    'view': 'full',
+    'final': true,
+    'venue_name': 'Club A',
+    'business_night': '2026-10-09',
+    'generated_at': '2026-10-09T23:40:00Z',
+    'closed_at': '2026-10-10T02:15:00Z',
+    'closed_by_name': 'Mia Manager',
+    'exceptions': [
+      {'key': 'payments_to_check', 'label': 'payments waiting to be checked', 'count': 3},
+    ],
+    'exceptions_note': 'counting tomorrow morning',
+    ...{
+      for (final k in ['bookings', 'payments', 'cash', 'flags', 'bottles', 'service', 'security']) k: sampleFullReport()[k],
+    },
+  };
+  final b = <String, dynamic>{
+    'view': 'full',
+    'final': false,
+    'venue_name': 'Club B',
+    'business_night': '2026-10-09',
+    'generated_at': '2026-10-09T23:41:00Z',
+    'bookings': {'count': 1, 'guests': 2, 'total_cents': 5000, 'paid_cents': 5000, 'balance_cents': 0, 'discount_cents': 0, 'seated': 0},
+    'payments': {
+      'count': 1, 'collected_cents': 5000, 'billed_cents': 5000, 'cash_cents': 0, 'debit_cents': 5000, 'credit_cents': 0, 'split_card_cents': 0,
+      'tax_cents': 0, 'gratuity_cents': 0, 'discount_cents': 0, 'unverified': 1, 'disputed': 0, 'no_receipt': 1, 'corrections': 0,
+    },
+    'bottles': {'lines': 0, 'value_cents': 0, 'served': 0, 'in_progress': 0, 'awaiting': 0, 'cancelled': 0, 'due_at_venue': 0},
+    'cash': {'handovers': 0, 'claimed_cents': 0, 'counted_cents': 0, 'shortage_cents': 0, 'overage_cents': 0, 'waiting': 0, 'held_cents': 0},
+    'flags': {'raised': 0, 'open': 0, 'resolved': 0, 'by_resolution': <String, dynamic>{}},
+    'service': {'total': 0, 'open': 0, 'completed': 0, 'escalated': 0, 'cancelled': 0},
+    'security': {
+      'alerts': {'total': 0, 'urgent': 0, 'unresolved': 0, 'escalated': 0, 'by_kind': <String, dynamic>{}},
+      'tasks': {'total': 0, 'done': 0, 'open': 0},
+      'incidents': <Map<String, dynamic>>[],
+    },
+  };
+  return {
+    'org_name': 'Club Co',
+    'business_night': '2026-10-09',
+    'generated_at': '2026-10-09T23:42:00Z',
+    'venues_total': 2,
+    'venues_final': 1,
+    'currency': 'CAD',
+    'currency_mixed': false,
+    'currencies': ['cad'],
+    'totals': {
+      'tables': 3, 'guests': 6, 'seated': 1, 'booked_cents': 21000, 'paid_cents': 18800, 'balance_cents': 2200, 'discount_cents': 0,
+      'payments': 6, 'collected_cents': 18800, 'cash_cents': 9500, 'card_cents': 9300, 'unverified': 5, 'disputed': 1, 'no_receipt': 6,
+      'bottle_lines': 3, 'bottle_value_cents': 10000, 'bottles_served': 1, 'cash_counted_cents': 7900, 'shortage_cents': 100, 'overage_cents': 0,
+      'held_cents': 1500, 'flags_open': 1, 'requests_open': 1, 'alerts_unresolved': 1, 'closed_with_exceptions': 1,
+    },
+    'venues': [
+      {'venue_id': 'v1', 'venue_name': 'Club A', 'currencies': ['cad'], 'report': a},
+      {'venue_id': 'v2', 'venue_name': 'Club B', 'currencies': ['cad'], 'report': b},
+    ],
+  };
+}
+
 /// The database's night functions as a fake with the same sentences the SQL raises. [role] is who is signed in:
 /// 'manager', 'owner', 'verifier', 'security' or 'server'.
 class FakeNightBackend {
@@ -55,6 +117,9 @@ class FakeNightBackend {
   String? closedNote;
   String? reopenReason;
   Map<String, dynamic> live = sampleFullReport();
+
+  /// What owner_night_report answers (the owner only); a test changes it to try other nights.
+  Map<String, dynamic> consolidated = sampleConsolidated();
   final List<({String function, Map<String, dynamic>? params})> calls = [];
   bool offline = false;
   bool missing = false;
@@ -146,6 +211,12 @@ class FakeNightBackend {
           status = 'reopened';
           reopenReason = reason;
           return null;
+        }
+      case 'owner_night_report':
+        {
+          if (role != 'owner') throw refuse('not allowed');
+          if (params!['p_night'] == null) throw refuse('choose a night');
+          return jsonDecode(jsonEncode(consolidated));
         }
       case 'night_report':
         {

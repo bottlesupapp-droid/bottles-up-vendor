@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../bottle_signs/providers/bottle_sign_providers.dart';
+import '../../bottle_signs/widgets/signs_load_notice.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
@@ -180,6 +182,14 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
           );
           return;
         }
+        // The signs of every line of the night, read together; a failure to read them is said, because a bottle must not go out without its sign unnoticed.
+        final signIds = LineIds([for (final l in lines) l.lineId]);
+        final signs = ref.watch(lineSignsProvider(signIds));
+        void signsChanged() {
+          ref.invalidate(lineSignsProvider(signIds));
+          ref.invalidate(ordersProvider(_query));
+        }
+
         final counts = filterCounts(lines);
         final shown = [
           for (final l in lines)
@@ -204,6 +214,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             ),
           ),
         );
+        items.add(() => SignsLoadNotice(signs: signs, onRetry: () => ref.invalidate(lineSignsProvider(signIds))));
         if (shown.isEmpty) {
           items.add(
             () => Padding(
@@ -226,6 +237,8 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
               busy: _busy.contains(l.lineId),
               onMove: (to) => _move(l, to),
               onOpenTable: () => _openTable(l),
+              sign: signs.valueOrNull?[l.lineId],
+              onSignChanged: signsChanged,
             ),
           );
         }
