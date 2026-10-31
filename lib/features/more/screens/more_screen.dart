@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../agreements/screens/agreements_screen.dart';
 import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
+import '../../bottle_signs/screens/bottle_signs_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../discounts/screens/discounts_screen.dart';
 import '../../door_sales/screens/shift_summary_screen.dart';
@@ -31,6 +32,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'payouts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.organizer => PayoutsScreen(workspace: workspace),
       // Discounts and free bottles: the owner sets the limits, the manager decides what is above a server's limit (the owner picks the club).
       'discounts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DiscountsScreen(workspace: workspace),
+      // Bottle signs are the club's: where a sign can go, whether a manager approves a server's, and the signs waiting (the owner picks the club).
+      'bottle-signs' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => BottleSignsScreen(workspace: workspace),
       // Refunds are the club's: its refund policy and the requests to decide (the owner picks the club).
       'refunds' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => RefundsScreen(workspace: workspace),
       // Double-booked tables: guests who paid after their table had gone to someone else, for the manager to sort out (the owner picks the club).
