@@ -94,7 +94,18 @@ class TeamService {
 
   Future<List<TeamMember>> team(String orgId) => _list('list_team', {'p_org': orgId}, parseTeamMember);
 
-  Future<List<TeamInvitation>> invitations(String orgId) => _list('list_team_invitations', {'p_org': orgId}, parseTeamInvitation);
+  /// The waiting invitations, each with whether it is a temporary link, whether the address was confirmed and whether a new link was asked for. The extras are an addition: where the
+  /// server does not have them yet, or they cannot be read, the invitations are shown without them rather than not at all.
+  Future<List<TeamInvitation>> invitations(String orgId) async {
+    final list = await _list('list_team_invitations', {'p_org': orgId}, parseTeamInvitation);
+    Map<String, InvitationExtras> extras = const {};
+    try {
+      extras = {for (final x in _rows(await _rpc('list_invitation_extras', params: {'p_org': orgId})).map(parseInvitationExtras).whereType<InvitationExtras>()) x.invitationId: x};
+    } catch (_) {
+      // Shown without them.
+    }
+    return [for (final i in list) i.withExtras(extras[i.invitationId])];
+  }
 
   /// The shifts of a club, for the invite form's picker. A failure is an empty list: a shift is optional.
   Future<List<Shift>> shifts(String venueId) async {
@@ -124,8 +135,11 @@ class TeamService {
     throw TeamActionException(failure);
   }
 
+  /// An ordinary invitation, or (for temporary access) a secure temporary link that the person confirms with a code sent to their e-mail.
   Future<IssuedLink> invite(String orgId, InvitePayload payload) => _act(() async {
-        final data = await _rpc('invite_member', params: inviteParams(orgId, payload));
+        final data = payload.temporary
+            ? await _rpc('invite_temporary_staff', params: inviteTemporaryParams(orgId, payload))
+            : await _rpc('invite_member', params: inviteParams(orgId, payload));
         return _issued(data, null, 'The invitation could not be created.');
       });
 

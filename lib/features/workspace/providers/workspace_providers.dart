@@ -5,10 +5,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../../owner/logic/owner_rules.dart' show siteUrl;
 import '../logic/workspace_routing.dart';
+import '../services/invitation_check_service.dart';
 import '../services/last_workspace_store.dart';
 import '../services/workspace_service.dart';
 
 final workspaceServiceProvider = Provider<WorkspaceService>((ref) => WorkspaceService());
+
+/// What an invitation link is, the code that confirms a temporary one, and asking for a new link.
+final invitationCheckServiceProvider = Provider<InvitationCheckService>((ref) => InvitationCheckService());
 
 /// The signed-in user's workspaces. Re-asked whenever the signed-in user changes,
 /// and never for a signed-out visitor.
