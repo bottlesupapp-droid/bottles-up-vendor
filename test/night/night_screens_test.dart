@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:bottles_up_vendor/features/night/providers/night_providers.dart';
+import 'package:bottles_up_vendor/features/night/screens/consolidated_report_screen.dart';
 import 'package:bottles_up_vendor/features/night/screens/night_screen.dart';
 import 'package:bottles_up_vendor/features/night/screens/owner_reports_screen.dart';
 import 'package:bottles_up_vendor/features/night/screens/report_screen.dart';
@@ -21,6 +22,8 @@ bool shareFails = false;
 /// Friday evening: the business night is Friday 9 October 2026.
 DateTime fridayNight() => DateTime(2026, 10, 9, 22, 0);
 
+List<OrgVenue> clubs = const [OrgVenue(id: 'v1', name: 'Club A', status: 'published'), OrgVenue(id: 'v2', name: 'Club B', status: 'draft')];
+
 Widget host(Widget child) => ProviderScope(
       key: UniqueKey(),
       overrides: [
@@ -29,7 +32,7 @@ Widget host(Widget child) => ProviderScope(
           if (shareFails) throw Exception('no share sheet');
           shared.add((bytes: bytes, name: name));
         }),
-        ownerVenuesProvider.overrideWith((ref, org) async => const [OrgVenue(id: 'v1', name: 'Club A', status: 'published'), OrgVenue(id: 'v2', name: 'Club B', status: 'draft')]),
+        ownerVenuesProvider.overrideWith((ref, org) async => clubs),
       ],
       child: MaterialApp(theme: ThemeData.dark(), home: Scaffold(body: child)),
     );
@@ -62,6 +65,7 @@ void main() {
     db = FakeNightBackend();
     shared = [];
     shareFails = false;
+    clubs = const [OrgVenue(id: 'v1', name: 'Club A', status: 'published'), OrgVenue(id: 'v2', name: 'Club B', status: 'draft')];
   });
 
   group('Prepare and close', () {
@@ -299,6 +303,98 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('report-title')), findsOneWidget);
       expect(db.calledWith('night_report').last['p_venue'], 'v2');
+    });
+
+    testWidgets('with two or more clubs the whole business is one tap away', (tester) async {
+      db.role = 'owner';
+      await open(tester, OwnerReportsScreen(workspace: owner, clock: fridayNight));
+      expect(find.byKey(const Key('owner-report-all')), findsOneWidget);
+      await tapKey(tester, 'consolidated-open');
+      expect(find.byKey(const Key('consolidated-title')), findsOneWidget);
+      expect(db.calledWith('owner_night_report').single, {'p_org': 'o1', 'p_night': '2026-10-09'});
+    });
+
+    testWidgets('with one club there is no combined report (its own report is the whole business)', (tester) async {
+      db.role = 'owner';
+      clubs = const [OrgVenue(id: 'v1', name: 'Club A', status: 'published')];
+      await open(tester, OwnerReportsScreen(workspace: owner, clock: fridayNight));
+      expect(find.byKey(const Key('owner-report-all')), findsNothing);
+      expect(find.byKey(const Key('consolidated-open')), findsNothing);
+      expect(find.byKey(const Key('owner-report-v1')), findsOneWidget);
+    });
+  });
+
+  group('The combined report', () {
+    Widget combined() => ConsolidatedReportScreen(orgId: 'o1', orgName: 'Club Co', clock: fridayNight);
+
+    testWidgets('shows how many clubs have closed, the totals with their currency, and each club', (tester) async {
+      db.role = 'owner';
+      await open(tester, combined());
+      expect(find.text('All venues'), findsOneWidget);
+      expect(find.textContaining('PRELIMINARY · 1 of 2 clubs have closed the night'), findsOneWidget);
+      expect(find.text('Sales (CAD)'), findsOneWidget);
+      expect(find.text(r'$210.00'), findsOneWidget);
+      expect(find.text('By club'), findsOneWidget);
+      expect(find.text('Club A · FINAL'), findsOneWidget);
+      expect(find.text('Club B · PRELIMINARY'), findsOneWidget);
+      expect(find.text('Club A · FINAL · CAD'), findsOneWidget);
+    });
+
+    testWidgets('clubs that sold in more than one currency are not added together', (tester) async {
+      db.role = 'owner';
+      db.consolidated['currency'] = null;
+      db.consolidated['currency_mixed'] = true;
+      db.consolidated['currencies'] = ['cad', 'usd'];
+      db.consolidated['totals'] = null;
+      await open(tester, combined());
+      expect(find.text('Totals not added'), findsOneWidget);
+      expect(find.text('Not shown'), findsOneWidget);
+      expect(find.text('Booked total'), findsNWidgets(2), reason: 'only the two clubs\' own figures remain');
+      expect(find.text(r'$210.00'), findsNothing);
+    });
+
+    testWidgets('sharing makes a real PDF named for the business, the night and whether it is final', (tester) async {
+      db.role = 'owner';
+      await open(tester, combined());
+      await tapKey(tester, 'consolidated-share');
+      expect(shared, hasLength(1));
+      expect(shared.single.name, 'club-co-all-venues-2026-10-09-preliminary.pdf');
+      expect(String.fromCharCodes(shared.single.bytes.take(5)), '%PDF-');
+    });
+
+    testWidgets('if the PDF cannot be shared the person is told, and can try again', (tester) async {
+      db.role = 'owner';
+      shareFails = true;
+      await open(tester, combined());
+      await tapKey(tester, 'consolidated-share');
+      expect(find.text('The PDF could not be made or shared. Try again.'), findsOneWidget);
+      shareFails = false;
+      await tapKey(tester, 'consolidated-share');
+      expect(shared, hasLength(1));
+    });
+
+    testWidgets('a person who is not the owner is told, with nothing to share', (tester) async {
+      db.role = 'manager';
+      await open(tester, combined());
+      expect(find.byKey(const Key('consolidated-error')), findsOneWidget);
+      expect(find.byKey(const Key('consolidated-share')), findsNothing);
+    });
+
+    testWidgets('a business with no club says so', (tester) async {
+      db.role = 'owner';
+      db.consolidated['venues'] = [];
+      db.consolidated['venues_total'] = 0;
+      db.consolidated['venues_final'] = 0;
+      await open(tester, combined());
+      expect(find.byKey(const Key('consolidated-empty')), findsOneWidget);
+      expect(find.text('No venues in this business yet'), findsOneWidget);
+    });
+
+    testWidgets('another night can be looked at', (tester) async {
+      db.role = 'owner';
+      await open(tester, combined());
+      await tapKey(tester, 'night-prev');
+      expect(db.calledWith('owner_night_report').last['p_night'], '2026-10-08');
     });
   });
 }

@@ -6,6 +6,7 @@ import '../../owner/logic/owner_rules.dart' show OrgVenue;
 import '../../owner/providers/owner_providers.dart';
 import '../../workspace/models/workspace.dart';
 import '../widgets/report_button.dart';
+import 'consolidated_report_screen.dart';
 import 'night_screen.dart';
 
 /// Reports (owner): for each club of the business, the nightly report and the controls to prepare, close and (only here) reopen a night.
@@ -39,6 +40,34 @@ class OwnerReportsScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(ownerVenuesProvider(workspace.orgId)),
             builder: (list) => Column(
               children: [
+                // Two or more clubs: the whole business for one night. (With one club its own report is the whole business.)
+                if (list.length > 1)
+                  Card(
+                    key: const Key('owner-report-all'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('All venues together', style: theme.textTheme.titleMedium),
+                          const SizedBox(height: 4),
+                          Text('Every club\'s report side by side, with the totals when they can be added.', style: theme.textTheme.bodySmall),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            key: const Key('consolidated-open'),
+                            icon: const Icon(Icons.stacked_bar_chart_outlined, size: 18),
+                            label: const Text('Combined report'),
+                            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                              builder: (_) => Scaffold(
+                                appBar: AppBar(title: const Text('All venues')),
+                                body: SafeArea(child: ConsolidatedReportScreen(orgId: workspace.orgId, orgName: workspace.orgName, clock: clock)),
+                              ),
+                            )),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 for (final v in list)
                   Card(
                     key: Key('owner-report-${v.id}'),
