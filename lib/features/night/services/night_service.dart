@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../workspace/services/workspace_service.dart' show RpcCaller;
+import '../logic/consolidated_report.dart';
 import '../logic/night_rules.dart';
 
 /// Hands a finished PDF to the phone's share sheet (save to Files, mail, print). Replaced in tests.
@@ -54,6 +55,10 @@ class NightService {
 
   Future<NightReport> report(String venueId, String night) =>
       _rpc.one('night_report', {'p_venue': venueId, 'p_night': night}, parseNightReport, 'the report');
+
+  /// The owner's report for one night across every club of the business (website repo, 20261115100000_owner_night_report.sql). Only the owner may ask.
+  Future<ConsolidatedReport> consolidated(String orgId, String night) =>
+      _rpc.one('owner_night_report', {'p_org': orgId, 'p_night': night}, parseConsolidatedReport, 'the combined report');
 }
 
 int opsIntOf(Object? v) => v is int ? v : (v is num ? v.toInt() : int.tryParse(v?.toString() ?? '') ?? 0);
