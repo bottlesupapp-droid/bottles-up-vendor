@@ -1,6 +1,8 @@
 import 'package:bottles_up_vendor/features/booking_conflicts/screens/booking_conflicts_screen.dart';
 import 'package:bottles_up_vendor/features/bottle_signs/screens/bottle_signs_screen.dart';
 import 'package:bottles_up_vendor/features/chat/providers/chat_providers.dart';
+import 'package:bottles_up_vendor/features/venue_access/screens/organizer_sales_screen.dart';
+import 'package:bottles_up_vendor/features/venue_access/screens/venue_access_screen.dart';
 import 'package:bottles_up_vendor/features/chat/screens/chat_screen.dart';
 import 'package:bottles_up_vendor/features/more/logic/more_entries.dart';
 import 'package:bottles_up_vendor/features/door_sales/screens/shift_summary_screen.dart';
@@ -26,6 +28,7 @@ Workspace ws(WorkspaceRole role) => Workspace(
 
 /// Every More entry that opens something, as role/entry. Add to this when one is built.
 const Set<String> builtMore = {
+  'organizer/sales', 'organizer/venue-access',
   'owner/organizer-door', 'manager/organizer-door', 'organizer/team',
   'owner/team', 'owner/chat', 'owner/settings', 'owner/inventory', 'owner/vip', 'owner/money',
   'door/settings', 'security/settings', 'security/incidents',
@@ -131,6 +134,20 @@ void main() {
     expect(moreDestinationFor(ws(WorkspaceRole.owner), 'conflicts'), isA<BookingConflictsScreen>());
     for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
       expect(moreDestinationFor(ws(role), 'conflicts'), isNull, reason: role.name);
+    }
+  });
+
+  test('sales and venue access are the organizer\'s own, and nobody else gets them', () {
+    expect(moreDestinationFor(ws(WorkspaceRole.organizer), 'sales'), isA<OrganizerSalesScreen>());
+    expect(moreDestinationFor(ws(WorkspaceRole.organizer), 'venue-access'), isA<VenueAccessScreen>());
+    for (final role in [WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
+      expect(moreDestinationFor(ws(role), 'sales'), isNull, reason: role.name);
+      expect(moreDestinationFor(ws(role), 'venue-access'), isNull, reason: role.name);
+    }
+    expect(moreEntriesFor(WorkspaceRole.organizer).map((e) => e.id), containsAll(['sales', 'venue-access']));
+    for (final role in [WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.door, WorkspaceRole.security]) {
+      expect(moreEntriesFor(role).map((e) => e.id), isNot(contains('sales')), reason: role.name);
+      expect(moreEntriesFor(role).map((e) => e.id), isNot(contains('venue-access')), reason: role.name);
     }
   });
 

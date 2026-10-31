@@ -15,6 +15,8 @@ import '../../refunds/screens/refunds_screen.dart';
 import '../../security/screens/incidents_screen.dart';
 import '../../security/screens/security_hub_screen.dart';
 import '../../team/screens/team_screen.dart';
+import '../../venue_access/screens/organizer_sales_screen.dart';
+import '../../venue_access/screens/venue_access_screen.dart';
 import '../../vip/screens/vip_screen.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
@@ -38,6 +40,10 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'refunds' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => RefundsScreen(workspace: workspace),
       // Double-booked tables: guests who paid after their table had gone to someone else, for the manager to sort out (the owner picks the club).
       'conflicts' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => BookingConflictsScreen(workspace: workspace),
+      // An organizer's Sales: their own tickets, and what each club hosting an event has chosen to share. Read only.
+      'sales' when workspace.role == WorkspaceRole.organizer => OrganizerSalesScreen(workspace: workspace),
+      // An organizer's Your venue access: what each club has chosen to share, one thing at a time.
+      'venue-access' when workspace.role == WorkspaceRole.organizer => VenueAccessScreen(workspace: workspace),
       // Agreements: a club's requests and terms with organizers, and an organizer's requests to clubs.
       'agreements' => AgreementsScreen(workspace: workspace),
       // Security is the manager's: the club's alerts, tasks and incident reports.
