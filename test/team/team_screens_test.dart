@@ -399,14 +399,18 @@ void main() {
       await tapKey(tester, 'send-invite');
       expect(inProblems('The end must be after the start.'), findsOneWidget);
       expect(team.count('invite_member'), 0);
+      expect(team.count('invite_temporary_staff'), 0);
 
       picks = [start, end];
       await tapKey(tester, 'pick-start');
       await tapKey(tester, 'pick-end');
       await tapKey(tester, 'send-invite');
-      final call = team.paramsOf('invite_member').single!;
+      expect(team.count('invite_member'), 0, reason: 'temporary access is a secure link, not an ordinary invitation');
+      final call = team.paramsOf('invite_temporary_staff').single!;
       expect([call['p_access_start'], call['p_access_end']], [start.toUtc().toIso8601String(), end.toUtc().toIso8601String()]);
+      expect(call['p_valid_hours'], 24);
       expect(find.byKey(const Key('invite-result')), findsOneWidget);
+      expect(find.byKey(const Key('invite-code-note')), findsOneWidget);
     });
 
     testWidgets('with shifts available, none is the default', (tester) async {

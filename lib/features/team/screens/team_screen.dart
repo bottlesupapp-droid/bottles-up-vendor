@@ -205,7 +205,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     if (!members.hasValue || !invitations.hasValue) return const Center(child: CircularProgressIndicator());
 
     final split = splitTeam(members.value!);
-    final waiting = invitations.value!.where((i) => i.state.canSendNewLink).toList();
+    // Someone who asked for a new link comes first: they are waiting for an answer.
+    final waiting = invitations.value!.where((i) => i.state.canSendNewLink).toList()..sort((a, b) => (b.renewalRequested ? 1 : 0) - (a.renewalRequested ? 1 : 0));
     final earlier = invitations.value!.where((i) => !i.state.canSendNewLink).toList();
     final noVenues = venues != null && venues.isEmpty;
 
@@ -302,6 +303,20 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               ],
             ),
             Text('${roleLabel(inv.role)} · ${describeScope(inv.venueName, inv.eventTitle, inv.shiftName)}', style: theme.textTheme.bodySmall),
+            if (inv.isTemporary || inv.renewalRequested)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    if (inv.isTemporary) TeamBadge(key: Key('temporary-${inv.invitationId}'), label: 'Temporary link', tone: Tone.info),
+                    if (inv.isTemporary) TeamBadge(key: Key('confirmed-${inv.invitationId}'), label: inv.identityConfirmed ? 'Address confirmed' : 'Address not confirmed yet', tone: inv.identityConfirmed ? Tone.success : Tone.neutral),
+                    if (inv.renewalRequested) TeamBadge(key: Key('renewal-${inv.invitationId}'), label: 'Asked for a new link', tone: Tone.warning),
+                  ],
+                ),
+              ),
+            if (inv.renewalRequested && inv.renewalNote != null) Text('"${inv.renewalNote}"', key: Key('renewal-note-${inv.invitationId}'), style: theme.textTheme.bodySmall),
             Text(
               'Access: ${describeAccess(inv.accessStartAt, inv.accessEndAt)} · $linkNote${inv.emailsSent > 0 ? ' · Emailed ${inv.emailsSent} time${inv.emailsSent == 1 ? '' : 's'}' : ''}',
               style: theme.textTheme.bodySmall,

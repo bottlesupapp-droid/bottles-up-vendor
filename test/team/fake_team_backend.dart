@@ -69,12 +69,43 @@ class FakeTeamBackend {
           'access_start_at': start, 'access_end_at': end, 'state': 'pending', 'expires_at': '2031-01-08T12:00:00Z', 'emails_sent': 0,
         });
         return [{'invitation_id': invId, 'token': 'tok-$invId', 'valid_until': '2031-01-08T12:00:00Z'}];
+      case 'invite_temporary_staff':
+        {
+          // As the SQL (20261118100000): the same checks as invite_member first, then its own.
+          final role = p['p_role'] as String?;
+          if (role == null || !const {'server', 'door', 'security', 'verifier'}.contains(role)) throw refuse('temporary access is for servers, door staff, security and verifiers');
+          if (p['p_access_end'] == null && p['p_shift'] == null) throw refuse('say when the access ends: an end time, or a shift');
+          if (p['p_access_end'] != null && !DateTime.parse(p['p_access_end'] as String).isAfter(DateTime.now())) throw refuse('the access would already be over');
+          final hours = p['p_valid_hours'];
+          if (hours is! int || hours < 1 || hours > 168) throw refuse('the link must stay valid for between 1 hour and 7 days');
+          final email = (p['p_email'] as String).trim().toLowerCase();
+          if (!email.contains('@')) throw refuse('valid email required');
+          if (!(rolesByVenue[p['p_venue']] ?? defaultRoles).contains(role)) throw refuse('not allowed');
+          final start = p['p_access_start'] as String?;
+          final end = p['p_access_end'] as String?;
+          if (start != null && end != null && !DateTime.parse(end).isAfter(DateTime.parse(start))) throw refuse('invalid access window');
+          final invId = id('i');
+          invitations.insert(0, {
+            'invitation_id': invId, 'email': email, 'role': role, 'venue_id': p['p_venue'], 'venue_name': 'Club A', 'shift_id': p['p_shift'],
+            'access_start_at': start, 'access_end_at': end, 'state': 'pending', 'expires_at': '2031-01-08T12:00:00Z', 'emails_sent': 0, 'kind': 'temporary', 'valid_hours': hours,
+          });
+          return [{'invitation_id': invId, 'token': 'tok-$invId', 'valid_until': '2031-01-08T12:00:00Z'}];
+        }
+      case 'list_invitation_extras':
+        return [
+          for (final i in invitations)
+            if ((i['state'] == 'pending' || i['state'] == 'expired') && (i['kind'] == 'temporary' || i['renewal_requested_at'] != null))
+              {
+                'invitation_id': i['invitation_id'], 'kind': i['kind'] ?? 'permanent', 'identity_verified': i['identity_verified'] == true,
+                'renewal_requested_at': i['renewal_requested_at'], 'renewal_note': i['renewal_note'],
+              },
+        ];
       case 'resend_invitation':
         final i = invitations.indexWhere((x) => x['invitation_id'] == p['p_invitation']);
         if (i < 0) throw refuse('not allowed');
         if (invitations[i]['state'] == 'accepted') throw refuse('already accepted');
         if (invitations[i]['state'] == 'revoked') throw refuse('invitation was revoked');
-        invitations[i] = {...invitations[i], 'state': 'pending'};
+        invitations[i] = {...invitations[i], 'state': 'pending', 'identity_verified': false, 'renewal_requested_at': null, 'renewal_note': null};
         return [{'invitation_id': p['p_invitation'], 'token': 'new-${p['p_invitation']}', 'valid_until': '2031-01-15T12:00:00Z'}];
       case 'revoke_invitation':
         final i = invitations.indexWhere((x) => x['invitation_id'] == p['p_invitation']);

@@ -100,6 +100,7 @@ class InviteForm {
     this.start,
     this.end,
     this.shiftId = '',
+    this.validHours = defaultTemporaryLinkHours,
   });
 
   final String email;
@@ -111,6 +112,26 @@ class InviteForm {
   final DateTime? start;
   final DateTime? end;
   final String shiftId;
+
+  /// How long a temporary person's link stays valid (hours). Only used when [temporary] is on.
+  final int validHours;
+}
+
+/// Temporary access is a secure, expiring link that the person confirms with a code sent to their e-mail. The client has not settled how long such a link should live, so the
+/// person inviting chooses; this is what is suggested.
+const int defaultTemporaryLinkHours = 24;
+const List<int> temporaryLinkHourChoices = [6, 12, 24, 48, 72, 168];
+
+/// The roles temporary access is for (the database refuses a manager).
+const Set<String> temporaryRoles = {'server', 'door', 'security', 'verifier'};
+
+/// "6 hours", "1 day", "7 days".
+String linkValidityLabel(int hours) {
+  if (hours % 24 == 0) {
+    final days = hours ~/ 24;
+    return days == 1 ? '1 day' : '$days days';
+  }
+  return hours == 1 ? '1 hour' : '$hours hours';
 }
 
 final RegExp _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
@@ -124,6 +145,8 @@ List<String> validateInvite(InviteForm f, {required DateTime now}) {
   if (f.venueId.isEmpty) problems.add('Choose the club they will work at.');
   if (f.role.isEmpty) problems.add('Choose a role.');
   if (f.temporary) {
+    if (f.role.isNotEmpty && !temporaryRoles.contains(f.role)) problems.add('Temporary access is for servers, door staff, security and verifiers.');
+    if (f.validHours < 1 || f.validHours > 168) problems.add('The link must stay valid for between 1 hour and 7 days.');
     final start = f.start;
     final end = f.end;
     if (start == null || end == null) {
@@ -147,6 +170,8 @@ class InvitePayload {
     this.shiftId,
     this.accessStartAt,
     this.accessEndAt,
+    this.temporary = false,
+    this.validHours,
   });
 
   final String email;
@@ -155,6 +180,12 @@ class InvitePayload {
   final String? shiftId;
   final DateTime? accessStartAt;
   final DateTime? accessEndAt;
+
+  /// A secure temporary link (invite_temporary_staff) instead of an ordinary invitation (invite_member).
+  final bool temporary;
+
+  /// How long the link is valid, for a temporary invitation.
+  final int? validHours;
 }
 
 InvitePayload buildInvitePayload(InviteForm f) => InvitePayload(
@@ -164,6 +195,8 @@ InvitePayload buildInvitePayload(InviteForm f) => InvitePayload(
       shiftId: f.shiftId.isEmpty ? null : f.shiftId,
       accessStartAt: f.temporary ? f.start : null,
       accessEndAt: f.temporary ? f.end : null,
+      temporary: f.temporary,
+      validHours: f.temporary ? f.validHours : null,
     );
 
 /// The parameters of `invite_member`, as the database names them.
@@ -176,6 +209,12 @@ Map<String, dynamic> inviteParams(String orgId, InvitePayload p) => {
       'p_shift': p.shiftId,
       'p_access_start': p.accessStartAt?.toUtc().toIso8601String(),
       'p_access_end': p.accessEndAt?.toUtc().toIso8601String(),
+    };
+
+/// The parameters of `invite_temporary_staff`, as the database names them.
+Map<String, dynamic> inviteTemporaryParams(String orgId, InvitePayload p) => {
+      ...inviteParams(orgId, p),
+      'p_valid_hours': p.validHours ?? defaultTemporaryLinkHours,
     };
 
 // ---------------------------------------------------------------------------
@@ -321,6 +360,10 @@ class TeamInvitation {
     this.accessEndAt,
     this.expiresAt,
     this.emailsSent = 0,
+    this.isTemporary = false,
+    this.identityConfirmed = false,
+    this.renewalRequestedAt,
+    this.renewalNote,
   });
 
   final String invitationId;
@@ -337,6 +380,64 @@ class TeamInvitation {
   final InvitationState state;
   final DateTime? expiresAt;
   final int emailsSent;
+
+  /// A secure temporary link that needs a code sent to the invited address.
+  final bool isTemporary;
+
+  /// The invitee has typed the code (it holds for 30 minutes).
+  final bool identityConfirmed;
+
+  /// The invitee of an expired link asked for a new one.
+  final DateTime? renewalRequestedAt;
+  final String? renewalNote;
+
+  bool get renewalRequested => renewalRequestedAt != null;
+
+  TeamInvitation withExtras(InvitationExtras? x) => x == null
+      ? this
+      : TeamInvitation(
+          invitationId: invitationId,
+          email: email,
+          role: role,
+          state: state,
+          venueId: venueId,
+          venueName: venueName,
+          eventId: eventId,
+          eventTitle: eventTitle,
+          shiftId: shiftId,
+          shiftName: shiftName,
+          accessStartAt: accessStartAt,
+          accessEndAt: accessEndAt,
+          expiresAt: expiresAt,
+          emailsSent: emailsSent,
+          isTemporary: x.isTemporary,
+          identityConfirmed: x.identityConfirmed,
+          renewalRequestedAt: x.renewalRequestedAt,
+          renewalNote: x.renewalNote,
+        );
+}
+
+/// What list_invitation_extras says about one waiting invitation.
+class InvitationExtras {
+  const InvitationExtras({required this.invitationId, required this.isTemporary, required this.identityConfirmed, this.renewalRequestedAt, this.renewalNote});
+
+  final String invitationId;
+  final bool isTemporary;
+  final bool identityConfirmed;
+  final DateTime? renewalRequestedAt;
+  final String? renewalNote;
+}
+
+InvitationExtras? parseInvitationExtras(Map<String, dynamic> r) {
+  final id = r['invitation_id'];
+  if (id is! String) return null;
+  return InvitationExtras(
+    invitationId: id,
+    isTemporary: r['kind'] == 'temporary',
+    identityConfirmed: r['identity_verified'] == true,
+    renewalRequestedAt: _time(r['renewal_requested_at']),
+    renewalNote: _str(r['renewal_note']),
+  );
 }
 
 class Shift {

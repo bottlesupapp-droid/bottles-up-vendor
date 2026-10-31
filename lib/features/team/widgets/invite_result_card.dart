@@ -6,13 +6,16 @@ import '../logic/team_rules.dart';
 
 /// What was just issued: the link and what happened to the email.
 class IssuedInvite {
-  const IssuedInvite({required this.email, required this.roleLabel, required this.businessName, required this.link, required this.outcome});
+  const IssuedInvite({required this.email, required this.roleLabel, required this.businessName, required this.link, required this.outcome, this.codeNote});
 
   final String email;
   final String roleLabel;
   final String businessName;
   final String link;
   final EmailOutcome outcome;
+
+  /// For a temporary link: that the person will be asked for a code, and how long the link works. Null for an ordinary invitation.
+  final String? codeNote;
 }
 
 /// Opens an address (the person's own email app). Replaced in tests.
@@ -93,6 +96,7 @@ class _InviteResultCardState extends State<InviteResultCard> {
               'This link is personal to ${i.email} and is shown only now. If you lose it, send a new link from the list.',
               style: theme.textTheme.bodySmall,
             ),
+            if (i.codeNote != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(i.codeNote!, key: const Key('invite-code-note'), style: theme.textTheme.bodySmall)),
           ],
         ),
       ),

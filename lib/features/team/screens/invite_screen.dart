@@ -36,6 +36,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
   String _role = '';
   String _shiftId = '';
   bool _temporary = false;
+  int _validHours = defaultTemporaryLinkHours;
   DateTime? _start;
   DateTime? _end;
   List<String> _problems = const [];
@@ -57,11 +58,15 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     setState(() => start ? _start = picked : _end = picked);
   }
 
-  Future<void> _submit(List<String> roles, List<Shift> shifts) async {
+  /// The roles on offer: temporary access is not for a manager, so that one is left out while it is on.
+  List<String> _offered(List<String> roles) => _temporary ? [for (final r in roles) if (temporaryRoles.contains(r)) r] : roles;
+
+  Future<void> _submit(List<String> allRoles, List<Shift> shifts) async {
     if (_busy) return;
+    final roles = _offered(allRoles);
     final role = roles.contains(_role) ? _role : (roles.isEmpty ? '' : roles.first);
     final shift = shifts.any((s) => s.shiftId == _shiftId) ? _shiftId : '';
-    final form = InviteForm(email: _email.text, role: role, venueId: _venueId, temporary: _temporary, start: _start, end: _end, shiftId: shift);
+    final form = InviteForm(email: _email.text, role: role, venueId: _venueId, temporary: _temporary, start: _start, end: _end, shiftId: shift, validHours: _validHours);
     final found = validateInvite(form, now: widget.clock());
     setState(() => _problems = found);
     if (found.isNotEmpty) return;
@@ -79,6 +84,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
         businessName: widget.workspace.orgName,
         link: invitationLink(siteUrl, issued.token),
         outcome: outcome,
+        codeNote: payload.temporary ? 'They will be asked for a 6-digit code sent to ${payload.email} before the link works. The link is valid for ${linkValidityLabel(payload.validHours ?? defaultTemporaryLinkHours)}.' : null,
       ));
     } on TeamActionException catch (e) {
       if (mounted) {
@@ -97,9 +103,11 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     final theme = Theme.of(context);
     final rolesAsync = ref.watch(invitableRolesProvider(RoleQuery(_orgId, _venueId)));
     final shifts = ref.watch(venueShiftsProvider(_venueId)).valueOrNull ?? const <Shift>[];
-    final roles = rolesAsync.valueOrNull ?? const <String>[];
+    final allRoles = rolesAsync.valueOrNull ?? const <String>[];
+    final roles = _offered(allRoles);
     final effectiveRole = roles.contains(_role) ? _role : (roles.isEmpty ? '' : roles.first);
-    final noRoles = rolesAsync.hasValue && roles.isEmpty;
+    final noRoles = rolesAsync.hasValue && allRoles.isEmpty;
+    final noTemporaryRole = _temporary && rolesAsync.hasValue && allRoles.isNotEmpty && roles.isEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Invite someone')),
@@ -133,6 +141,8 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
           if (rolesAsync.isLoading) const LinearProgressIndicator(),
           if (rolesAsync.hasError) Text('The roles could not be loaded. Check your connection and try again.', key: const Key('roles-error'), style: theme.textTheme.bodySmall),
           if (noRoles) Text('You cannot appoint anyone at this club.', key: const Key('no-roles'), style: theme.textTheme.bodySmall),
+          if (noTemporaryRole)
+            Text('Temporary access is for servers, door staff, security and verifiers, and you cannot appoint any of those at this club.', key: const Key('no-temporary-roles'), style: theme.textTheme.bodySmall),
           Wrap(
             spacing: 8,
             children: [
@@ -167,7 +177,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
             key: const Key('invite-temporary'),
             contentPadding: EdgeInsets.zero,
             title: const Text('Temporary access'),
-            subtitle: const Text('For a night or a shift. Otherwise it lasts until you remove them.'),
+            subtitle: const Text('For a night or a shift. They confirm their e-mail with a code before the link works. Otherwise access lasts until you remove them.'),
             value: _temporary,
             onChanged: (v) => setState(() => _temporary = v),
           ),
@@ -179,12 +189,22 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
                 Expanded(child: OutlinedButton(key: const Key('pick-end'), onPressed: () => _pick(false), child: Text(_when(_end, 'Choose end')))),
               ],
             ),
+          if (_temporary) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int>(
+              key: const Key('invite-valid-hours'),
+              initialValue: _validHours,
+              decoration: const InputDecoration(labelText: 'The link works for', helperText: 'After that they have to ask for a new one.', border: OutlineInputBorder()),
+              items: [for (final h in temporaryLinkHourChoices) DropdownMenuItem(value: h, child: Text(linkValidityLabel(h)))],
+              onChanged: (v) => setState(() => _validHours = v ?? _validHours),
+            ),
+          ],
           const SizedBox(height: 16),
           ProblemsBox(problems: _problems),
           const SizedBox(height: 12),
           FilledButton(
             key: const Key('send-invite'),
-            onPressed: _busy || noRoles ? null : () => _submit(roles, shifts),
+            onPressed: _busy || noRoles || noTemporaryRole ? null : () => _submit(allRoles, shifts),
             child: Text(_busy ? 'Sending…' : 'Send invitation'),
           ),
         ],
