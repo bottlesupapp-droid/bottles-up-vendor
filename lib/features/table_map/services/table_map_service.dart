@@ -87,7 +87,7 @@ class TableMapService {
 
   /// Changes the terms of bookings made from now on; bookings that exist keep the terms they were made under.
   Future<void> saveDepositTerms(String venueId, DepositTermsForm form) => _rpc.act(
-        () async => await _rpc.call('save_venue_deposit_terms', {'p_venue': venueId, 'p_details': depositTermsPayload(form)}),
+        () async => await _rpc.call(depositSaveFunction(form), {'p_venue': venueId, 'p_details': depositTermsPayload(form)}),
         generic: 'The deposit terms could not be saved. Check your connection and try again.',
       );
 }

@@ -390,8 +390,8 @@ void main() {
     });
 
     test('the purposes on offer follow the credit switch', () {
-      expect(purposesFor(depositIsCredit: true), [DepositPurpose.minimumSpendCredit]);
-      expect(purposesFor(depositIsCredit: false), [DepositPurpose.reservationFee, DepositPurpose.admission]);
+      expect(purposesFor(depositIsCredit: true), [DepositPurpose.minimumSpendCredit, DepositPurpose.combination]);
+      expect(purposesFor(depositIsCredit: false), [DepositPurpose.reservationFee, DepositPurpose.admission, DepositPurpose.combination]);
     });
 
     test('the terms in words', () {

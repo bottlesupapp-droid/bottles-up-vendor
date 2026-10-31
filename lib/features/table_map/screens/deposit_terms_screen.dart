@@ -21,6 +21,9 @@ class DepositTermsScreen extends ConsumerStatefulWidget {
 class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
   DepositTermsForm? _form;
   late final TextEditingController _pct = TextEditingController();
+  late final TextEditingController _fee = TextEditingController();
+  late final TextEditingController _credit = TextEditingController();
+  late final TextEditingController _admission = TextEditingController();
   bool _busy = false;
   bool _seeded = false;
   List<String> _problems = const [];
@@ -28,22 +31,29 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
   @override
   void dispose() {
     _pct.dispose();
+    _fee.dispose();
+    _credit.dispose();
+    _admission.dispose();
     super.dispose();
   }
 
   DepositTermsForm _current(DepositSettings s) => _form ?? depositFormFrom(s.terms);
 
+  /// The form with what is typed in the boxes now.
+  DepositTermsForm _typed({DepositRecipient? recipient, DepositPurpose? purpose}) =>
+      DepositTermsForm(recipient: recipient, venuePctText: _pct.text, purpose: purpose, feePctText: _fee.text, creditPctText: _credit.text, admissionPctText: _admission.text);
+
   void _update(DepositSettings s, {DepositRecipient? recipient, DepositPurpose? purpose}) {
     final f = _current(s);
     setState(() {
-      _form = DepositTermsForm(recipient: recipient ?? f.recipient, venuePctText: _pct.text, purpose: purpose ?? f.purpose);
+      _form = _typed(recipient: recipient ?? f.recipient, purpose: purpose ?? f.purpose);
       _problems = const [];
     });
   }
 
   Future<void> _save(DepositSettings s) async {
     if (_busy) return;
-    final f = DepositTermsForm(recipient: _current(s).recipient, venuePctText: _pct.text, purpose: _current(s).purpose);
+    final f = _typed(recipient: _current(s).recipient, purpose: _current(s).purpose);
     final found = validateDepositTerms(f, depositIsCredit: s.depositIsCredit);
     setState(() => _problems = found);
     if (found.isNotEmpty) return;
@@ -62,6 +72,60 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
         _busy = false;
       });
     }
+  }
+
+  Widget _shareField(String key, String label, TextEditingController c) => Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: TextField(
+            key: Key(key),
+            controller: c,
+            enabled: !_busy,
+            keyboardType: TextInputType.number,
+            onChanged: (_) => setState(() => _problems = const []),
+            decoration: InputDecoration(labelText: label, suffixText: '%', border: const OutlineInputBorder()),
+          ),
+        ),
+      );
+
+  /// The three shares of a combination, the total of what is typed, and the worked example.
+  Widget _sharesEditor(ThemeData theme, DepositSettings s) {
+    final shares = _typed().shares;
+    final sum = shares == null ? null : shares.reservationFeePct + shares.minimumSpendCreditPct + shares.admissionPct;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('How the deposit is shared out', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text('Each share is a percent of the deposit. Together they make 100%, so no money is counted twice. Only the credit counts toward the bottle bill.', style: theme.textTheme.bodySmall),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _shareField('share-fee', 'Reservation fee', _fee),
+              _shareField('share-credit', 'Credit toward the minimum', _credit),
+              _shareField('share-admission', 'Admission', _admission),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            sum == null ? 'Give a share for each, 0 for none.' : (sum == 100 ? 'Together: 100%.' : 'Together: $sum%. They have to make 100%.'),
+            key: const Key('deposit-shares-total'),
+            style: theme.textTheme.bodySmall,
+          ),
+          if (shares != null && sum == 100)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Column(
+                key: const Key('deposit-example'),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [for (final line in depositExampleLines(shares)) Padding(padding: const EdgeInsets.only(top: 2), child: Text(line, style: theme.textTheme.bodySmall))],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -96,6 +160,9 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
           if (!_seeded) {
             _seeded = true;
             _pct.text = f.venuePctText;
+            _fee.text = f.feePctText;
+            _credit.text = f.creditPctText;
+            _admission.text = f.admissionPctText;
           }
           final purposes = purposesFor(depositIsCredit: s.depositIsCredit);
           return ListView(
@@ -158,10 +225,11 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
                   ],
                 ),
               ),
+              if (f.purpose == DepositPurpose.combination) _sharesEditor(theme, s),
               Text(
                 s.depositIsCredit
-                    ? 'The deposit is credited toward the bottle bill at this venue, so it can only be a credit toward the minimum spend. The BottlesUp team can change that.'
-                    : 'The deposit is not credited toward the bottle bill at this venue, so it is a reservation fee or admission. The BottlesUp team can switch the credit on.',
+                    ? 'The deposit is credited toward the bottle bill at this venue, so it can only be a credit toward the minimum spend, alone or as one share of a combination. The BottlesUp team can change that.'
+                    : 'The deposit is not credited toward the bottle bill at this venue, so it is a reservation fee or admission, alone or combined (with no credit share). The BottlesUp team can switch the credit on.',
                 key: const Key('deposit-credit-explained'),
                 style: theme.textTheme.bodySmall,
               ),

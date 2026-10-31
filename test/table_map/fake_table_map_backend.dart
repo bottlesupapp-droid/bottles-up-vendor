@@ -296,6 +296,38 @@ class FakeTableMapBackend {
         }
         depositTerms = {'recipient': recipient, 'venue_pct': pct, 'purpose': purpose};
         return depositTerms;
+      case 'save_venue_deposit_combination':
+        _manager();
+        final d = p['p_details'] as Map<String, dynamic>;
+        for (final k in d.keys) {
+          if (!const {'recipient', 'venue_pct', 'reservation_fee_pct', 'minimum_spend_credit_pct', 'admission_pct'}.contains(k)) throw refuse('unknown field: $k');
+        }
+        final recipient = d['recipient'] as String?;
+        var pct = d['venue_pct'] as int?;
+        if (recipient == null || !const {'venue', 'organizer', 'split'}.contains(recipient)) throw refuse('choose who receives the deposit: the venue, the approved organizer, or a split');
+        if (recipient == 'venue') {
+          if (pct != null && pct != 100) throw refuse('when the venue keeps the deposit its share is 100 percent');
+          pct = 100;
+        } else if (recipient == 'organizer') {
+          if (pct != null && pct != 0) throw refuse('when the organizer receives the deposit the venue\'s share is 0 percent');
+          pct = 0;
+        } else if (pct == null || pct < 1 || pct > 99) {
+          throw refuse('for a split give the venue\'s share between 1 and 99 percent (the organizer gets the rest, so the two add up to 100)');
+        }
+        final fee = d['reservation_fee_pct'] as int?;
+        final credit = d['minimum_spend_credit_pct'] as int?;
+        final admission = d['admission_pct'] as int?;
+        if (fee == null || credit == null || admission == null) throw refuse('give a share for each of the three: the reservation fee, the minimum spend credit and admission (0 for none)');
+        if (fee + credit + admission != 100) throw refuse('the three shares have to add up to 100 percent (they add up to ${fee + credit + admission} percent)');
+        if ([fee, credit, admission].where((v) => v > 0).length < 2) throw refuse('a combination needs at least two of the three shares above 0; for a single purpose choose it on its own');
+        if (credit > 0 && !depositIsCredit) {
+          throw refuse('part of the deposit would be a credit toward the bottle bill, but that is not switched on for this venue; give the credit share as 0, or ask the BottlesUp team to switch the credit on');
+        }
+        if (credit == 0 && depositIsCredit) {
+          throw refuse('the deposit is credited toward the bottle bill at this venue, so a combination needs a credit share above 0; ask the BottlesUp team if that should change');
+        }
+        depositTerms = {'recipient': recipient, 'venue_pct': pct, 'purpose': 'combination', 'parts': {'reservation_fee_pct': fee, 'minimum_spend_credit_pct': credit, 'admission_pct': admission}};
+        return depositTerms;
     }
     throw StateError('unexpected call $function');
   }

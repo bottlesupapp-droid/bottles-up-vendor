@@ -159,7 +159,8 @@ void main() {
       expect(t, contains("v_recipient not in ('venue', 'organizer', 'split')"));
       expect(t, contains("v_purpose not in ('reservation_fee', 'minimum_spend_credit', 'admission')"));
       expect([for (final r in DepositRecipient.values) r.db], ['venue', 'organizer', 'split']);
-      expect([for (final p in DepositPurpose.values) p.db], ['reservation_fee', 'minimum_spend_credit', 'admission']);
+      // The single-purpose function takes these three; a combination has its own function (below).
+      expect([for (final p in DepositPurpose.values) if (p != DepositPurpose.combination) p.db], ['reservation_fee', 'minimum_spend_credit', 'admission']);
       expect(t, contains("if v_purpose = 'minimum_spend_credit' and not v_credit then"));
       expect(t, contains("if v_purpose <> 'minimum_spend_credit' and v_credit then"));
       expect(t, contains('v_pct is null or v_pct < 1 or v_pct > 99'));
