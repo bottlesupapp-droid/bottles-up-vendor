@@ -6,6 +6,8 @@ import '../../night/providers/night_providers.dart' show shareReportProvider;
 import '../../ops/widgets/ops_async_view.dart';
 import '../../organizer_events/logic/organizer_events_rules.dart';
 import '../../organizer_events/providers/organizer_events_providers.dart';
+import '../../report_emails/logic/report_email_rules.dart';
+import '../../report_emails/widgets/email_report_button.dart';
 import '../../workspace/models/workspace.dart';
 import '../logic/access_rules.dart';
 import '../providers/venue_access_providers.dart';
@@ -89,6 +91,12 @@ class _OrganizerSalesScreenState extends ConsumerState<OrganizerSalesScreen> {
                           onPressed: _sharing ? null : () => _share(s),
                           icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
                           label: Text(_sharing ? 'Making the PDF…' : 'Share as PDF'),
+                        ),
+                        const SizedBox(height: 8),
+                        EmailReportButton(
+                          keyPrefix: 'sales-email',
+                          target: ReportTarget(kind: ReportKind.organizerSales, orgId: widget.workspace.orgId, eventId: selected, ref: selected, fileName: doc.fileName),
+                          buildPdf: () => buildReportPdf(doc),
                         ),
                         const SizedBox(height: 12),
                         DocumentCards(sections: doc.sections, keyPrefix: 'sales-section'),

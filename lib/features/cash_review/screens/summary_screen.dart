@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../night/widgets/report_button.dart';
 import '../../ops/widgets/ops_async_view.dart';
+import '../../report_emails/logic/report_email_rules.dart' show emailOrgIdFor;
 import '../../table_service/providers/table_service_providers.dart' show NightQuery;
 import '../../table_service/widgets/night_bar.dart';
 import '../../workspace/models/workspace.dart';
@@ -55,7 +56,7 @@ class _VerifierSummaryScreenState extends ConsumerState<VerifierSummaryScreen> {
           const SizedBox(height: 12),
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           const SizedBox(height: 8),
-          Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, night: _night, clock: widget.clock)),
+          Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, emailOrgId: emailOrgIdFor(widget.workspace), night: _night, clock: widget.clock)),
           const SizedBox(height: 8),
           OpsAsyncView<VerifierSummary>(
             value: summary,

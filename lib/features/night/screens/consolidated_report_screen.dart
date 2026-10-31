@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/widgets/ops_async_view.dart';
+import '../../report_emails/logic/report_email_rules.dart';
+import '../../report_emails/widgets/email_report_button.dart';
 import '../../table_service/widgets/night_bar.dart';
 import '../logic/consolidated_report.dart';
 import '../logic/report_pdf.dart';
@@ -80,6 +82,12 @@ class _ConsolidatedReportScreenState extends ConsumerState<ConsolidatedReportScr
                     onPressed: _sharing ? null : () => _share(r),
                     icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
                     label: Text(_sharing ? 'Making the PDF…' : 'Share as PDF'),
+                  ),
+                  const SizedBox(height: 8),
+                  EmailReportButton(
+                    keyPrefix: 'consolidated-email',
+                    target: ReportTarget(kind: ReportKind.ownerCombined, orgId: widget.orgId, ref: _night, fileName: doc.fileName),
+                    buildPdf: () => buildReportPdf(doc),
                   ),
                   const SizedBox(height: 12),
                   if (r.venues.isEmpty)

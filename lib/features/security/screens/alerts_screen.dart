@@ -8,6 +8,7 @@ import '../../night/widgets/report_button.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/ops_dialogs.dart';
+import '../../report_emails/logic/report_email_rules.dart' show emailOrgIdFor;
 import '../../table_service/providers/table_service_providers.dart' show NightQuery;
 import '../../table_service/widgets/night_bar.dart';
 import '../../workspace/models/workspace.dart';
@@ -117,7 +118,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
           if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
-          Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, night: _night, clock: widget.clock, label: 'Night report')),
+          Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, emailOrgId: emailOrgIdFor(widget.workspace), night: _night, clock: widget.clock, label: 'Night report')),
           summary.maybeWhen(
             skipLoadingOnReload: true,
             data: (s) => Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(securitySummaryLine(s), key: const Key('alerts-summary'), style: theme.textTheme.bodyMedium)),
