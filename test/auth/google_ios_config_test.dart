@@ -19,6 +19,10 @@ void main() {
       expect(GoogleSignInConfig.iosClientId, isNot(GoogleSignInConfig.webClientId));
     });
 
+    test('the web client is the one shared with the customer app (change both apps together, and Supabase\'s Google provider list)', () {
+      expect(GoogleSignInConfig.webClientId, '49598092873-m0ulktdouimlj210alks0nsqa08ktmrh$_suffix');
+    });
+
     test('so Google is offered on iPhone, with Apple under it', () {
       expect(GoogleSignInConfig.isConfiguredFor(TargetPlatform.iOS), isTrue);
       expect(socialProvidersFor(TargetPlatform.iOS), [SocialProvider.google, SocialProvider.apple]);
