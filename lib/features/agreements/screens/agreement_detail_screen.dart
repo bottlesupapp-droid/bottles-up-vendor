@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/ops_dialogs.dart';
+import '../../venue_access/widgets/agreement_grants_card.dart';
 import '../logic/agreement_rules.dart';
 import '../providers/agreement_providers.dart';
 import 'terms_form_screen.dart';
@@ -179,6 +180,11 @@ class _AgreementDetailScreenState extends ConsumerState<AgreementDetailScreen> {
                           if (d.canClose) OutlinedButton(key: const Key('agreement-close'), onPressed: _busy ? null : () => _close(d), child: Text(d.side == 'venue' && d.activeVersion == null ? 'Decline' : (d.activeVersion == null ? 'Withdraw' : 'Cancel agreement'))),
                         ],
                       ),
+                    // What the club shares with the organizer under this agreement (only while it is in force; the card says nothing otherwise).
+                    if (d.status == 'active' || d.status == 'changes_pending') ...[
+                      const SizedBox(height: 12),
+                      AgreementGrantsCard(agreementId: d.id, side: d.side),
+                    ],
                     const Divider(height: 32),
                     Text('Discussion', style: theme.textTheme.titleMedium),
                     if (d.notes.isEmpty) const Text('Nothing said yet.', key: Key('agreement-no-notes')),
