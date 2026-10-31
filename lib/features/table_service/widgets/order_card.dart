@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../bottle_signs/logic/sign_rules.dart' show LineSign;
+import '../../bottle_signs/widgets/line_sign_bar.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/widgets/desk_chip.dart';
 import '../logic/bottle_orders_rules.dart';
@@ -33,6 +35,8 @@ class OrderCard extends StatelessWidget {
     this.onOpenTable,
     this.showTable = true,
     this.onDeliverPart,
+    this.sign,
+    this.onSignChanged,
   });
 
   final OrderLine line;
@@ -52,6 +56,13 @@ class OrderCard extends StatelessWidget {
   /// Hand over part of the line (a table's own page only). Offered when the line allows it (see [canDeliverPart]).
   final VoidCallback? onDeliverPart;
 
+  /// The sign on this line, when the club uses signs (see the bottle_signs feature). With review on, a waiting or declined sign stops the order being prepared or delivered, so those
+  /// moves are not offered, exactly as the database would refuse them.
+  final LineSign? sign;
+
+  /// A sign was set, removed, approved or declined: the screen reads its lists again.
+  final VoidCallback? onSignChanged;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -63,6 +74,9 @@ class OrderCard extends StatelessWidget {
       for (final s in targets)
         if (s != primary) s,
     ];
+    final signStops = sign?.blocksService ?? false;
+    // Accepting an order is still fine while its sign waits; preparing, handing over and delivering are not.
+    bool stoppedBySign(ServiceState s) => signStops && s != ServiceState.awaitingPrep && s != ServiceState.accepted;
     final tableLine = [
       if (l.tableName != null) l.tableName!,
       if (l.customerName != null) l.customerName!,
@@ -150,6 +164,8 @@ class OrderCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (sign != null)
+              LineSignBar(sign: sign!, title: l.title, manager: manager, bookingId: l.bookingId, onChanged: onSignChanged ?? () {}),
             if (l.cancelled)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
@@ -195,7 +211,8 @@ class OrderCard extends StatelessWidget {
                         onPressed:
                             busy ||
                                     (primary == ServiceState.served &&
-                                        block != null)
+                                        block != null) ||
+                                    stoppedBySign(primary)
                                 ? null
                                 : () => onMove(primary),
                         child: Text(primary.moveLabel),
@@ -205,7 +222,7 @@ class OrderCard extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 8),
                         child: OutlinedButton(
                           key: Key('deliver-part-${l.lineId}'),
-                          onPressed: busy || block != null ? null : onDeliverPart,
+                          onPressed: busy || block != null || signStops ? null : onDeliverPart,
                           child: const Text('Deliver some'),
                         ),
                       ),
@@ -224,7 +241,8 @@ class OrderCard extends StatelessWidget {
                                   value: s,
                                   enabled:
                                       !(s == ServiceState.served &&
-                                          block != null),
+                                          block != null) &&
+                                      !stoppedBySign(s),
                                   child: Text(
                                     s == ServiceState.awaitingPrep ||
                                             s.index < l.state.index

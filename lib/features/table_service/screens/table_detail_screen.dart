@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../bottle_signs/providers/bottle_sign_providers.dart';
+import '../../bottle_signs/widgets/signs_load_notice.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/widgets/desk_chip.dart';
 import '../logic/bottle_orders_rules.dart';
@@ -48,6 +50,7 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
   void _reload() {
     ref.invalidate(bookingMoneyProvider(widget.bookingId));
     ref.invalidate(tableOrdersProvider);
+    ref.invalidate(lineSignsProvider);
   }
 
   Future<void> _move(OrderLine l, ServiceState to) async {
@@ -284,25 +287,39 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
           final e = loadFailureFor(error, 'orders');
           return Padding(padding: const EdgeInsets.only(top: 8), child: Text(e.message, key: const Key('detail-orders-error')));
         },
-        data: (lines) => lines.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text('No bottle orders on this table.', key: const Key('detail-orders-empty'), style: theme.textTheme.bodyMedium),
-              )
-            : Column(
-                children: [
-                  for (final l in lines)
-                    OrderCard(
-                      line: l,
-                      now: now,
-                      manager: m.isManager,
-                      busy: _busy.contains(l.lineId),
-                      showTable: false,
-                      onMove: (to) => _move(l, to),
-                      onDeliverPart: () => _deliverPart(l),
-                    ),
-                ],
-              ),
+        data: (lines) {
+          if (lines.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('No bottle orders on this table.', key: const Key('detail-orders-empty'), style: theme.textTheme.bodyMedium),
+            );
+          }
+          // The signs of this table's lines; a failure to read them is said, because a bottle must not go out without its sign unnoticed.
+          final signIds = LineIds([for (final l in lines) l.lineId]);
+          final signs = ref.watch(lineSignsProvider(signIds));
+          void signsChanged() {
+            ref.invalidate(lineSignsProvider(signIds));
+            ref.invalidate(tableOrdersProvider);
+          }
+
+          return Column(
+            children: [
+              SignsLoadNotice(signs: signs, onRetry: () => ref.invalidate(lineSignsProvider(signIds))),
+              for (final l in lines)
+                OrderCard(
+                  line: l,
+                  now: now,
+                  manager: m.isManager,
+                  busy: _busy.contains(l.lineId),
+                  showTable: false,
+                  onMove: (to) => _move(l, to),
+                  onDeliverPart: () => _deliverPart(l),
+                  sign: signs.valueOrNull?[l.lineId],
+                  onSignChanged: signsChanged,
+                ),
+            ],
+          );
+        },
       ),
     ]);
   }

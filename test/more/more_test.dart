@@ -1,4 +1,5 @@
 import 'package:bottles_up_vendor/features/booking_conflicts/screens/booking_conflicts_screen.dart';
+import 'package:bottles_up_vendor/features/bottle_signs/screens/bottle_signs_screen.dart';
 import 'package:bottles_up_vendor/features/chat/providers/chat_providers.dart';
 import 'package:bottles_up_vendor/features/chat/screens/chat_screen.dart';
 import 'package:bottles_up_vendor/features/more/logic/more_entries.dart';
@@ -31,6 +32,7 @@ const Set<String> builtMore = {
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
   'owner/refunds', 'manager/refunds', 'owner/conflicts', 'manager/conflicts', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts', 'door/shift-summary',
+  'owner/bottle-signs', 'manager/bottle-signs',
 };
 
 void main() {
@@ -129,6 +131,19 @@ void main() {
     expect(moreDestinationFor(ws(WorkspaceRole.owner), 'conflicts'), isA<BookingConflictsScreen>());
     for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
       expect(moreDestinationFor(ws(role), 'conflicts'), isNull, reason: role.name);
+    }
+  });
+
+  test('bottle signs are the club manager\'s and the owner\'s, and nobody else gets them', () {
+    expect(moreDestinationFor(ws(WorkspaceRole.manager), 'bottle-signs'), isA<BottleSignsScreen>());
+    expect(moreDestinationFor(ws(WorkspaceRole.owner), 'bottle-signs'), isA<BottleSignsScreen>());
+    for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
+      expect(moreDestinationFor(ws(role), 'bottle-signs'), isNull, reason: role.name);
+    }
+    expect(moreEntriesFor(WorkspaceRole.manager).map((e) => e.id), contains('bottle-signs'));
+    expect(moreEntriesFor(WorkspaceRole.owner).map((e) => e.id), contains('bottle-signs'));
+    for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security]) {
+      expect(moreEntriesFor(role).map((e) => e.id), isNot(contains('bottle-signs')), reason: role.name);
     }
   });
 
