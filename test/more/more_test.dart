@@ -10,6 +10,7 @@ import 'package:bottles_up_vendor/features/more/screens/more_screen.dart';
 import 'package:bottles_up_vendor/features/more/screens/workspace_settings_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
+import 'package:bottles_up_vendor/features/report_emails/screens/report_recipients_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,6 +37,7 @@ const Set<String> builtMore = {
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
   'owner/refunds', 'manager/refunds', 'owner/conflicts', 'manager/conflicts', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts', 'door/shift-summary',
   'owner/bottle-signs', 'manager/bottle-signs',
+  'owner/report-emails', 'manager/report-emails', 'organizer/report-emails',
 };
 
 void main() {
@@ -161,6 +163,17 @@ void main() {
     expect(moreEntriesFor(WorkspaceRole.owner).map((e) => e.id), contains('bottle-signs'));
     for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security]) {
       expect(moreEntriesFor(role).map((e) => e.id), isNot(contains('bottle-signs')), reason: role.name);
+    }
+  });
+
+  test('report e-mails are the owner\'s, the manager\'s and the organizer\'s, and nobody else gets them', () {
+    for (final role in [WorkspaceRole.owner, WorkspaceRole.manager, WorkspaceRole.organizer]) {
+      expect(moreDestinationFor(ws(role), 'report-emails'), isA<ReportRecipientsScreen>(), reason: role.name);
+      expect(moreEntriesFor(role).map((e) => e.id), contains('report-emails'), reason: role.name);
+    }
+    for (final role in [WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
+      expect(moreDestinationFor(ws(role), 'report-emails'), isNull, reason: role.name);
+      expect(moreEntriesFor(role).map((e) => e.id), isNot(contains('report-emails')), reason: role.name);
     }
   });
 

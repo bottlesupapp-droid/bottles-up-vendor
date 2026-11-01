@@ -3,6 +3,7 @@ import '../../chat/providers/chat_providers.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../floor/screens/floor_screen.dart';
 import '../../ops/services/ops_rpc.dart' show OpsActionException;
+import '../../report_emails/logic/report_email_rules.dart' show emailOrgIdFor;
 import '../../server_desk/widgets/reason_dialog.dart';
 import '../../booking_conflicts/providers/conflict_providers.dart';
 import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
@@ -287,6 +288,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                           NightScreen(
                             venueId: venueId,
                             venueName: widget.workspace.venueName,
+                            emailOrgId: emailOrgIdFor(widget.workspace),
                             canReopen: widget.workspace.role == WorkspaceRole.owner,
                             clock: widget.clock,
                           ),
@@ -295,7 +297,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                     ),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, night: _night, clock: widget.clock),
+                      child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, emailOrgId: emailOrgIdFor(widget.workspace), night: _night, clock: widget.clock),
                     ),
                     const SizedBox(height: 8),
                     Text('Needs attention', style: theme.textTheme.titleMedium),

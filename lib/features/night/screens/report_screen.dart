@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/widgets/ops_async_view.dart';
+import '../../report_emails/logic/report_email_rules.dart';
+import '../../report_emails/widgets/email_report_button.dart';
 import '../../table_service/providers/table_service_providers.dart' show NightQuery;
 import '../../table_service/widgets/night_bar.dart';
 import '../logic/night_rules.dart';
@@ -12,10 +14,13 @@ import '../providers/night_providers.dart';
 /// The nightly report for one club, for the signed-in person's role: the manager and owner see everything, the payment verifier the money,
 /// security only security. It says whether it is preliminary or final, and can be shared as a PDF with the same words.
 class ReportScreen extends ConsumerStatefulWidget {
-  const ReportScreen({super.key, required this.venueId, this.venueName, this.initialNight, this.clock = DateTime.now});
+  const ReportScreen({super.key, required this.venueId, this.venueName, this.emailOrgId, this.initialNight, this.clock = DateTime.now});
 
   final String venueId;
   final String? venueName;
+
+  /// The business this club belongs to, when the person may e-mail the report (the owner and the manager). Without it there is no E-mail button.
+  final String? emailOrgId;
   final String? initialNight;
   final DateTime Function() clock;
 
@@ -82,6 +87,14 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                     icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
                     label: Text(_sharing ? 'Making the PDF…' : 'Share as PDF'),
                   ),
+                  if (widget.emailOrgId != null) ...[
+                    const SizedBox(height: 8),
+                    EmailReportButton(
+                      keyPrefix: 'report-email',
+                      target: ReportTarget(kind: ReportKind.venueNight, orgId: widget.emailOrgId!, venueId: widget.venueId, ref: _night, fileName: doc.fileName),
+                      buildPdf: () => buildReportPdf(doc),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   for (final (i, s) in doc.sections.indexed)
                     Card(

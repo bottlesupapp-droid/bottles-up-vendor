@@ -12,6 +12,7 @@ import '../../inventory/screens/inventory_screen.dart';
 import '../../money/screens/owner_money_screen.dart';
 import '../../payouts/screens/payouts_screen.dart';
 import '../../refunds/screens/refunds_screen.dart';
+import '../../report_emails/screens/report_recipients_screen.dart';
 import '../../security/screens/incidents_screen.dart';
 import '../../security/screens/security_hub_screen.dart';
 import '../../team/screens/team_screen.dart';
@@ -60,6 +61,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'incidents' when workspace.role == WorkspaceRole.security => IncidentsScreen(workspace: workspace),
       // The door's own shift at the chosen event: what they scanned in and what they sold, cash and card machine apart.
       'shift-summary' when workspace.role == WorkspaceRole.door => ShiftSummaryScreen(membershipId: workspace.membershipId),
+      // Who receives each report by e-mail: the owner's lists, the manager's club list, the organizer's event list. Nothing is sent from here.
+      'report-emails' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager || workspace.role == WorkspaceRole.organizer => ReportRecipientsScreen(workspace: workspace),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };

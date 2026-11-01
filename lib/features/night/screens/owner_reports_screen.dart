@@ -82,7 +82,7 @@ class OwnerReportsScreen extends ConsumerWidget {
                             spacing: 8,
                             runSpacing: 4,
                             children: [
-                              ReportButton(venueId: v.id, venueName: v.name, clock: clock),
+                              ReportButton(venueId: v.id, venueName: v.name, emailOrgId: workspace.orgId, clock: clock),
                               OutlinedButton.icon(
                                 key: Key('owner-night-${v.id}'),
                                 icon: const Icon(Icons.nightlight_outlined, size: 18),
@@ -90,7 +90,7 @@ class OwnerReportsScreen extends ConsumerWidget {
                                 onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
                                   builder: (_) => Scaffold(
                                     appBar: AppBar(title: Text(v.name)),
-                                    body: SafeArea(child: NightScreen(venueId: v.id, venueName: v.name, canReopen: true, clock: clock)),
+                                    body: SafeArea(child: NightScreen(venueId: v.id, venueName: v.name, emailOrgId: workspace.orgId, canReopen: true, clock: clock)),
                                   ),
                                 )),
                               ),

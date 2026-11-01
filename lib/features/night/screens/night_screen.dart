@@ -17,8 +17,10 @@ import 'report_screen.dart';
 /// the closing items are ticked, and the night is closed, with exceptions only if they are acknowledged and explained. A closed night's
 /// checklist is locked; only the owner reopens it, with a reason.
 class NightScreen extends ConsumerStatefulWidget {
-  const NightScreen({super.key, required this.venueId, this.venueName, this.canReopen = false, this.clock = DateTime.now});
+  const NightScreen({super.key, required this.venueId, this.venueName, this.emailOrgId, this.canReopen = false, this.clock = DateTime.now});
 
+  /// The business of this club, when the person may e-mail the report from its page (the owner and the manager).
+  final String? emailOrgId;
   final String venueId;
   final String? venueName;
   final bool canReopen;
@@ -184,7 +186,7 @@ class _NightScreenState extends ConsumerState<NightScreen> {
                 OutlinedButton.icon(
                   key: const Key('night-report'),
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => Scaffold(appBar: AppBar(title: const Text('Report')), body: ReportScreen(venueId: widget.venueId, venueName: widget.venueName, initialNight: _night, clock: widget.clock)),
+                    builder: (_) => Scaffold(appBar: AppBar(title: const Text('Report')), body: ReportScreen(venueId: widget.venueId, venueName: widget.venueName, emailOrgId: widget.emailOrgId, initialNight: _night, clock: widget.clock)),
                   )),
                   icon: const Icon(Icons.description_outlined),
                   label: Text(s.closed ? 'Final report' : 'Preliminary report'),
