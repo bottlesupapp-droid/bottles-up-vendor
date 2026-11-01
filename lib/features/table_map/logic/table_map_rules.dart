@@ -588,7 +588,8 @@ enum DepositRecipient {
 enum DepositPurpose {
   reservationFee('reservation_fee', 'Reservation fee', 'Holds the table. It is not counted toward the bottle bill.'),
   minimumSpendCredit('minimum_spend_credit', 'Credit toward the minimum spend', 'Counts toward what the table has to spend on bottles.'),
-  admission('admission', 'Admission', 'Pays for the guests\' entry.');
+  admission('admission', 'Admission', 'Pays for the guests\' entry.'),
+  combination('combination', 'A combination', 'Split the deposit into a reservation fee, a credit toward the minimum spend and admission. Only the credit share counts toward the bottle bill.');
 
   const DepositPurpose(this.db, this.label, this.explanation);
 
@@ -604,14 +605,53 @@ enum DepositPurpose {
   }
 }
 
+/// The three shares of a combination, in whole percents that add up to 100 (the database checks the same). Only the credit share counts toward the bottle bill.
+class DepositShares {
+  const DepositShares({required this.reservationFeePct, required this.minimumSpendCreditPct, required this.admissionPct});
+
+  final int reservationFeePct;
+  final int minimumSpendCreditPct;
+  final int admissionPct;
+
+  /// The deposit in cents split like the server does: the credit and the admission rounded DOWN, the reservation fee takes what is left, so the three add up to the deposit exactly and the
+  /// credit is never more than its share (website: supabase/functions/_shared/depositAllocation.ts).
+  DepositSplit split(int depositCents) {
+    final d = depositCents < 0 ? 0 : depositCents;
+    final credit = d * minimumSpendCreditPct ~/ 100;
+    final admission = d * admissionPct ~/ 100;
+    return DepositSplit(reservationFeeCents: d - credit - admission, minimumSpendCreditCents: credit, admissionCents: admission);
+  }
+}
+
+class DepositSplit {
+  const DepositSplit({required this.reservationFeeCents, required this.minimumSpendCreditCents, required this.admissionCents});
+
+  final int reservationFeeCents;
+  final int minimumSpendCreditCents;
+  final int admissionCents;
+}
+
+DepositShares? _parseShares(Object? parts) {
+  if (parts is! Map) return null;
+  final fee = _int(parts['reservation_fee_pct']);
+  final credit = _int(parts['minimum_spend_credit_pct']);
+  final admission = _int(parts['admission_pct']);
+  if (fee == null || credit == null || admission == null) return null;
+  if ([fee, credit, admission].any((v) => v < 0 || v > 100) || fee + credit + admission != 100) return null;
+  return DepositShares(reservationFeePct: fee, minimumSpendCreditPct: credit, admissionPct: admission);
+}
+
 class DepositTerms {
-  const DepositTerms({required this.recipient, required this.venuePct, required this.purpose, this.isDefault = false});
+  const DepositTerms({required this.recipient, required this.venuePct, required this.purpose, this.shares, this.isDefault = false});
 
   final DepositRecipient recipient;
 
   /// The venue's share, 0 to 100 (the organizer gets the rest).
   final int venuePct;
   final DepositPurpose purpose;
+
+  /// The three shares, when the purpose is a combination (and only then).
+  final DepositShares? shares;
 
   /// Not chosen by the venue: what a booking gets when the venue never set any (the venue keeps it).
   final bool isDefault;
@@ -625,7 +665,9 @@ DepositTerms? parseDepositTerms(Object? json) {
   final purpose = DepositPurpose.fromDb(json['purpose']?.toString());
   final pct = _int(json['venue_pct']);
   if (recipient == null || purpose == null || pct == null || pct < 0 || pct > 100) return null;
-  return DepositTerms(recipient: recipient, venuePct: pct, purpose: purpose, isDefault: json['default'] == true);
+  final shares = purpose == DepositPurpose.combination ? _parseShares(json['parts']) : null;
+  if (purpose == DepositPurpose.combination && shares == null) return null;
+  return DepositTerms(recipient: recipient, venuePct: pct, purpose: purpose, shares: shares, isDefault: json['default'] == true);
 }
 
 /// The venue's deposit terms. [terms] is null while the venue has not chosen. [depositIsCredit] is the BottlesUp-owned switch that decides which purposes are possible.
@@ -641,9 +683,11 @@ DepositSettings? parseDepositSettings(Map<String, dynamic> row) {
   return DepositSettings(terms: parseDepositTerms(row['terms']), depositIsCredit: row['deposit_is_credit'] == true);
 }
 
-/// The purposes the venue may pick: while the deposit is credited toward the bottle bill its purpose is a minimum spend credit, otherwise a reservation fee or admission.
-List<DepositPurpose> purposesFor({required bool depositIsCredit}) =>
-    depositIsCredit ? const [DepositPurpose.minimumSpendCredit] : const [DepositPurpose.reservationFee, DepositPurpose.admission];
+/// The purposes the venue may pick: while the deposit is credited toward the bottle bill its purpose is a minimum spend credit, otherwise a reservation fee or admission; a combination of the three
+/// is possible either way (with the credit on, its credit share has to be above 0; with it off, 0).
+List<DepositPurpose> purposesFor({required bool depositIsCredit}) => depositIsCredit
+    ? const [DepositPurpose.minimumSpendCredit, DepositPurpose.combination]
+    : const [DepositPurpose.reservationFee, DepositPurpose.admission, DepositPurpose.combination];
 
 /// The terms in words: "The venue keeps the deposit, as a reservation fee." / "Split: the venue 60%, the organizer 40%, as admission."
 String depositTermsLine(DepositTerms t) {
@@ -656,16 +700,64 @@ String depositTermsLine(DepositTerms t) {
     DepositPurpose.reservationFee => 'as a reservation fee',
     DepositPurpose.minimumSpendCredit => 'as a credit toward the minimum spend',
     DepositPurpose.admission => 'as admission',
+    DepositPurpose.combination => 'split into ${t.shares == null ? 'its shares' : sharesPhrase(t.shares!)}',
   };
   return '$who, $what.';
 }
 
+/// "a reservation fee (30%), a credit toward the minimum spend (50%) and admission (20%)"; a share of 0 is left out.
+String sharesPhrase(DepositShares s) {
+  final parts = [
+    if (s.reservationFeePct > 0) 'a reservation fee (${s.reservationFeePct}%)',
+    if (s.minimumSpendCreditPct > 0) 'a credit toward the minimum spend (${s.minimumSpendCreditPct}%)',
+    if (s.admissionPct > 0) 'admission (${s.admissionPct}%)',
+  ];
+  if (parts.length < 2) return parts.join();
+  return '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
+}
+
+/// "Of the deposit: reservation fee \$60.00, credit toward the minimum spend \$100.00, admission \$40.00." with the booking's own deposit; a share of 0 is left out.
+String depositAllocationLine(DepositShares s, int depositCents) {
+  final x = s.split(depositCents);
+  final parts = [
+    if (s.reservationFeePct > 0) 'reservation fee ${formatDollars(x.reservationFeeCents)}',
+    if (s.minimumSpendCreditPct > 0) 'credit toward the minimum spend ${formatDollars(x.minimumSpendCreditCents)}',
+    if (s.admissionPct > 0) 'admission ${formatDollars(x.admissionCents)}',
+  ];
+  return 'Of the deposit: ${parts.join(', ')}.';
+}
+
+/// The client's own worked example, with the venue's shares: a deposit on a table with a minimum spend. Shows what is credited, what is not, and what is left of the minimum.
+List<String> depositExampleLines(DepositShares s, {int depositCents = 20000, int minimumSpendCents = 100000}) {
+  final x = s.split(depositCents);
+  final left = minimumSpendCents - x.minimumSpendCreditCents;
+  return [
+    'Example: a ${formatDollars(depositCents)} deposit on a table with a ${formatDollars(minimumSpendCents)} minimum spend.',
+    if (s.reservationFeePct > 0) 'Reservation fee ${formatDollars(x.reservationFeeCents)}: kept as a charge, not counted toward the minimum.',
+    if (s.admissionPct > 0) 'Admission ${formatDollars(x.admissionCents)}: pays for entry, not counted toward the minimum.',
+    if (s.minimumSpendCreditPct > 0) 'Credit ${formatDollars(x.minimumSpendCreditCents)}: counted toward the minimum, which leaves ${formatDollars(left < 0 ? 0 : left)} to spend.' else 'Nothing is counted toward the minimum: ${formatDollars(minimumSpendCents)} is still to spend.',
+  ];
+}
+
 class DepositTermsForm {
-  const DepositTermsForm({this.recipient, this.venuePctText = '', this.purpose});
+  const DepositTermsForm({this.recipient, this.venuePctText = '', this.purpose, this.feePctText = '', this.creditPctText = '', this.admissionPctText = ''});
 
   final DepositRecipient? recipient;
   final String venuePctText;
   final DepositPurpose? purpose;
+
+  /// The three shares of a combination, as typed.
+  final String feePctText;
+  final String creditPctText;
+  final String admissionPctText;
+
+  DepositShares? get shares {
+    final fee = int.tryParse(feePctText.trim());
+    final credit = int.tryParse(creditPctText.trim());
+    final admission = int.tryParse(admissionPctText.trim());
+    if (fee == null || credit == null || admission == null) return null;
+    return DepositShares(reservationFeePct: fee, minimumSpendCreditPct: credit, admissionPct: admission);
+  }
 }
 
 /// What is wrong with the terms, in plain words. Empty means they can be sent.
@@ -684,7 +776,26 @@ List<String> validateDepositTerms(DepositTermsForm f, {required bool depositIsCr
     final pct = int.tryParse(f.venuePctText.trim());
     if (pct == null || pct < 1 || pct > 99) out.add('For a split, give the venue\'s share between 1 and 99 percent. The organizer gets the rest.');
   }
+  if (p == DepositPurpose.combination) out.addAll(_validateShares(f, depositIsCredit: depositIsCredit));
   return out;
+}
+
+List<String> _validateShares(DepositTermsForm f, {required bool depositIsCredit}) {
+  final s = f.shares;
+  if (s == null || [s.reservationFeePct, s.minimumSpendCreditPct, s.admissionPct].any((v) => v < 0 || v > 100)) {
+    return const ['Give a share between 0 and 100 for each of the three: the reservation fee, the credit toward the minimum spend and admission (0 for none).'];
+  }
+  final sum = s.reservationFeePct + s.minimumSpendCreditPct + s.admissionPct;
+  if (sum != 100) return ['The three shares have to add up to 100%. They add up to $sum%.'];
+  final used = [s.reservationFeePct, s.minimumSpendCreditPct, s.admissionPct].where((v) => v > 0).length;
+  if (used < 2) return const ['A combination needs at least two of the three above 0. For one purpose, choose it on its own.'];
+  if (s.minimumSpendCreditPct > 0 && !depositIsCredit) {
+    return const ['The credit toward the minimum spend is not switched on for this venue, so give it 0%. Ask the BottlesUp team if it should be switched on.'];
+  }
+  if (s.minimumSpendCreditPct == 0 && depositIsCredit) {
+    return const ['The deposit is credited toward the bottle bill at this venue, so a combination needs a credit share above 0%. Ask the BottlesUp team if that should change.'];
+  }
+  return const [];
 }
 
 /// The payload of save_venue_deposit_terms: the venue's share is fixed for the two single recipients.
@@ -695,12 +806,27 @@ Map<String, dynamic> depositTermsPayload(DepositTermsForm f) => {
         DepositRecipient.organizer => 0,
         DepositRecipient.split => int.parse(f.venuePctText.trim()),
       },
-      'purpose': f.purpose!.db,
+      if (f.purpose == DepositPurpose.combination) ...{
+        'reservation_fee_pct': f.shares!.reservationFeePct,
+        'minimum_spend_credit_pct': f.shares!.minimumSpendCreditPct,
+        'admission_pct': f.shares!.admissionPct,
+      } else
+        'purpose': f.purpose!.db,
     };
+
+/// Which database function saves these terms: a combination has its own (website repo, 20261120100000_deposit_combination.sql).
+String depositSaveFunction(DepositTermsForm f) => f.purpose == DepositPurpose.combination ? 'save_venue_deposit_combination' : 'save_venue_deposit_terms';
 
 DepositTermsForm depositFormFrom(DepositTerms? t) => t == null
     ? const DepositTermsForm()
-    : DepositTermsForm(recipient: t.recipient, venuePctText: t.recipient == DepositRecipient.split ? '${t.venuePct}' : '', purpose: t.purpose);
+    : DepositTermsForm(
+        recipient: t.recipient,
+        venuePctText: t.recipient == DepositRecipient.split ? '${t.venuePct}' : '',
+        purpose: t.purpose,
+        feePctText: t.shares == null ? '' : '${t.shares!.reservationFeePct}',
+        creditPctText: t.shares == null ? '' : '${t.shares!.minimumSpendCreditPct}',
+        admissionPctText: t.shares == null ? '' : '${t.shares!.admissionPct}',
+      );
 
 // ---------------------------------------------------------------------------
 // The terms a booking was made under
@@ -732,6 +858,7 @@ BookingTerms? parseBookingTerms(Map<String, dynamic> r) {
 List<String> bookingTermsLines(BookingTerms t) => [
       t.depositCents > 0 ? 'Deposit: ${formatDollars(t.depositCents)}' : 'No deposit',
       if (t.depositCents > 0) (t.deposit == null ? 'Deposit terms were not recorded for this booking.' : depositTermsLine(t.deposit!)),
+      if (t.depositCents > 0 && t.deposit?.shares != null) depositAllocationLine(t.deposit!.shares!, t.depositCents),
       admissionsLine(t.includedAdmissions),
       if (t.refundPolicySet) ...t.refundPolicyLines else 'No refund policy was set when this was booked.',
     ];
