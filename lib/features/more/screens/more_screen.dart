@@ -23,6 +23,7 @@ import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
 import '../logic/more_entries.dart';
 import 'workspace_settings_screen.dart';
+import '../../sales_source/screens/sales_tracking_screen.dart';
 
 /// The page behind a More entry, or null while that part is not built. Add to this as each part is built; nothing else changes.
 Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entryId) {
@@ -63,6 +64,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'shift-summary' when workspace.role == WorkspaceRole.door => ShiftSummaryScreen(membershipId: workspace.membershipId),
       // Who receives each report by e-mail: the owner's lists, the manager's club list, the organizer's event list. Nothing is sent from here.
       'report-emails' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager || workspace.role == WorkspaceRole.organizer => ReportRecipientsScreen(workspace: workspace),
+      // Where the club's sales come from, and its closing reports: the owner and the manager.
+      'sales-tracking' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => SalesTrackingScreen(workspace: workspace),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };
