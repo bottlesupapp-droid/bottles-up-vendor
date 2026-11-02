@@ -120,7 +120,7 @@ class _PaymentSettingsEditorState extends ConsumerState<PaymentSettingsEditor> {
           final selected = _picked ?? saved.mode;
           return ListView(
             key: const Key('payment-settings'),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               Text('Bottles', style: theme.textTheme.titleMedium),
               const SizedBox(height: 4),

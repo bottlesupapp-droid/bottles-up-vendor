@@ -175,7 +175,7 @@ class NotBuiltYetSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 140),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       children: [
         Row(
           children: [

@@ -134,7 +134,7 @@ class _RefundPolicyScreenState extends ConsumerState<RefundPolicyScreen> {
           final preview = previewLines(_form);
           return ListView(
             key: const Key('refund-policy'),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               Text(
                 saved.hasPolicy

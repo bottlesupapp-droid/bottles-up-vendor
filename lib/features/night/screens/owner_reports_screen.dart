@@ -25,7 +25,7 @@ class OwnerReportsScreen extends ConsumerWidget {
       child: ListView(
         key: const Key('owner-reports'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
           Text('Reports', style: theme.textTheme.headlineSmall),
           Text(workspace.orgName, style: theme.textTheme.bodyMedium),

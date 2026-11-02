@@ -118,7 +118,7 @@ class _NightScreenState extends ConsumerState<NightScreen> {
       child: ListView(
         key: const Key('night-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Text('Prepare and close the night', style: theme.textTheme.headlineSmall),
           if (widget.venueName != null) Text(widget.venueName!, style: theme.textTheme.bodyMedium),

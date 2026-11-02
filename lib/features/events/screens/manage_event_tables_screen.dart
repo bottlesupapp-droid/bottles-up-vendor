@@ -70,7 +70,7 @@ class ManageEventTablesScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(eventTablesProvider(eventId)),
             child: ListView.builder(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88), // room for the Add button
               itemCount: tables.length,
               itemBuilder: (context, index) =>
                   _TableCard(table: tables[index], eventId: eventId),

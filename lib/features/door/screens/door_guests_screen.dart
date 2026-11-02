@@ -216,7 +216,7 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
     final theme = Theme.of(context);
     final guests = _guests;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         DoorEventBar(
           events: events,

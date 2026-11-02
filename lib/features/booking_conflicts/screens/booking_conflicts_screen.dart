@@ -208,7 +208,7 @@ class _BookingConflictsScreenState extends ConsumerState<BookingConflictsScreen>
       child: ListView(
         key: const Key('conflicts'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           Text(
             'A guest who pays after their 10 minutes are up can find the table taken. They keep their payment, but get no confirmation until you have sorted it out: call them, move the booking to another table or refund it, then close it here.',

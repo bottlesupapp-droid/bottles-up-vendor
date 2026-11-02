@@ -59,7 +59,7 @@ class _VipScreenState extends ConsumerState<VipScreen> {
       child: ListView(
         key: const Key('vip-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Row(
             children: [

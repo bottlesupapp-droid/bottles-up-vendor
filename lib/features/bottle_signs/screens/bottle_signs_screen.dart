@@ -91,7 +91,7 @@ class _BottleSignsScreenState extends ConsumerState<BottleSignsScreen> {
       child: ListView(
         key: const Key('bottle-signs'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           Text('Bottle signs', style: theme.textTheme.headlineSmall),
           const SizedBox(height: 4),

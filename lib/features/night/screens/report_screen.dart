@@ -58,7 +58,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
       child: ListView(
         key: const Key('report-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           const SizedBox(height: 8),

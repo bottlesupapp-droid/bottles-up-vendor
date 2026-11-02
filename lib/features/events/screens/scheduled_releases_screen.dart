@@ -59,7 +59,7 @@ class ScheduledReleasesScreen extends ConsumerWidget {
               ref.invalidate(scheduledReleasesProvider(eventId));
             },
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88), // room for the Add button
               itemCount: releases.length,
               itemBuilder: (context, index) {
                 final release = releases[index];
