@@ -14,6 +14,7 @@ import '../../cash_review/logic/cash_rules.dart' show checkFlagReason;
 import '../../cash_review/providers/cash_providers.dart';
 import '../../ops/services/ops_rpc.dart' show OpsActionException;
 import '../../ops/widgets/ops_dialogs.dart' show showTextDialog;
+import '../../../core/live/live_refresh.dart';
 
 /// Asks for the note that goes with checking a payment. Replaced in tests.
 typedef VerifyPrompt =
@@ -196,7 +197,12 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
       },
     );
 
-    return RefreshIndicator(
+    return LiveRefresh(
+      refresh: (r) {
+        r.invalidate(pendingPaymentsProvider(venueId));
+      },
+      watching: [pendingPaymentsProvider(venueId)],
+      child: RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(pendingPaymentsProvider(venueId));
         try {
@@ -211,6 +217,7 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
         itemCount: items.length,
         itemBuilder: (_, i) => items[i](),
       ),
+    ),
     );
   }
 

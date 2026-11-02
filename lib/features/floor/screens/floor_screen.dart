@@ -13,6 +13,7 @@ import '../logic/bookings_rules.dart';
 import '../providers/floor_providers.dart';
 import '../services/floor_service.dart';
 import '../widgets/booking_card.dart';
+import '../../../core/live/live_refresh.dart';
 
 /// Picks a night. Replaced in tests; in the app it is Flutter's own date picker.
 typedef NightPicker = Future<DateTime?> Function(BuildContext context, DateTime initial);
@@ -189,7 +190,14 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
     final servers = (orgId != null && problem == null) ? ref.watch(bookingServersProvider(query)) : null;
     final team = orgId != null ? ref.watch(teamMembersProvider(orgId)) : null;
 
-    return RefreshIndicator(
+    return LiveRefresh(
+      refresh: (r) {
+        if (problem != null) return;
+        r.invalidate(floorBookingsProvider(query));
+        r.invalidate(bookingServersProvider(query));
+      },
+      watching: [if (problem == null) floorBookingsProvider(query)],
+      child: RefreshIndicator(
       onRefresh: () async {
         if (problem != null) return;
         ref.invalidate(floorBookingsProvider(query));
@@ -286,6 +294,7 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
             ),
         ],
       ),
+    ),
     );
   }
 
