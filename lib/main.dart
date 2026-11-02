@@ -10,6 +10,7 @@ import 'core/connectivity/connection_monitor.dart';
 import 'core/crash/crash_reporting.dart';
 import 'core/startup/startup_error_app.dart';
 import 'core/utils/error_handler.dart';
+import 'core/live/live_refresh.dart';
 
 void main() {
   // Catch errors from async gaps - must wrap everything including initialization
@@ -50,6 +51,8 @@ Future<void> _start() async {
         // Tell the person when the phone cannot reach the server (brief section 33). Off in tests.
         connectionMonitorEnabledProvider.overrideWithValue(true),
         connectionProbeProvider.overrideWithValue(httpProbe(SupabaseConfig.url)),
+        // Operational screens look again every few seconds while they are in front, and say when they last did (brief sections 2 and 29). Off in tests.
+        liveRefreshEnabledProvider.overrideWithValue(true),
       ],
       child: const BottlesUpVendorApp(),
     ),
