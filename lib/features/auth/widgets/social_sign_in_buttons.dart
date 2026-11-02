@@ -5,11 +5,13 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../core/config/google_sign_in_config.dart';
 import '../services/social_sign_in_service.dart';
 
-/// Which of the two sign-ins this phone can offer: Apple on iPhone, Google where it is set up (see [GoogleSignInConfig]). Apple requires an app that offers another company's sign-in on
+/// Which of the two sign-ins this phone can offer: none while [SocialSignInConfig.offered] is off; otherwise Apple on iPhone, Google where it is set up (see [GoogleSignInConfig]). Apple requires an app that offers another company's sign-in on
 /// iPhone to offer Sign in with Apple as well, and this is always the case here: Apple is offered whenever Google is on iPhone.
 List<SocialProvider> socialProvidersFor(TargetPlatform platform) => [
-      if (GoogleSignInConfig.isConfiguredFor(platform)) SocialProvider.google,
-      if (platform == TargetPlatform.iOS) SocialProvider.apple,
+      if (SocialSignInConfig.offered) ...[
+        if (GoogleSignInConfig.isConfiguredFor(platform)) SocialProvider.google,
+        if (platform == TargetPlatform.iOS) SocialProvider.apple,
+      ],
     ];
 
 /// "or", then "Continue with Google" and, on iPhone, "Continue with Apple" (Apple's own button, which App Review looks for). Draws nothing when the phone can offer neither. While [enabled] is

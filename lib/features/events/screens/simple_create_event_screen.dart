@@ -336,7 +336,7 @@ class _SimpleCreateEventScreenState
     return Form(
       key: _formKey,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).padding.bottom + 80),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
         children: [
           // ── Event Info ──────────────────────────────────────────────────
           _sectionTitle(theme, 'Event Info'),

@@ -38,7 +38,7 @@ class WorkspaceShell extends ConsumerWidget {
     final sectionId = segments.length > 2 ? segments[2] : nav.landing.id;
 
     return Scaffold(
-      extendBody: true,
+      extendBody: false, // the page ends where the floating bar begins (see MainShell)
       body: SafeArea(
         bottom: false,
         child: Column(

@@ -103,7 +103,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
             )
           : SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom + 80),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
