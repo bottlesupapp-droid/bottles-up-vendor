@@ -32,7 +32,7 @@ class PayoutsScreen extends ConsumerWidget {
       child: ListView(
         key: const Key('payouts'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           OpsAsyncView<MyPayouts>(
             value: payouts,

@@ -52,7 +52,7 @@ class _Body extends ConsumerWidget {
     final theme = Theme.of(context);
     final summary = ref.watch(shiftSummaryProvider(event.eventId));
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         DoorEventBar(
           events: events,

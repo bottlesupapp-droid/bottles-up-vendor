@@ -375,48 +375,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Divider
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'or continue with',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Social Login Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSocialButton(
-                          icon: Icons.g_mobiledata,
-                          label: 'Google',
-                          theme: theme,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildSocialButton(
-                          icon: Icons.apple,
-                          label: 'Apple',
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
                   // Resend OTP / Timer
                   Center(
                     child: _canResend
@@ -468,29 +426,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialButton({
-    required IconData icon,
-    required String label,
-    required ThemeData theme,
-  }) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: Icon(icon, size: 24),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: theme.colorScheme.onSurface,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        side: BorderSide(
-          color: theme.colorScheme.outline,
-          width: 1.5,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );

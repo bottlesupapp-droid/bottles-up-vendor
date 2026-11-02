@@ -1,3 +1,4 @@
+import 'package:bottles_up_vendor/core/config/google_sign_in_config.dart';
 import 'package:bottles_up_vendor/features/auth/providers/supabase_auth_provider.dart';
 import 'package:bottles_up_vendor/features/auth/screens/register_screen.dart';
 import 'package:bottles_up_vendor/features/auth/services/social_sign_in_service.dart';
@@ -49,7 +50,11 @@ Future<void> _as(TargetPlatform platform, Future<void> Function() body) async {
 }
 
 void main() {
-  tearDown(() => pendingInviteToken.value = null);
+  setUp(() => SocialSignInConfig.offered = true);
+  tearDown(() {
+    SocialSignInConfig.offered = false;
+    pendingInviteToken.value = null;
+  });
 
   group('the Create an account page', () {
     testWidgets('on Android it offers Google, under its own heading and without the "or" line', (tester) async {

@@ -311,7 +311,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
               onRefresh: _loadTicketTiers,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom + 80),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

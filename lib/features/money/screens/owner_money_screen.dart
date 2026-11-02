@@ -36,7 +36,7 @@ class _OwnerMoneyScreenState extends ConsumerState<OwnerMoneyScreen> {
       child: ListView(
         key: const Key('money-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
           Text('Money', style: theme.textTheme.headlineSmall),
           Text(widget.workspace.orgName, style: theme.textTheme.bodyMedium),

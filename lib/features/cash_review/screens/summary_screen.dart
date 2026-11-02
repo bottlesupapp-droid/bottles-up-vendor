@@ -49,7 +49,7 @@ class _VerifierSummaryScreenState extends ConsumerState<VerifierSummaryScreen> {
       onRefresh: () async => ref.invalidate(verifierSummaryProvider(_query)),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Text('Summary', style: theme.textTheme.headlineSmall),
           if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),

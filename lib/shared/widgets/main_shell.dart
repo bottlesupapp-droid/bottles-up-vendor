@@ -43,7 +43,8 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = _getCurrentIndex(context);
     return Scaffold(
-      extendBody: true, // body flows behind the floating glass nav
+      // The page ends where the floating bar begins. It used to flow behind the bar (extendBody), which left the last line of a list, buttons such as "Delete Account" and the floating "Add" buttons underneath it.
+      extendBody: false,
       body: child,
       bottomNavigationBar: GlassBottomNavBar(
         currentIndex: currentIndex,

@@ -101,7 +101,7 @@ class MoreScreen extends StatelessWidget {
     ];
     return ListView(
       key: const Key('more-list'),
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
         Text('More', style: theme.textTheme.headlineSmall),
         const SizedBox(height: 4),

@@ -64,7 +64,7 @@ class _ExceptionsScreenState extends ConsumerState<ExceptionsScreen> {
       onRefresh: () async => _refresh(),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Text('Exceptions', style: theme.textTheme.headlineSmall),
           Text('Payments flagged because something looked wrong.', style: theme.textTheme.bodyMedium),

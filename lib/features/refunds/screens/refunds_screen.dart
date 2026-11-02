@@ -80,7 +80,7 @@ class _RefundsScreenState extends ConsumerState<RefundsScreen> {
       child: ListView(
         key: const Key('refunds'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           Card(
             child: ListTile(

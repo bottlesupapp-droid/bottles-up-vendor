@@ -124,7 +124,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
       data: (list) {
         final g = groupEvents(list, widget.clock());
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
             BusinessStatusCard(orgId: _orgId),
             Text('Create your events here. They stay private drafts until the BottlesUp team publishes them and sets up tickets with you.', style: theme.textTheme.bodyMedium),

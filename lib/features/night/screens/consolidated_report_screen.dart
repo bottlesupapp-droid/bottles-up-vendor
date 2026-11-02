@@ -54,7 +54,7 @@ class _ConsolidatedReportScreenState extends ConsumerState<ConsolidatedReportScr
       child: ListView(
         key: const Key('consolidated-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           const SizedBox(height: 8),

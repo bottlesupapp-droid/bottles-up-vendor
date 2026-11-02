@@ -102,7 +102,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
       child: ListView(
         key: const Key('alerts-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Row(
             children: [

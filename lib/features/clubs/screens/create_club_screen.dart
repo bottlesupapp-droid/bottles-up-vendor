@@ -189,7 +189,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
                   utils.ResponsiveUtils.getResponsivePadding(context),
                   utils.ResponsiveUtils.getResponsivePadding(context),
                   utils.ResponsiveUtils.getResponsivePadding(context),
-                  utils.ResponsiveUtils.getResponsivePadding(context) + MediaQuery.of(context).padding.bottom + 80,
+                  utils.ResponsiveUtils.getResponsivePadding(context),
                 ),
                 child: Form(
                   key: _formKey,

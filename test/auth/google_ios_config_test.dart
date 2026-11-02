@@ -12,6 +12,9 @@ const _suffix = '.apps.googleusercontent.com';
 String _reversed(String clientId) => 'com.googleusercontent.apps.${clientId.substring(0, clientId.length - _suffix.length)}';
 
 void main() {
+  setUp(() => SocialSignInConfig.offered = true);
+  tearDown(() => SocialSignInConfig.offered = false);
+
   group('Google sign-in on iPhone', () {
     test('the iOS client is set, belongs to the same Google project as the web client, and is not the web client', () {
       expect(GoogleSignInConfig.iosClientId, endsWith(_suffix));

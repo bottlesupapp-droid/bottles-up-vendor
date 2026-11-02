@@ -522,7 +522,7 @@ class EventDetailsScreen extends ConsumerWidget {
               },
             ),
 
-              const SizedBox(height: 100),
+              const SizedBox(height: 24),
             ],
           ),
         ),

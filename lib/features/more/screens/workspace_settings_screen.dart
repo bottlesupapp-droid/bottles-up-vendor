@@ -52,7 +52,7 @@ class WorkspaceSettingsScreen extends StatelessWidget {
     final signedIn = email ?? _signedInEmail();
     return ListView(
       key: const Key('settings-list'),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         ListTile(
           key: const Key('settings-account'),
