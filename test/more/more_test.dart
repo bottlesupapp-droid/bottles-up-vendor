@@ -11,6 +11,7 @@ import 'package:bottles_up_vendor/features/more/screens/workspace_settings_scree
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/report_emails/screens/report_recipients_screen.dart';
+import 'package:bottles_up_vendor/features/sales_source/screens/sales_tracking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,6 +39,7 @@ const Set<String> builtMore = {
   'owner/refunds', 'manager/refunds', 'owner/conflicts', 'manager/conflicts', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts', 'door/shift-summary',
   'owner/bottle-signs', 'manager/bottle-signs',
   'owner/report-emails', 'manager/report-emails', 'organizer/report-emails',
+  'owner/sales-tracking', 'manager/sales-tracking',
 };
 
 void main() {
@@ -174,6 +176,17 @@ void main() {
     for (final role in [WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
       expect(moreDestinationFor(ws(role), 'report-emails'), isNull, reason: role.name);
       expect(moreEntriesFor(role).map((e) => e.id), isNot(contains('report-emails')), reason: role.name);
+    }
+  });
+
+  test('Sales Tracking is the owner\'s and the manager\'s, and nobody else gets it', () {
+    for (final role in [WorkspaceRole.owner, WorkspaceRole.manager]) {
+      expect(moreDestinationFor(ws(role), 'sales-tracking'), isA<SalesTrackingScreen>(), reason: role.name);
+      expect(moreEntriesFor(role).map((e) => e.id), contains('sales-tracking'), reason: role.name);
+    }
+    for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
+      expect(moreDestinationFor(ws(role), 'sales-tracking'), isNull, reason: role.name);
+      expect(moreEntriesFor(role).map((e) => e.id), isNot(contains('sales-tracking')), reason: role.name);
     }
   });
 
