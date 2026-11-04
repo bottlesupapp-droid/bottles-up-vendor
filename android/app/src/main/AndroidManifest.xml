@@ -41,6 +41,14 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="www.bottlesupapp.com" android:pathPrefix="/accept-invite"/>
             </intent-filter>
+            <!-- The website's /reset-password page (the button in the reset email) opens the app on bottlesupbusiness://app/reset-password?token_hash=...
+                 This is the app's own scheme, not a web address, so there is nothing to verify. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="bottlesupbusiness" android:host="app"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

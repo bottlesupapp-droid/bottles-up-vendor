@@ -34,6 +34,16 @@
 				<string>com.googleusercontent.apps.49598092873-0ubqrl5je9vkl68sjohn2an7l2pgeki9</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>BusinessLinks</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bottlesupbusiness</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>

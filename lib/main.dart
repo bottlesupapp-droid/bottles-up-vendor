@@ -9,6 +9,7 @@ import 'core/config/supabase_config.dart';
 import 'core/connectivity/connection_monitor.dart';
 import 'core/crash/crash_reporting.dart';
 import 'core/startup/startup_error_app.dart';
+import 'features/auth/services/recovery_link_listener.dart';
 import 'core/utils/error_handler.dart';
 
 void main() {
@@ -90,6 +91,9 @@ class BottlesUpVendorApp extends ConsumerWidget {
       
       // Routing
       routerConfig: router,
+
+      // A password-reset link from the website opens the app on the new-password screen.
+      builder: (context, child) => RecoveryLinkListener(child: child ?? const SizedBox.shrink()),
     );
   }
 }
