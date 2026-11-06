@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../logic/last_workspace.dart';
 import '../logic/workspace_routing.dart';
@@ -34,42 +36,65 @@ class _WorkspaceSelectorScreenState extends ConsumerState<WorkspaceSelectorScree
     final async = ref.watch(workspaceSnapshotProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your workspaces'),
-        actions: [
-          TextButton(
-            onPressed: () => ref.read(supabaseAuthProvider.notifier).signOut(),
-            child: const Text('Sign out'),
+      body: BuBackdrop(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.m, BuSpace.s, 0),
+                child: Row(
+                  children: [
+                    const BuWordmark(),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => ref.read(supabaseAuthProvider.notifier).signOut(),
+                      child: const Text('Sign out'),
+                    ),
+                  ],
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(BuSpace.page, BuSpace.xxl, BuSpace.page, BuSpace.xl),
+                child: BuPageHeader(
+                  eyebrow: 'Assigned access',
+                  title: 'Your workspaces',
+                  intro: 'Only businesses, events and roles assigned to your account appear here.',
+                ),
+              ),
+              Expanded(
+                child: async.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => _Empty(snapshot: WorkspaceSnapshot.error(e.toString())),
+                  data: (snapshot) {
+                    final sole = snapshot.soleWorkspace;
+                    if (sole != null && !_autoOpened) {
+                      _autoOpened = true;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) context.go(workspaceLandingPath(sole));
+                      });
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasWorkspaces) return _Empty(snapshot: snapshot);
+                    // The one used last on this phone goes first. Access is the database's: this only orders the list.
+                    final lastId = ref.watch(lastWorkspaceIdProvider).valueOrNull;
+                    final shown = withLastUsedFirst(snapshot.workspaces, lastId);
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(BuSpace.page, 0, BuSpace.page, BuSpace.xl),
+                      itemCount: shown.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: BuSpace.m),
+                      itemBuilder: (context, i) => _WorkspaceCard(
+                        workspace: shown[i],
+                        lastUsed: isLastUsed(shown[i], shown, lastId),
+                        onOpen: () => _open(shown[i]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _Empty(snapshot: WorkspaceSnapshot.error(e.toString())),
-        data: (snapshot) {
-          final sole = snapshot.soleWorkspace;
-          if (sole != null && !_autoOpened) {
-            _autoOpened = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) context.go(workspaceLandingPath(sole));
-            });
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasWorkspaces) return _Empty(snapshot: snapshot);
-          // The one used last on this phone goes first. Access is the database's: this only orders the list.
-          final lastId = ref.watch(lastWorkspaceIdProvider).valueOrNull;
-          final shown = withLastUsedFirst(snapshot.workspaces, lastId);
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: shown.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, i) => _WorkspaceCard(
-              workspace: shown[i],
-              lastUsed: isLastUsed(shown[i], shown, lastId),
-              onOpen: () => _open(shown[i]),
-            ),
-          );
-        },
+        ),
       ),
     );
   }
@@ -87,23 +112,40 @@ class _WorkspaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bu = context.bu;
     final nav = navigationFor(workspace.role);
     final until = workspace.accessEndAt;
-    return Card(
-      child: ListTile(
-        key: Key('workspace-${workspace.membershipId}'),
-        onTap: onOpen,
-        leading: Icon(nav.landing.activeIcon, color: theme.colorScheme.primary),
-        title: Text(workspace.role.label),
-        subtitle: Text(
-          [
-            if (lastUsed) 'Last used',
-            '${workspace.orgName} · ${workspace.scopeLabel}',
-            if (until != null) 'Access until ${DateFormat('MMM d, HH:mm').format(until.toLocal())}',
-          ].join('\n'),
-        ),
-        isThreeLine: until != null || lastUsed,
-        trailing: const Icon(Ionicons.chevron_forward),
+    final muted = theme.textTheme.bodySmall?.copyWith(color: bu.muted, height: 1.5);
+    return BuCard(
+      key: Key('workspace-${workspace.membershipId}'),
+      highlight: lastUsed,
+      onTap: onOpen,
+      child: Row(
+        children: [
+          BuIconTile(icon: nav.landing.activeIcon, size: 46),
+          const SizedBox(width: BuSpace.l),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(workspace.role.label, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 4),
+                // One block of text, so "Last used" is part of the card's words (a screen reader reads the card as one thing).
+                Text.rich(
+                  TextSpan(
+                    style: muted,
+                    children: [
+                      if (lastUsed) TextSpan(text: 'Last used\n', style: TextStyle(color: bu.orangeSoft, fontWeight: FontWeight.w700)),
+                      TextSpan(text: '${workspace.orgName} · ${workspace.scopeLabel}'),
+                      if (until != null) TextSpan(text: '\nAccess until ${DateFormat('MMM d, HH:mm').format(until.toLocal())}'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Ionicons.chevron_forward, size: 18, color: bu.muted),
+        ],
       ),
     );
   }

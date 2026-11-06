@@ -93,6 +93,12 @@ flutter:
   assets:
     - assets/images/
 
+  # Inter, the app's font. Bundled (not downloaded) so text looks the same on every phone, offline, from the first frame.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+
 
 # Flutter Launcher Icons configuration
 flutter_launcher_icons:
