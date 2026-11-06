@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../logic/owner_rules.dart';
 import '../providers/owner_providers.dart';
 import '../screens/setup/booking_times_editor.dart';
@@ -34,10 +35,15 @@ class SetupProgress extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(minHeight: 6, value: s.percent / 100, backgroundColor: theme.colorScheme.surfaceContainerHighest),
+                  borderRadius: BorderRadius.circular(BuRadius.pill),
+                  child: LinearProgressIndicator(
+                    minHeight: 6,
+                    value: s.percent / 100,
+                    backgroundColor: Colors.white.withValues(alpha: 0.10),
+                    color: s.requiredDone >= s.requiredTotal ? context.bu.green : null,
+                  ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: BuSpace.s),
                 Text('${s.requiredDone} of ${s.requiredTotal} required steps', style: theme.textTheme.bodySmall),
               ],
             );

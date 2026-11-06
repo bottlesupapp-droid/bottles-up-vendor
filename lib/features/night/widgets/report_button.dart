@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../screens/report_screen.dart';
 
@@ -25,7 +26,7 @@ class ReportButton extends StatelessWidget {
           body: SafeArea(child: ReportScreen(venueId: venueId, venueName: venueName, emailOrgId: emailOrgId, initialNight: night, clock: clock)),
         ),
       )),
-      icon: const Icon(Icons.description_outlined, size: 18),
+      icon: const Icon(Ionicons.document_text_outline, size: 18),
       label: Text(label),
     );
   }

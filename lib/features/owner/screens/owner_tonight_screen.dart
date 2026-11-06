@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../table_service/screens/tonight_screen.dart';
 import '../../workspace/models/workspace.dart';
 import '../providers/owner_providers.dart';
@@ -73,7 +74,7 @@ class _OwnerTonightScreenState extends ConsumerState<OwnerTonightScreen> {
                 child: ListView(
                   key: const Key('owner-tonight-venues'),
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 0),
                   children: [
                     for (final v in list)
                       Padding(
@@ -81,6 +82,7 @@ class _OwnerTonightScreenState extends ConsumerState<OwnerTonightScreen> {
                         child: ChoiceChip(
                           key: Key('owner-tonight-venue-${v.id}'),
                           label: Text(v.name),
+                          showCheckmark: false,
                           selected: v.id == chosen.id,
                           onSelected: (_) => setState(() => _venueId = v.id),
                         ),

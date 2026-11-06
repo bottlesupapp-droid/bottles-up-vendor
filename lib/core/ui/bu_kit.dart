@@ -386,23 +386,35 @@ class BuStatusPill extends StatelessWidget {
   }
 }
 
-/// A count shown at the right of a row: "3" in a soft orange disc.
+/// A count shown at the right of a row: "3" in a soft disc. The tone says what the number means: brand (the default, orange), attention (amber: a number
+/// that needs a person), good, bad, or neutral (a plain count that asks nothing of anyone).
 class BuCountBadge extends StatelessWidget {
-  const BuCountBadge(this.count, {super.key});
+  const BuCountBadge(this.count, {super.key, this.tone = BuTone.brand});
 
   final int count;
+  final BuTone tone;
 
   @override
   Widget build(BuildContext context) {
     final bu = context.bu;
+    final color = switch (tone) {
+      BuTone.neutral => bu.muted,
+      BuTone.good => bu.green,
+      BuTone.attention => bu.amber,
+      BuTone.bad => bu.red,
+      BuTone.brand => bu.orangeSoft,
+    };
     return Semantics(
       label: '$count',
       excludeSemantics: true,
       child: Container(
-        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
         padding: const EdgeInsets.symmetric(horizontal: 5),
         decoration: BoxDecoration(
-          color: bu.orangeWash,
+          color:
+              tone == BuTone.neutral
+                  ? bu.panel2
+                  : color.withValues(alpha: 0.13),
           borderRadius: BorderRadius.circular(BuRadius.pill),
         ),
         // Centred but shrink-wrapped: a Container with an `alignment` would fill all the width a column offers it.
@@ -413,7 +425,7 @@ class BuCountBadge extends StatelessWidget {
             '$count',
             style: Theme.of(
               context,
-            ).textTheme.labelMedium?.copyWith(color: bu.orangeSoft),
+            ).textTheme.labelLarge?.copyWith(color: color),
           ),
         ),
       ),
@@ -509,6 +521,251 @@ class BuWordmark extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// A ring that fills as [value] goes from 0 to 1, with a big word in the middle and a small one under it: "42%" over "arrived".
+class BuRing extends StatelessWidget {
+  const BuRing({
+    super.key,
+    required this.value,
+    required this.center,
+    this.caption,
+    this.size = 96,
+    this.stroke = 8,
+  });
+
+  /// 0 to 1. Anything outside is held to that range.
+  final double value;
+  final String center;
+  final String? caption;
+  final double size;
+  final double stroke;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      label: caption == null ? center : '$center $caption',
+      excludeSemantics: true,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(
+          painter: _RingPainter(
+            value: value.clamp(0.0, 1.0),
+            track: Colors.white.withValues(alpha: 0.10),
+            fill: bu.orangeSoft,
+            stroke: stroke,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  center,
+                  style: text.titleLarge?.copyWith(
+                    fontSize: size * 0.24,
+                    letterSpacing: -0.6,
+                  ),
+                ),
+                if (caption != null)
+                  Text(
+                    caption!,
+                    style: text.labelSmall?.copyWith(
+                      color: bu.muted,
+                      fontSize: size * 0.11,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter({
+    required this.value,
+    required this.track,
+    required this.fill,
+    required this.stroke,
+  });
+
+  final double value;
+  final Color track;
+  final Color fill;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final arc = rect.deflate(stroke / 2);
+    final base =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..strokeCap = StrokeCap.round;
+    canvas.drawArc(arc, 0, 6.2831853, false, base..color = track);
+    if (value > 0) {
+      canvas.drawArc(
+        arc,
+        -1.5707963,
+        6.2831853 * value,
+        false,
+        base..color = fill,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.value != value ||
+      old.track != track ||
+      old.fill != fill ||
+      old.stroke != stroke;
+}
+
+/// The big card at the top of a home screen: an eyebrow, a headline, a line under it, and something at the right (usually a [BuRing]). A warm glow in
+/// its corner, so it is the first thing the eye finds.
+class BuHeroCard extends StatelessWidget {
+  const BuHeroCard({
+    super.key,
+    required this.title,
+    this.eyebrow,
+    this.subtitle,
+    this.trailing,
+  });
+
+  final String title;
+  final String? eyebrow;
+  final String? subtitle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final radius = BorderRadius.circular(BuRadius.hero);
+    // Its own item for a screen reader: the headline, the line under it and the ring are read together, apart from what is around the card.
+    return Semantics(
+      container: true,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: bu.orange.withValues(alpha: 0.18)),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment(0.6, 0.9),
+              colors: [Color(0xFF302019), Color(0xFF171513)],
+              stops: [0, 0.72],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(0.7, -0.5),
+                        radius: 0.8,
+                        colors: [
+                          const Color(0x47FF9853),
+                          const Color(0x00FF9853),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(BuSpace.xl),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (eyebrow != null) ...[
+                            BuEyebrow(eyebrow!),
+                            const SizedBox(height: BuSpace.s),
+                          ],
+                          Text(
+                            title,
+                            style: text.titleLarge?.copyWith(
+                              fontSize: 22,
+                              height: 1.2,
+                            ),
+                          ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: BuSpace.s),
+                            Text(
+                              subtitle!,
+                              style: text.bodyMedium?.copyWith(color: bu.soft),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (trailing != null) ...[
+                      const SizedBox(width: BuSpace.l),
+                      trailing!,
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One figure on a card: the number big, and what it counts under it. The number is the first text in the tile, the label the second.
+class BuMetricTile extends StatelessWidget {
+  const BuMetricTile({
+    super.key,
+    required this.value,
+    required this.label,
+    this.valueColor,
+  });
+
+  final String value;
+  final String label;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    // One item for a screen reader: "12, Guests expected".
+    return Semantics(
+      container: true,
+      child: BuCard(
+        padding: const EdgeInsets.all(BuSpace.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              value,
+              style: text.headlineMedium?.copyWith(color: valueColor ?? bu.ink),
+            ),
+            const SizedBox(height: BuSpace.xs),
+            Text(label, style: text.bodySmall?.copyWith(color: bu.muted)),
+          ],
+        ),
+      ),
     );
   }
 }
