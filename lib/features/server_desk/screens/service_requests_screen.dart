@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../team/providers/team_providers.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
@@ -125,10 +127,13 @@ class _ServiceRequestsScreenState extends ConsumerState<ServiceRequestsScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Text('Requests', style: theme.textTheme.headlineSmall),
-          if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
+          BuPageHeader(eyebrow: _manager ? 'Service' : 'Your shift', title: 'Requests'),
+          if (widget.workspace.venueName != null) ...[
+            const SizedBox(height: BuSpace.xs),
+            Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          ],
           SwitchListTile(
             key: const Key('show-closed'),
             contentPadding: EdgeInsets.zero,
@@ -140,25 +145,27 @@ class _ServiceRequestsScreenState extends ConsumerState<ServiceRequestsScreen> {
             loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),
             error: (error, _) {
               final e = error is ServerDeskLoadException ? error : const ServerDeskLoadException(unavailable: false, accessEnded: false, what: 'requests');
-              return Column(
-                children: [
-                  Text(e.message, key: const Key('requests-error'), textAlign: TextAlign.center),
-                  if (!e.unavailable)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: OutlinedButton(
-                        key: const Key('requests-retry'),
-                        onPressed: () => ref.invalidate(serviceRequestsProvider(_query)),
-                        child: const Text('Try again'),
+              return BuCard(
+                child: Column(
+                  children: [
+                    Text(e.message, key: const Key('requests-error'), textAlign: TextAlign.center),
+                    if (!e.unavailable)
+                      Padding(
+                        padding: const EdgeInsets.only(top: BuSpace.m),
+                        child: OutlinedButton(
+                          key: const Key('requests-retry'),
+                          onPressed: () => ref.invalidate(serviceRequestsProvider(_query)),
+                          child: const Text('Try again'),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               );
             },
             data: (rows) {
               if (rows.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.only(top: 24),
+                return const BuCard(
+                  padding: EdgeInsets.all(BuSpace.xl),
                   child: Text('Nothing needs your attention.', key: Key('requests-empty'), textAlign: TextAlign.center),
                 );
               }

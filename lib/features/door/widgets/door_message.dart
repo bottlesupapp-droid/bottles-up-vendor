@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
+
 /// A plain message with an optional retry, for the loading failures and empty states of the door screens.
 class DoorMessage extends StatelessWidget {
   const DoorMessage({super.key, required this.text, this.onRetry});
@@ -11,16 +14,19 @@ class DoorMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(text, key: const Key('door-message'), textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
-            if (onRetry != null) ...[
-              const SizedBox(height: 16),
-              OutlinedButton(key: const Key('door-retry'), onPressed: onRetry, child: const Text('Try again')),
+        padding: const EdgeInsets.all(BuSpace.page),
+        child: BuCard(
+          padding: const EdgeInsets.all(BuSpace.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(text, key: const Key('door-message'), textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+              if (onRetry != null) ...[
+                const SizedBox(height: BuSpace.l),
+                OutlinedButton(key: const Key('door-retry'), onPressed: onRetry, child: const Text('Try again')),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

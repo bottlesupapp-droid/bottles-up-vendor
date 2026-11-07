@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
+import '../../server_desk/widgets/desk_chip.dart';
 import '../../vip/screens/vip_lookup_screen.dart';
 import '../logic/door_rules.dart';
 import '../providers/door_providers.dart';
@@ -175,11 +178,11 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
         Align(
           alignment: Alignment.centerRight,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 0),
             child: TextButton.icon(
               key: const Key('vip-lookup-open'),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => VipLookupScreen(venueId: venueId))),
-              icon: const Icon(Icons.star_outline, size: 18),
+              icon: const Icon(Ionicons.star_outline, size: 18),
               label: const Text('VIP lookup'),
             ),
           ),
@@ -216,8 +219,10 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
     final theme = Theme.of(context);
     final guests = _guests;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
+        const BuPageHeader(eyebrow: 'Door', title: 'Guests'),
+        const SizedBox(height: BuSpace.l),
         DoorEventBar(
           events: events,
           selected: event,
@@ -234,7 +239,7 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
             });
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: BuSpace.l),
         if (_outcome != null) ...[
           ScanResultPanel(
             outcome: _outcome!,
@@ -255,7 +260,6 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
           decoration: const InputDecoration(
             hintText: 'Search by name or ticket code',
             prefixIcon: Icon(Ionicons.search_outline),
-            border: OutlineInputBorder(),
           ),
           onChanged: (t) => _onChanged(t, event),
         ),
@@ -288,36 +292,33 @@ class _GuestTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return BuCard(
       key: Key('guest-${guest.ticketCode}'),
-      margin: const EdgeInsets.only(top: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(guest.name, style: theme.textTheme.titleMedium),
-                  Text('${guest.tierName.isEmpty ? 'Ticket' : guest.tierName} × ${guest.quantity}'),
-                  Text(guest.ticketCode, style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')),
-                  if (guest.needsCode && !guest.isIn) Text('Needs an entry code', style: theme.textTheme.bodySmall),
-                ],
-              ),
+      margin: const EdgeInsets.only(top: BuSpace.s),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(guest.name, style: theme.textTheme.titleMedium),
+                Text('${guest.tierName.isEmpty ? 'Ticket' : guest.tierName} × ${guest.quantity}'),
+                Text(guest.ticketCode, style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')),
+                if (guest.needsCode && !guest.isIn) Text('Needs an entry code', style: theme.textTheme.bodySmall),
+              ],
             ),
-            if (guest.isIn)
-              const Chip(key: Key('guest-in'), avatar: Icon(Ionicons.checkmark_circle, size: 18), label: Text('In'))
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (guest.partlyIn) Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('${guest.admittedCount} of ${guest.quantity} in', key: Key('guest-partly-${guest.ticketCode}'), style: theme.textTheme.bodySmall)),
-                  FilledButton(key: Key('admit-${guest.ticketCode}'), onPressed: onAdmit, child: Text(guest.partlyIn ? 'Admit more' : 'Admit')),
-                ],
-              ),
-          ],
-        ),
+          ),
+          if (guest.isIn)
+            DeskChip(key: const Key('guest-in'), text: 'In', color: context.bu.green, icon: Ionicons.checkmark_circle)
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (guest.partlyIn) Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('${guest.admittedCount} of ${guest.quantity} in', key: Key('guest-partly-${guest.ticketCode}'), style: theme.textTheme.bodySmall)),
+                FilledButton(key: Key('admit-${guest.ticketCode}'), onPressed: onAdmit, child: Text(guest.partlyIn ? 'Admit more' : 'Admit')),
+              ],
+            ),
+        ],
       ),
     );
   }

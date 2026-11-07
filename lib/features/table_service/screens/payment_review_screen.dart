@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/widgets/desk_chip.dart';
 import '../../workspace/models/workspace.dart';
@@ -115,15 +117,20 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
 
     // One entry per row, built only when it scrolls into view: a long queue can have hundreds of payments.
     final items = <Widget Function()>[
-      () => Text('Payments to check', style: theme.textTheme.headlineSmall),
+      () => const BuPageHeader(eyebrow: 'Payments', title: 'Payments to check'),
       () =>
           widget.workspace.venueName == null
               ? const SizedBox.shrink()
-              : Text(
-                widget.workspace.venueName!,
-                style: theme.textTheme.bodyMedium,
+              : Padding(
+                padding: const EdgeInsets.only(top: BuSpace.xs),
+                child: Text(
+                  widget.workspace.venueName!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: context.bu.muted,
+                  ),
+                ),
               ),
-      () => const SizedBox(height: 8),
+      () => const SizedBox(height: BuSpace.m),
     ];
     async.when<void>(
       loading:
@@ -136,32 +143,34 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
       error: (error, _) {
         final e = loadFailureFor(error, 'payments');
         items.add(
-          () => Column(
-            children: [
-              Text(
-                e.message,
-                key: const Key('review-error'),
-                textAlign: TextAlign.center,
-              ),
-              if (!e.unavailable)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: OutlinedButton(
-                    key: const Key('review-retry'),
-                    onPressed:
-                        () => ref.invalidate(pendingPaymentsProvider(venueId)),
-                    child: const Text('Try again'),
-                  ),
+          () => BuCard(
+            child: Column(
+              children: [
+                Text(
+                  e.message,
+                  key: const Key('review-error'),
+                  textAlign: TextAlign.center,
                 ),
-            ],
+                if (!e.unavailable)
+                  Padding(
+                    padding: const EdgeInsets.only(top: BuSpace.m),
+                    child: OutlinedButton(
+                      key: const Key('review-retry'),
+                      onPressed:
+                          () => ref.invalidate(pendingPaymentsProvider(venueId)),
+                      child: const Text('Try again'),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
       data: (rows) {
         if (rows.isEmpty) {
           items.add(
-            () => const Padding(
-              padding: EdgeInsets.only(top: 24),
+            () => const BuCard(
+              padding: EdgeInsets.all(BuSpace.xl),
               child: Text(
                 'Nothing is waiting to be checked.',
                 key: Key('review-empty'),
@@ -175,7 +184,7 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
           () => Text(
             '${rows.length} ${rows.length == 1 ? 'payment' : 'payments'} waiting',
             key: const Key('review-summary'),
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted),
           ),
         );
         for (final p in rows) {
@@ -207,7 +216,7 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
       },
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         itemCount: items.length,
         itemBuilder: (_, i) => items[i](),
       ),
@@ -223,103 +232,100 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
     final reason = p.cannotVerifyBecause;
     final verification =
         p.disputed ? Verification.disputed : Verification.pending;
-    return Card(
+    return BuCard(
       key: Key('review-${p.paymentId}'),
-      margin: const EdgeInsets.only(top: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    p.customerName,
-                    style: theme.textTheme.titleMedium,
-                  ),
+      margin: const EdgeInsets.only(top: BuSpace.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  p.customerName,
+                  style: theme.textTheme.titleMedium,
                 ),
-                DeskChip(
-                  key: Key('review-state-${p.paymentId}'),
-                  text: p.disputed ? 'Disputed' : 'Pending',
-                  color: verificationColor(verification),
-                ),
-              ],
-            ),
-            Text(
-              [
-                p.tableName,
-                if (p.confirmationCode != null) p.confirmationCode!,
-              ].join(' · '),
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${p.methodLabel} · collected ${formatDollars(p.paidCents)}',
-              style: theme.textTheme.titleSmall,
-            ),
-            if (p.billedCents != p.paidCents)
-              Text(
-                'Bill ${formatDollars(p.billedCents)}',
-                style: theme.textTheme.bodySmall,
               ),
-            if (p.posReference != null)
-              Text(
-                'Till receipt no. ${p.posReference}',
-                style: theme.textTheme.bodySmall,
+              DeskChip(
+                key: Key('review-state-${p.paymentId}'),
+                text: p.disputed ? 'Disputed' : 'Pending',
+                color: verificationColor(verification),
               ),
+            ],
+          ),
+          Text(
+            [
+              p.tableName,
+              if (p.confirmationCode != null) p.confirmationCode!,
+            ].join(' · '),
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${p.methodLabel} · collected ${formatDollars(p.paidCents)}',
+            style: theme.textTheme.titleSmall,
+          ),
+          if (p.billedCents != p.paidCents)
             Text(
-              'Recorded ${waitedLabel(p.recordedAt, now)} ago by ${p.recordedByMe ? 'you' : (p.recordedByName ?? 'a colleague')}',
+              'Bill ${formatDollars(p.billedCents)}',
               style: theme.textTheme.bodySmall,
             ),
-            if (p.disputed && p.disputeReason != null)
-              Text(
-                'Guest says: ${p.disputeReason}',
-                key: Key('dispute-${p.paymentId}'),
-                style: theme.textTheme.bodySmall,
+          if (p.posReference != null)
+            Text(
+              'Till receipt no. ${p.posReference}',
+              style: theme.textTheme.bodySmall,
+            ),
+          Text(
+            'Recorded ${waitedLabel(p.recordedAt, now)} ago by ${p.recordedByMe ? 'you' : (p.recordedByName ?? 'a colleague')}',
+            style: theme.textTheme.bodySmall,
+          ),
+          if (p.disputed && p.disputeReason != null)
+            Text(
+              'Guest says: ${p.disputeReason}',
+              key: Key('dispute-${p.paymentId}'),
+              style: theme.textTheme.bodySmall,
+            ),
+          const SizedBox(height: 4),
+          if (p.receiptPath != null)
+            TextButton.icon(
+              key: Key('review-receipt-${p.paymentId}'),
+              onPressed: () => showReceipt(context, ref, p.receiptPath!),
+              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+              label: const Text('View receipt'),
+            )
+          else
+            Text(
+              'No receipt${p.missingReceiptReason == null ? '' : ': ${p.missingReceiptReason}'}',
+              key: Key('review-no-receipt-${p.paymentId}'),
+              style: theme.textTheme.bodySmall,
+            ),
+          const SizedBox(height: 8),
+          if (reason != null)
+            Text(
+              reason,
+              key: Key('review-why-${p.paymentId}'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: context.bu.amber,
               ),
-            const SizedBox(height: 4),
-            if (p.receiptPath != null)
-              TextButton.icon(
-                key: Key('review-receipt-${p.paymentId}'),
-                onPressed: () => showReceipt(context, ref, p.receiptPath!),
-                icon: const Icon(Icons.receipt_long_outlined, size: 18),
-                label: const Text('View receipt'),
-              )
-            else
-              Text(
-                'No receipt${p.missingReceiptReason == null ? '' : ': ${p.missingReceiptReason}'}',
-                key: Key('review-no-receipt-${p.paymentId}'),
-                style: theme.textTheme.bodySmall,
+            )
+          else
+            FilledButton(
+              key: Key('verify-${p.paymentId}'),
+              onPressed:
+                  _busy.contains(p.paymentId) ? null : () => _verify(p),
+              child: const Text('Check it against the till'),
+            ),
+          if (!p.recordedByMe)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: Key('flag-${p.paymentId}'),
+                onPressed: () => _flag(p),
+                icon: const Icon(Icons.flag_outlined, size: 18),
+                label: const Text('Flag a problem'),
               ),
-            const SizedBox(height: 8),
-            if (reason != null)
-              Text(
-                reason,
-                key: Key('review-why-${p.paymentId}'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFFFFB300),
-                ),
-              )
-            else
-              FilledButton(
-                key: Key('verify-${p.paymentId}'),
-                onPressed:
-                    _busy.contains(p.paymentId) ? null : () => _verify(p),
-                child: const Text('Check it against the till'),
-              ),
-            if (!p.recordedByMe)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  key: Key('flag-${p.paymentId}'),
-                  onPressed: () => _flag(p),
-                  icon: const Icon(Icons.flag_outlined, size: 18),
-                  label: const Text('Flag a problem'),
-                ),
-              ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../logic/door_rules.dart';
 import '../providers/door_providers.dart';
 import '../services/door_service.dart';
@@ -184,8 +186,10 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
     final theme = Theme.of(context);
     final camera = (widget.cameraBuilder ?? _defaultCamera)(context, (code) => _process(code, event));
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
+        const BuPageHeader(eyebrow: 'Door', title: 'Scan'),
+        const SizedBox(height: BuSpace.l),
         DoorEventBar(
           events: events,
           selected: event,
@@ -195,7 +199,7 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
             _next();
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: BuSpace.l),
         if (_outcome != null) ...[
           ScanResultPanel(
             outcome: _outcome!,
@@ -206,16 +210,16 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
             onAdmit: (n) => _admit(n, event),
             onMore: () => _more(event),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: BuSpace.l),
         ],
         if (_busy) const Padding(padding: EdgeInsets.only(bottom: 12), child: LinearProgressIndicator(key: Key('checking'))),
         ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(BuRadius.card),
           child: SizedBox(key: const Key('camera-area'), height: 260, child: camera),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: BuSpace.xl),
         Text('Or type the ticket code', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 8),
+        const SizedBox(height: BuSpace.s),
         Row(
           children: [
             Expanded(
@@ -224,7 +228,7 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
                 controller: _manual,
                 textInputAction: TextInputAction.search,
                 autocorrect: false,
-                decoration: const InputDecoration(hintText: 'Ticket code', border: OutlineInputBorder()),
+                decoration: const InputDecoration(hintText: 'Ticket code'),
                 onSubmitted: (v) => _process(v, event, manual: true),
               ),
             ),
@@ -252,7 +256,7 @@ class _CameraProblem extends StatelessWidget {
       key: const Key('camera-problem'),
       alignment: Alignment.center,
       padding: const EdgeInsets.all(20),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color: context.bu.panel2,
       child: Text(text, textAlign: TextAlign.center),
     );
   }

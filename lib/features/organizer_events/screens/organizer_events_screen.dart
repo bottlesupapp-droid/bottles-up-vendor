@@ -1,9 +1,12 @@
 import '../../agreements/screens/agreements_screen.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../business/widgets/business_status_card.dart';
 import '../../door_staff/screens/organizer_team_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../../core/utils/date_time_picker.dart';
 import '../../owner/widgets/setup_common.dart' show confirmRemove;
@@ -93,7 +96,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
   }
 
   Widget _heading(BuildContext context, String text) =>
-      Padding(padding: const EdgeInsets.only(top: 12, bottom: 8), child: Text(text.toUpperCase(), style: Theme.of(context).textTheme.labelMedium?.copyWith(letterSpacing: 0.8)));
+      Padding(padding: const EdgeInsets.only(top: BuSpace.l, bottom: BuSpace.s), child: BuEyebrow(text));
 
   @override
   Widget build(BuildContext context) {
@@ -107,16 +110,19 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
         final e = error is OrganizerEventsLoadException ? error : const OrganizerEventsLoadException(unavailable: false, accessEnded: false);
         return Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(e.message, key: const Key('events-error'), textAlign: TextAlign.center),
-                if (!e.unavailable) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton(key: const Key('events-retry'), onPressed: () => ref.invalidate(organizerEventsProvider(_orgId)), child: const Text('Try again')),
+            padding: const EdgeInsets.all(BuSpace.page),
+            child: BuCard(
+              padding: const EdgeInsets.all(BuSpace.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(e.message, key: const Key('events-error'), textAlign: TextAlign.center),
+                  if (!e.unavailable) ...[
+                    const SizedBox(height: BuSpace.m),
+                    OutlinedButton(key: const Key('events-retry'), onPressed: () => ref.invalidate(organizerEventsProvider(_orgId)), child: const Text('Try again')),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -124,17 +130,19 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
       data: (list) {
         final g = groupEvents(list, widget.clock());
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
           children: [
             BusinessStatusCard(orgId: _orgId),
-            Text('Create your events here. They stay private drafts until the BottlesUp team publishes them and sets up tickets with you.', style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 12),
+            const BuPageHeader(eyebrow: 'Organizer', title: 'Your events'),
+            const SizedBox(height: BuSpace.xs),
+            Text('Create your events here. They stay private drafts until the BottlesUp team publishes them and sets up tickets with you.', style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+            const SizedBox(height: BuSpace.l),
             Wrap(
-              spacing: 8,
-              runSpacing: 4,
+              spacing: BuSpace.s,
+              runSpacing: BuSpace.s,
               children: [
-                FilledButton.icon(key: const Key('create-event'), onPressed: () => _openForm(null), icon: const Icon(Icons.add, size: 18), label: const Text('Create event')),
-                OutlinedButton.icon(key: const Key('invite-team'), onPressed: _openTeam, icon: const Icon(Icons.group_add_outlined, size: 18), label: const Text('Invite door staff')),
+                FilledButton.icon(key: const Key('create-event'), onPressed: () => _openForm(null), icon: const Icon(Ionicons.add, size: 18), label: const Text('Create event')),
+                OutlinedButton.icon(key: const Key('invite-team'), onPressed: _openTeam, icon: const Icon(Ionicons.person_add_outline, size: 18), label: const Text('Invite door staff')),
               ],
             ),
             if (states.hasError && list.isNotEmpty)
@@ -148,11 +156,10 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
                 ),
               ),
             if (list.isEmpty)
-              Container(
+              BuCard(
                 key: const Key('no-events'),
-                margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.4)), borderRadius: BorderRadius.circular(14)),
+                margin: const EdgeInsets.only(top: BuSpace.l),
+                padding: const EdgeInsets.all(BuSpace.xl),
                 child: const Text('No events yet. Create your first event. It stays a private draft until the BottlesUp team publishes it.', textAlign: TextAlign.center),
               ),
             for (final (title, group) in [('Drafts', g.drafts), ('Upcoming', g.upcoming), ('Past', g.past)])

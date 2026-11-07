@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../door/logic/door_rules.dart';
 import '../../door/providers/door_providers.dart';
 import '../../door/services/door_service.dart';
@@ -200,8 +202,10 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
 
   Widget _body(List<DoorEvent> events, DoorEvent event) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
+        const BuPageHeader(eyebrow: 'Door', title: 'Door sales'),
+        const SizedBox(height: BuSpace.l),
         DoorEventBar(
           events: events,
           selected: event,
@@ -218,7 +222,7 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
             });
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: BuSpace.l),
         if (_done != null)
           _SaleDone(sale: _done!, method: _doneMethod!, onAnother: _another)
         else
@@ -238,23 +242,25 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
       loading: () => const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
       error: (error, _) {
         final e = opsLoadFailureFor(error, 'ticket types');
-        return Column(children: [
-          Text(e.message, key: const Key('sale-load-error'), textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          if (!e.unavailable) OutlinedButton(key: const Key('sale-retry'), onPressed: () => ref.invalidate(saleOptionsProvider(event.eventId)), child: const Text('Try again')),
-        ]);
+        return BuCard(
+          child: Column(children: [
+            Text(e.message, key: const Key('sale-load-error'), textAlign: TextAlign.center),
+            const SizedBox(height: BuSpace.m),
+            if (!e.unavailable) OutlinedButton(key: const Key('sale-retry'), onPressed: () => ref.invalidate(saleOptionsProvider(event.eventId)), child: const Text('Try again')),
+          ]),
+        );
       },
       data: (data) {
-        if (data.closed) return Text(salesClosedMessage, key: const Key('sale-closed'), style: theme.textTheme.bodyLarge);
+        if (data.closed) return BuCard(padding: const EdgeInsets.all(BuSpace.xl), child: Text(salesClosedMessage, key: const Key('sale-closed'), style: theme.textTheme.bodyLarge));
         if (data.options.isEmpty) {
-          return Text('This event has no ticket types you can sell at the door.', key: const Key('sale-none'), style: theme.textTheme.bodyLarge);
+          return BuCard(padding: const EdgeInsets.all(BuSpace.xl), child: Text('This event has no ticket types you can sell at the door.', key: const Key('sale-none'), style: theme.textTheme.bodyLarge));
         }
         final option = _chosen(data.options);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('1. Ticket type', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            BuSectionHeader(title: '1. Ticket type'),
+            const SizedBox(height: BuSpace.s),
             for (final o in data.options) _TierCard(option: o, selected: o.tierId == _tierId, enabled: !_busy, onTap: () => _choose(o)),
             if (option != null && !option.soldOut) ...[
               const SizedBox(height: 12),
@@ -276,16 +282,16 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 20),
-            Text('2. Guest details', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: BuSpace.xl),
+            BuSectionHeader(title: '2. Guest details'),
+            const SizedBox(height: BuSpace.s),
             TextField(
               key: const Key('sale-name'),
               controller: _name,
               enabled: !_busy,
               textCapitalization: TextCapitalization.words,
               maxLength: guestNameMax,
-              decoration: const InputDecoration(labelText: 'Guest name (required)', border: OutlineInputBorder(), counterText: ''),
+              decoration: const InputDecoration(labelText: 'Guest name (required)', counterText: ''),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -294,7 +300,7 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
               enabled: !_busy,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
-              decoration: const InputDecoration(labelText: 'Email (optional)', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Email (optional)'),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -302,15 +308,16 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
               controller: _phone,
               enabled: !_busy,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Phone (optional)', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Phone (optional)'),
             ),
             const SizedBox(height: 6),
             Text('The email and phone are only kept with the sale. No ticket is emailed or texted from here.', key: const Key('sale-contact-note'), style: theme.textTheme.bodySmall),
-            const SizedBox(height: 20),
-            Text('3. How did the guest pay?', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: BuSpace.xl),
+            BuSectionHeader(title: '3. How did the guest pay?'),
+            const SizedBox(height: BuSpace.s),
             SegmentedButton<DoorPayMethod>(
               key: const Key('sale-method'),
+              expandedInsets: EdgeInsets.zero,
               emptySelectionAllowed: true,
               showSelectedIcon: false,
               segments: [
@@ -335,7 +342,7 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
                 controller: _reference,
                 enabled: !_busy,
                 maxLength: receiptMax,
-                decoration: const InputDecoration(labelText: 'Card machine receipt number (required)', border: OutlineInputBorder(), counterText: ''),
+                decoration: const InputDecoration(labelText: 'Card machine receipt number (required)', counterText: ''),
               ),
             ],
             const SizedBox(height: 20),
@@ -343,10 +350,13 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
               Text(saleSummaryLine(option, _quantity, _method!), key: const Key('sale-summary'), style: theme.textTheme.titleMedium),
             if (_problem != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_problem!, key: const Key('sale-problem'), style: TextStyle(color: theme.colorScheme.error))),
             const SizedBox(height: 12),
-            FilledButton(
-              key: const Key('sale-submit'),
-              onPressed: _busy ? null : () => _review(event, option),
-              child: Text(_busy ? 'Issuing...' : 'Review and issue the ticket'),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                key: const Key('sale-submit'),
+                onPressed: _busy ? null : () => _review(event, option),
+                child: Text(_busy ? 'Issuing...' : 'Review and issue the ticket'),
+              ),
             ),
             const SizedBox(height: 8),
             Text('Approved discounts and promo codes are not part of door sales yet.', key: const Key('sale-no-discounts'), style: theme.textTheme.bodySmall),
@@ -369,34 +379,25 @@ class _TierCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final usable = enabled && !option.soldOut;
-    return Card(
+    return BuCard(
       key: Key('sale-tier-${option.tierId}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: selected ? theme.colorScheme.primary : Colors.transparent, width: 2),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: usable ? onTap : null,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(option.name, style: theme.textTheme.titleMedium?.copyWith(color: option.soldOut ? theme.disabledColor : null)),
-                    Text(option.leftLabel, key: Key('sale-left-${option.tierId}'), style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              Text(option.priceLabel, key: Key('sale-price-${option.tierId}'), style: theme.textTheme.titleMedium),
-              if (selected) const Padding(padding: EdgeInsets.only(left: 8), child: Icon(Ionicons.checkmark_circle, key: Key('sale-selected'))),
-            ],
+      margin: const EdgeInsets.only(bottom: BuSpace.s),
+      highlight: selected,
+      onTap: usable ? onTap : null,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(option.name, style: theme.textTheme.titleMedium?.copyWith(color: option.soldOut ? theme.disabledColor : null)),
+                Text(option.leftLabel, key: Key('sale-left-${option.tierId}'), style: theme.textTheme.bodySmall),
+              ],
+            ),
           ),
-        ),
+          Text(option.priceLabel, key: Key('sale-price-${option.tierId}'), style: theme.textTheme.titleMedium),
+          if (selected) Padding(padding: const EdgeInsets.only(left: BuSpace.s), child: Icon(Ionicons.checkmark_circle, key: const Key('sale-selected'), color: context.bu.orangeSoft)),
+        ],
       ),
     );
   }
@@ -413,37 +414,36 @@ class _SaleDone extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final guests = sale.quantity == 1 ? '1 guest is' : '${sale.quantity} guests are';
-    return Card(
+    return BuCard(
       key: const Key('sale-done'),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              const Icon(Ionicons.checkmark_circle, size: 28),
-              const SizedBox(width: 8),
-              Expanded(child: Text(sale.repeated ? 'This sale was already made' : 'Ticket issued', key: const Key('sale-done-title'), style: theme.textTheme.titleLarge)),
-            ]),
-            const SizedBox(height: 12),
-            SelectableText(sale.ticketCode, key: const Key('sale-done-code'), style: theme.textTheme.headlineMedium?.copyWith(fontFamily: 'monospace')),
-            const SizedBox(height: 8),
-            Text('${sale.quantity} × ${sale.tierName} · ${sale.amountCents == 0 ? 'Free' : formatDollars(sale.amountCents)} · ${method.label}', key: const Key('sale-done-line')),
-            const SizedBox(height: 8),
-            Text(
-              sale.repeated
-                  ? '$guests checked in. Nothing new was recorded: the sale had already gone through.'
-                  : '$guests checked in. The ticket cannot be scanned again. No ticket was emailed or texted.',
-              key: const Key('sale-done-note'),
-            ),
-            if (!sale.repeated) ...[
-              const SizedBox(height: 4),
-              Text(sale.available == 1 ? '1 ticket of this type is left.' : '${sale.available} tickets of this type are left.', key: const Key('sale-done-left'), style: theme.textTheme.bodySmall),
-            ],
-            const SizedBox(height: 16),
-            FilledButton(key: const Key('sale-another'), onPressed: onAnother, child: const Text('Sell another ticket')),
+      highlight: true,
+      padding: const EdgeInsets.all(BuSpace.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Ionicons.checkmark_circle, size: 28, color: context.bu.green),
+            const SizedBox(width: BuSpace.s),
+            Expanded(child: Text(sale.repeated ? 'This sale was already made' : 'Ticket issued', key: const Key('sale-done-title'), style: theme.textTheme.titleLarge)),
+          ]),
+          const SizedBox(height: BuSpace.m),
+          SelectableText(sale.ticketCode, key: const Key('sale-done-code'), style: theme.textTheme.headlineMedium?.copyWith(fontFamily: 'monospace')),
+          const SizedBox(height: BuSpace.s),
+          Text('${sale.quantity} × ${sale.tierName} · ${sale.amountCents == 0 ? 'Free' : formatDollars(sale.amountCents)} · ${method.label}', key: const Key('sale-done-line')),
+          const SizedBox(height: BuSpace.s),
+          Text(
+            sale.repeated
+                ? '$guests checked in. Nothing new was recorded: the sale had already gone through.'
+                : '$guests checked in. The ticket cannot be scanned again. No ticket was emailed or texted.',
+            key: const Key('sale-done-note'),
+          ),
+          if (!sale.repeated) ...[
+            const SizedBox(height: BuSpace.xs),
+            Text(sale.available == 1 ? '1 ticket of this type is left.' : '${sale.available} tickets of this type are left.', key: const Key('sale-done-left'), style: theme.textTheme.bodySmall),
           ],
-        ),
+          const SizedBox(height: BuSpace.l),
+          FilledButton(key: const Key('sale-another'), onPressed: onAnother, child: const Text('Sell another ticket')),
+        ],
       ),
     );
   }

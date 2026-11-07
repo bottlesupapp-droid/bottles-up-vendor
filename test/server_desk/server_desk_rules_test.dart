@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:bottles_up_vendor/core/theme/app_tokens.dart';
 import 'package:bottles_up_vendor/features/server_desk/logic/server_desk_rules.dart';
 import 'package:bottles_up_vendor/features/server_desk/widgets/desk_chip.dart';
-import 'package:flutter/material.dart' show Color;
 import 'package:bottles_up_vendor/features/team/logic/team_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -239,13 +239,15 @@ void main() {
   });
 
   group('the colours', () {
-    test('amber while it waits, blue while someone is on it, green when done, red when passed up, grey when dropped', () {
-      expect(requestStatusColor(RequestStatus.fresh), const Color(0xFFFFB300));
-      expect(requestStatusColor(RequestStatus.acknowledged), const Color(0xFF42A5F5));
-      expect(requestStatusColor(RequestStatus.inProgress), const Color(0xFF42A5F5));
-      expect(requestStatusColor(RequestStatus.completed), const Color(0xFF66BB6A));
-      expect(requestStatusColor(RequestStatus.escalated), const Color(0xFFEF5350));
-      expect(requestStatusColor(RequestStatus.cancelled), const Color(0xFF9E9E9E));
+    // The design's own colours (the redesign replaced Material's amber, blue, green, red and grey).
+    test('amber while it waits, orange while someone is on it, green when done, red when passed up, grey when dropped', () {
+      final bu = BuTokens.dark;
+      expect(requestStatusColor(RequestStatus.fresh), bu.amber);
+      expect(requestStatusColor(RequestStatus.acknowledged), bu.orangeSoft);
+      expect(requestStatusColor(RequestStatus.inProgress), bu.orangeSoft);
+      expect(requestStatusColor(RequestStatus.completed), bu.green);
+      expect(requestStatusColor(RequestStatus.escalated), bu.red);
+      expect(requestStatusColor(RequestStatus.cancelled), bu.muted);
     });
   });
 

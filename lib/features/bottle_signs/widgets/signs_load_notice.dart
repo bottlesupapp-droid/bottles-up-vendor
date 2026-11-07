@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../logic/sign_rules.dart';
 
@@ -18,12 +21,27 @@ class SignsLoadNotice extends StatelessWidget {
     if (error == null) return const SizedBox.shrink();
     final failure = opsLoadFailureFor(error, 'the bottle signs');
     if (failure.unavailable) return const SizedBox.shrink();
-    return Card(
+    return BuCard(
       key: const Key('signs-notice'),
-      child: ListTile(
-        leading: const Icon(Icons.edit_note),
-        title: Text(failure.message, key: const Key('signs-notice-text')),
-        trailing: failure.accessEnded ? null : TextButton(key: const Key('signs-notice-retry'), onPressed: onRetry, child: const Text('Try again')),
+      accent: context.bu.amber,
+      margin: const EdgeInsets.only(top: BuSpace.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Ionicons.create_outline, color: context.bu.amber, size: 20),
+              const SizedBox(width: BuSpace.m),
+              Expanded(child: Text(failure.message, key: const Key('signs-notice-text'))),
+            ],
+          ),
+          if (!failure.accessEnded)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(key: const Key('signs-notice-retry'), onPressed: onRetry, child: const Text('Try again')),
+            ),
+        ],
       ),
     );
   }

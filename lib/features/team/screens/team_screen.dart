@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../owner/logic/owner_rules.dart' show OrgVenue, siteUrl;
 import '../../owner/providers/owner_providers.dart';
 import '../../owner/widgets/setup_common.dart' show confirmRemove;
@@ -178,16 +181,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final e = error is TeamLoadException ? error : const TeamLoadException(unavailable: false, accessEnded: false);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(e.message, key: const Key('team-error'), textAlign: TextAlign.center),
-            if (!e.unavailable) ...[
-              const SizedBox(height: 12),
-              OutlinedButton(key: const Key('team-retry'), onPressed: _refresh, child: const Text('Try again')),
+        padding: const EdgeInsets.all(BuSpace.page),
+        child: BuCard(
+          padding: const EdgeInsets.all(BuSpace.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(e.message, key: const Key('team-error'), textAlign: TextAlign.center),
+              if (!e.unavailable) ...[
+                const SizedBox(height: BuSpace.m),
+                OutlinedButton(key: const Key('team-retry'), onPressed: _refresh, child: const Text('Try again')),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -211,39 +217,41 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final noVenues = venues != null && venues.isEmpty;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
-        Text('Appoint managers and staff, give temporary access for a night or a shift, and remove access at any time.', style: theme.textTheme.bodyMedium),
-        const SizedBox(height: 12),
+        const BuPageHeader(eyebrow: 'People', title: 'Team'),
+        const SizedBox(height: BuSpace.xs),
+        Text('Appoint managers and staff, give temporary access for a night or a shift, and remove access at any time.', style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+        const SizedBox(height: BuSpace.l),
         Wrap(
-          spacing: 8,
-          runSpacing: 4,
+          spacing: BuSpace.s,
+          runSpacing: BuSpace.s,
           children: [
             FilledButton.icon(
               key: const Key('invite-button'),
               onPressed: venues == null || noVenues ? null : () => _invite(venues),
-              icon: const Icon(Icons.person_add_alt_1, size: 18),
+              icon: const Icon(Ionicons.person_add_outline, size: 18),
               label: const Text('Invite someone'),
             ),
             OutlinedButton.icon(
               key: const Key('shifts-button'),
               onPressed: venues == null || noVenues ? null : () => _shifts(venues),
-              icon: const Icon(Icons.schedule, size: 18),
+              icon: const Icon(Ionicons.time_outline, size: 18),
               label: const Text('Shifts'),
             ),
           ],
         ),
         if (noVenues)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text('Add a venue first. People are invited to work at a club.', key: const Key('no-venues'), style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFFFFB300))),
+            padding: const EdgeInsets.only(top: BuSpace.s),
+            child: Text('Add a venue first. People are invited to work at a club.', key: const Key('no-venues'), style: theme.textTheme.bodySmall?.copyWith(color: context.bu.amber)),
           ),
-        const SizedBox(height: 16),
+        const SizedBox(height: BuSpace.xl),
         if (_issued != null) InviteResultCard(invite: _issued!, openUri: widget.openUri, onClose: () => setState(() => _issued = null)),
         _heading(context, 'Invitations waiting (${waiting.length})'),
         if (waiting.isEmpty) Text('No invitations are waiting.', key: const Key('no-waiting'), style: theme.textTheme.bodySmall),
         for (final inv in waiting) _invitationCard(context, inv),
-        const SizedBox(height: 20),
+        const SizedBox(height: BuSpace.xl),
         _heading(context, 'Team (${split.current.length})'),
         if (split.current.isEmpty) Text('Nobody is on the team yet.', key: const Key('no-team'), style: theme.textTheme.bodySmall),
         for (final m in split.current) _memberCard(context, m),
@@ -278,8 +286,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   }
 
   Widget _heading(BuildContext context, String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text.toUpperCase(), style: Theme.of(context).textTheme.labelMedium?.copyWith(letterSpacing: 0.8)),
+        padding: const EdgeInsets.only(bottom: BuSpace.s),
+        child: BuEyebrow(text),
       );
 
   Widget _invitationCard(BuildContext context, TeamInvitation inv) {
@@ -288,93 +296,87 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final linkNote = inv.state == InvitationState.expired
         ? 'Link expired'
         : (expires == null ? 'Link is waiting' : 'Link works until ${DateFormat.yMMMd('en_US').format(expires.toLocal())}');
-    return Card(
+    return BuCard(
       key: Key('invitation-${inv.invitationId}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(inv.email, style: theme.textTheme.titleSmall, overflow: TextOverflow.ellipsis)),
-                TeamBadge(label: inv.state.label, tone: inv.state.tone),
-              ],
-            ),
-            Text('${roleLabel(inv.role)} · ${describeScope(inv.venueName, inv.eventTitle, inv.shiftName)}', style: theme.textTheme.bodySmall),
-            if (inv.isTemporary || inv.renewalRequested)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    if (inv.isTemporary) TeamBadge(key: Key('temporary-${inv.invitationId}'), label: 'Temporary link', tone: Tone.info),
-                    if (inv.isTemporary) TeamBadge(key: Key('confirmed-${inv.invitationId}'), label: inv.identityConfirmed ? 'Address confirmed' : 'Address not confirmed yet', tone: inv.identityConfirmed ? Tone.success : Tone.neutral),
-                    if (inv.renewalRequested) TeamBadge(key: Key('renewal-${inv.invitationId}'), label: 'Asked for a new link', tone: Tone.warning),
-                  ],
-                ),
+      margin: const EdgeInsets.only(bottom: BuSpace.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(inv.email, style: theme.textTheme.titleSmall, overflow: TextOverflow.ellipsis)),
+              TeamBadge(label: inv.state.label, tone: inv.state.tone),
+            ],
+          ),
+          Text('${roleLabel(inv.role)} · ${describeScope(inv.venueName, inv.eventTitle, inv.shiftName)}', style: theme.textTheme.bodySmall),
+          if (inv.isTemporary || inv.renewalRequested)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  if (inv.isTemporary) TeamBadge(key: Key('temporary-${inv.invitationId}'), label: 'Temporary link', tone: Tone.info),
+                  if (inv.isTemporary) TeamBadge(key: Key('confirmed-${inv.invitationId}'), label: inv.identityConfirmed ? 'Address confirmed' : 'Address not confirmed yet', tone: inv.identityConfirmed ? Tone.success : Tone.neutral),
+                  if (inv.renewalRequested) TeamBadge(key: Key('renewal-${inv.invitationId}'), label: 'Asked for a new link', tone: Tone.warning),
+                ],
               ),
-            if (inv.renewalRequested && inv.renewalNote != null) Text('"${inv.renewalNote}"', key: Key('renewal-note-${inv.invitationId}'), style: theme.textTheme.bodySmall),
-            Text(
-              'Access: ${describeAccess(inv.accessStartAt, inv.accessEndAt)} · $linkNote${inv.emailsSent > 0 ? ' · Emailed ${inv.emailsSent} time${inv.emailsSent == 1 ? '' : 's'}' : ''}',
-              style: theme.textTheme.bodySmall,
             ),
-            Row(
-              children: [
-                if (inv.state.canSendNewLink)
-                  TextButton(
-                    key: Key('new-link-${inv.invitationId}'),
-                    onPressed: _busyId == inv.invitationId ? null : () => _newLink(inv),
-                    child: Text(_busyId == inv.invitationId ? 'Sending…' : 'Send a new link'),
-                  ),
-                if (inv.state.canCancel) TextButton(key: Key('cancel-${inv.invitationId}'), onPressed: () => _cancel(inv), child: const Text('Cancel invitation')),
-              ],
-            ),
-          ],
-        ),
+          if (inv.renewalRequested && inv.renewalNote != null) Text('"${inv.renewalNote}"', key: Key('renewal-note-${inv.invitationId}'), style: theme.textTheme.bodySmall),
+          Text(
+            'Access: ${describeAccess(inv.accessStartAt, inv.accessEndAt)} · $linkNote${inv.emailsSent > 0 ? ' · Emailed ${inv.emailsSent} time${inv.emailsSent == 1 ? '' : 's'}' : ''}',
+            style: theme.textTheme.bodySmall,
+          ),
+          Row(
+            children: [
+              if (inv.state.canSendNewLink)
+                TextButton(
+                  key: Key('new-link-${inv.invitationId}'),
+                  onPressed: _busyId == inv.invitationId ? null : () => _newLink(inv),
+                  child: Text(_busyId == inv.invitationId ? 'Sending…' : 'Send a new link'),
+                ),
+              if (inv.state.canCancel) TextButton(key: Key('cancel-${inv.invitationId}'), onPressed: () => _cancel(inv), child: const Text('Cancel invitation')),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _memberCard(BuildContext context, TeamMember m) {
     final theme = Theme.of(context);
-    return Card(
+    return BuCard(
       key: Key('member-${m.membershipId}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(displayName(m.name, m.email), style: theme.textTheme.titleSmall, overflow: TextOverflow.ellipsis)),
-                TeamBadge(label: m.state.label, tone: m.state.tone),
-              ],
-            ),
-            if (m.name != null && m.email != null) Text(m.email!, style: theme.textTheme.bodySmall),
-            Text('${roleLabel(m.role)} · ${describeScope(m.venueName, m.eventTitle, m.shiftName)}', style: theme.textTheme.bodySmall),
-            Text('Access: ${describeAccess(m.accessStartAt, m.accessEndAt)}', style: theme.textTheme.bodySmall),
-            if (canRemoveMember(m.role, m.state))
-              Align(
-                alignment: Alignment.centerRight,
-                child: Wrap(
-                  children: [
-                    if (canChangeRole(m.role, m.state, venueId: m.venueId))
-                      TextButton(key: Key('change-role-${m.membershipId}'), onPressed: _busyId == m.membershipId ? null : () => _changeRole(m), child: const Text('Change role')),
-                    TextButton(
-                      key: Key('remove-${m.membershipId}'),
-                      style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF5350)),
-                      onPressed: () => _remove(m),
-                      child: const Text('Remove'),
-                    ),
-                  ],
-                ),
+      margin: const EdgeInsets.only(bottom: BuSpace.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(displayName(m.name, m.email), style: theme.textTheme.titleSmall, overflow: TextOverflow.ellipsis)),
+              TeamBadge(label: m.state.label, tone: m.state.tone),
+            ],
+          ),
+          if (m.name != null && m.email != null) Text(m.email!, style: theme.textTheme.bodySmall),
+          Text('${roleLabel(m.role)} · ${describeScope(m.venueName, m.eventTitle, m.shiftName)}', style: theme.textTheme.bodySmall),
+          Text('Access: ${describeAccess(m.accessStartAt, m.accessEndAt)}', style: theme.textTheme.bodySmall),
+          if (canRemoveMember(m.role, m.state))
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                children: [
+                  if (canChangeRole(m.role, m.state, venueId: m.venueId))
+                    TextButton(key: Key('change-role-${m.membershipId}'), onPressed: _busyId == m.membershipId ? null : () => _changeRole(m), child: const Text('Change role')),
+                  TextButton(
+                    key: Key('remove-${m.membershipId}'),
+                    style: TextButton.styleFrom(foregroundColor: context.bu.red),
+                    onPressed: () => _remove(m),
+                    child: const Text('Remove'),
+                  ),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
