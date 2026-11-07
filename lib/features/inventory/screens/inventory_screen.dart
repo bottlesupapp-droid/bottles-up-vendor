@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/ui/bu_kit.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
@@ -144,14 +147,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       child: ListView(
         key: const Key('inventory-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Row(
-            children: [
-              Expanded(child: Text('Inventory', style: theme.textTheme.headlineSmall)),
-              TextButton.icon(key: const Key('stock-history-all'), onPressed: () => _history(null), icon: const Icon(Icons.history, size: 18), label: const Text('History')),
-            ],
-          ),
+          BuPageHeader(eyebrow: 'Stock', title: 'Inventory', trailing: TextButton.icon(key: const Key('stock-history-all'), onPressed: () => _history(null), icon: const Icon(Ionicons.time_outline, size: 18), label: const Text('History'))),
           if (widget.workspace.venueName != null && widget.workspace.venueId != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
           if (widget.workspace.venueId == null)
             TextButton(key: const Key('inventory-change-club'), onPressed: () => setState(() => _chosenVenue = null), child: const Text('Choose another club')),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
@@ -122,7 +123,7 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
         contentPadding: EdgeInsets.zero,
         title: Text(layout.hasValue ? admissionsLine(current) : 'Admissions included'),
         subtitle: const Text('How many guests a booking of this table includes.'),
-        trailing: const Icon(Icons.edit_outlined),
+        trailing: const Icon(Ionicons.create_outline),
         enabled: layout.hasValue,
         onTap: () async {
           final saved = await showDialog<bool>(
@@ -163,7 +164,6 @@ class _TableTypeFormScreenState extends ConsumerState<TableTypeFormScreen> {
           hintText: hint,
           helperText: helper,
           helperMaxLines: 2,
-          border: const OutlineInputBorder(),
           counterText: '',
         ),
       ),

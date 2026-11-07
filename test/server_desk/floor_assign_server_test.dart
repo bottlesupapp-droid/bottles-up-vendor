@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bottles_up_vendor/core/theme/app_tokens.dart';
 import 'package:bottles_up_vendor/features/floor/providers/floor_providers.dart';
 import 'package:bottles_up_vendor/features/floor/screens/floor_screen.dart';
 import 'package:bottles_up_vendor/features/server_desk/logic/server_desk_rules.dart';
@@ -10,6 +11,7 @@ import 'package:bottles_up_vendor/features/team/services/team_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ionicons/ionicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../floor/fake_floor_backend.dart';
@@ -220,7 +222,7 @@ void main() {
     desk.staff['m-old'] = 'revoked';
     await open(tester, host());
     expect(find.text('Server: Old Olga (access ended)'), findsOneWidget);
-    expect(tester.widget<Text>(find.byKey(const Key('server-b1'))).style?.color, const Color(0xFFFFB300), reason: 'amber, so the table does not look covered');
+    expect(tester.widget<Text>(find.byKey(const Key('server-b1'))).style?.color, BuTokens.dark.amber, reason: 'amber, so the table does not look covered');
     // They cannot be offered again, but the table can be given to someone else.
     expect(find.byKey(const Key('assign-b1')), findsOneWidget);
   });
@@ -297,8 +299,8 @@ void main() {
     expect(find.byKey(const Key('pick-m-old')), findsNothing);
     expect(find.byKey(const Key('pick-m-door')), findsNothing);
     expect(find.text('Starts later'), findsOneWidget);
-    expect(find.descendant(of: find.byKey(const Key('pick-m-sam')), matching: find.byIcon(Icons.check)), findsOneWidget, reason: 'the current server is ticked');
-    expect(find.descendant(of: find.byKey(const Key('pick-m-zoe')), matching: find.byIcon(Icons.check)), findsNothing);
+    expect(find.descendant(of: find.byKey(const Key('pick-m-sam')), matching: find.byIcon(Ionicons.checkmark)), findsOneWidget, reason: 'the current server is ticked');
+    expect(find.descendant(of: find.byKey(const Key('pick-m-zoe')), matching: find.byIcon(Ionicons.checkmark)), findsNothing);
     await tester.tap(find.byKey(const Key('pick-m-zoe')));
     await tester.pumpAndSettle();
     expect(desk.assignments['b1'], 'm-zoe', reason: 'the person tapped, not the first in the list');

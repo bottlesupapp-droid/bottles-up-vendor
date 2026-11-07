@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/ui/bu_kit.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/venue_picker.dart';
@@ -93,7 +94,7 @@ class _BottleSignsScreenState extends ConsumerState<BottleSignsScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          Text('Bottle signs', style: theme.textTheme.headlineSmall),
+          const BuPageHeader(eyebrow: 'Service', title: 'Bottle signs'),
           const SizedBox(height: 4),
           Text('A short sign that goes with a bottle to the table. Servers write it on the order.', style: theme.textTheme.bodyMedium),
           OpsAsyncView<SignSettings>(

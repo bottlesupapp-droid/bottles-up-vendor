@@ -65,7 +65,7 @@ class _IncludedAdmissionsDialogState extends ConsumerState<IncludedAdmissionsDia
             controller: _text,
             enabled: !_busy,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: 'Guests included', errorText: _problem, errorMaxLines: 3, border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: 'Guests included', errorText: _problem, errorMaxLines: 3),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../../core/utils/date_time_picker.dart';
 import '../../owner/logic/owner_rules.dart' show OrgVenue;
@@ -99,8 +100,8 @@ class _ShiftsScreenState extends ConsumerState<ShiftsScreen> {
                 onChanged: (v) => setState(() => _venueId = v ?? _venueId),
               ),
             TextField(key: const Key('shift-name'), controller: _name, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Name', hintText: 'For example Friday night'), onChanged: (_) => setState(() => _problem = null)),
-            ListTile(key: const Key('shift-start'), contentPadding: EdgeInsets.zero, title: const Text('Starts'), subtitle: Text(_start == null ? 'Choose' : describeAccessTime(_start!)), onTap: () => _pick(true), trailing: const Icon(Icons.schedule, size: 18)),
-            ListTile(key: const Key('shift-end'), contentPadding: EdgeInsets.zero, title: const Text('Ends'), subtitle: Text(_end == null ? 'Choose' : describeAccessTime(_end!)), onTap: () => _pick(false), trailing: const Icon(Icons.schedule, size: 18)),
+            ListTile(key: const Key('shift-start'), contentPadding: EdgeInsets.zero, title: const Text('Starts'), subtitle: Text(_start == null ? 'Choose' : describeAccessTime(_start!)), onTap: () => _pick(true), trailing: const Icon(Ionicons.time_outline, size: 18)),
+            ListTile(key: const Key('shift-end'), contentPadding: EdgeInsets.zero, title: const Text('Ends'), subtitle: Text(_end == null ? 'Choose' : describeAccessTime(_end!)), onTap: () => _pick(false), trailing: const Icon(Ionicons.time_outline, size: 18)),
             if (_problem != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(_problem!, key: const Key('shift-problem'), style: TextStyle(color: theme.colorScheme.error))),
             const SizedBox(height: 8),
             FilledButton(key: const Key('shift-save'), onPressed: _saving ? null : _save, child: Text(_saving ? 'Saving…' : 'Add shift')),

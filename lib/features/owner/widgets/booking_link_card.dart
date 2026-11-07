@@ -4,6 +4,7 @@ import 'package:ionicons/ionicons.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../logic/owner_rules.dart';
 
 Future<void> _defaultCopy(String text) => Clipboard.setData(ClipboardData(text: text));
@@ -37,7 +38,7 @@ class BookingLinkCard extends StatelessWidget {
     final theme = Theme.of(context);
     final live = venue.isLive;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
         Text('Booking link', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
@@ -89,7 +90,7 @@ class BookingLinkCard extends StatelessWidget {
         Text(
           linkNote(venue.status),
           key: const Key('link-note'),
-          style: theme.textTheme.bodyMedium?.copyWith(color: live ? const Color(0xFF66BB6A) : const Color(0xFFFFB300)),
+          style: theme.textTheme.bodyMedium?.copyWith(color: live ? BuTokens.dark.green : BuTokens.dark.amber),
         ),
         const SizedBox(height: 20),
         Center(

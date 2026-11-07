@@ -1,7 +1,9 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../profile/screens/privacy_policy_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../owner/logic/owner_rules.dart' show siteUrl;
 import '../../workspace/models/workspace.dart';
@@ -52,37 +54,37 @@ class WorkspaceSettingsScreen extends StatelessWidget {
     final signedIn = email ?? _signedInEmail();
     return ListView(
       key: const Key('settings-list'),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
         ListTile(
           key: const Key('settings-account'),
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.person_outline),
+          leading: const Icon(Ionicons.person_outline),
           title: Text(signedIn ?? 'Signed in'),
           subtitle: const Text('Your account'),
         ),
         ListTile(
           key: const Key('settings-acting-as'),
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.badge_outlined),
+          leading: const Icon(Ionicons.id_card_outline),
           title: Text('${workspace.role.label} · ${workspace.scopeLabel}'),
           subtitle: Text(workspace.orgName.isEmpty ? 'Working as' : 'Working as, for ${workspace.orgName}'),
         ),
         ListTile(
           key: const Key('settings-privacy'),
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.privacy_tip_outlined),
+          leading: const Icon(Ionicons.shield_checkmark_outline),
           title: const Text('Privacy policy'),
-          trailing: const Icon(Icons.open_in_new, size: 18),
+          trailing: const Icon(Ionicons.open_outline, size: 18),
           onTap: () => _privacy(context),
         ),
         ListTile(
           key: const Key('settings-collected'),
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.fact_check_outlined),
+          leading: const Icon(Ionicons.checkbox_outline),
           title: const Text('What this app collects'),
           subtitle: const Text('A plain list, not the legal policy.'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const Icon(Ionicons.chevron_forward),
           onTap: () => Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
         ),
         const SizedBox(height: 12),

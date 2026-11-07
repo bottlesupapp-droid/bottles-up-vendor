@@ -244,7 +244,7 @@ class _AcceptInvitationScreenState extends ConsumerState<AcceptInvitationScreen>
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               textAlign: TextAlign.center,
               style: theme.textTheme.headlineSmall?.copyWith(letterSpacing: 6),
-              decoration: const InputDecoration(labelText: '6-digit code', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: '6-digit code'),
               onChanged: (_) => setState(() => _codeMessage = null),
               onSubmitted: (_) => _confirm(),
             ),

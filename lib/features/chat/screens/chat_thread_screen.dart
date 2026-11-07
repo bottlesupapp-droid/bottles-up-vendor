@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../workspace/models/workspace_role.dart';
@@ -62,9 +63,9 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (m.pinned)
-              ListTile(key: const Key('chat-unpin-action'), leading: const Icon(Icons.push_pin_outlined), title: const Text('Unpin'), onTap: () => Navigator.of(context).pop('unpin'))
+              ListTile(key: const Key('chat-unpin-action'), leading: const Icon(Ionicons.pin_outline), title: const Text('Unpin'), onTap: () => Navigator.of(context).pop('unpin'))
             else
-              ListTile(key: const Key('chat-pin-action'), leading: const Icon(Icons.push_pin_outlined), title: const Text('Pin at the top of this chat'), onTap: () => Navigator.of(context).pop('pin')),
+              ListTile(key: const Key('chat-pin-action'), leading: const Icon(Ionicons.pin_outline), title: const Text('Pin at the top of this chat'), onTap: () => Navigator.of(context).pop('pin')),
           ],
         ),
       ),
@@ -103,10 +104,10 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
               color: theme.colorScheme.secondaryContainer,
               child: Row(
                 children: [
-                  const Icon(Icons.push_pin, size: 16),
+                  const Icon(Ionicons.pin, size: 16),
                   const SizedBox(width: 8),
                   Expanded(child: Text(pinnedBody, maxLines: 3, overflow: TextOverflow.ellipsis)),
-                  if (_canPin) IconButton(key: const Key('chat-unpin'), tooltip: 'Unpin', icon: const Icon(Icons.close, size: 18), onPressed: () => _pin(null)),
+                  if (_canPin) IconButton(key: const Key('chat-unpin'), tooltip: 'Unpin', icon: const Icon(Ionicons.close, size: 18), onPressed: () => _pin(null)),
                 ],
               ),
             ),
@@ -190,7 +191,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (m.pinned) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(Icons.push_pin, size: 12)),
+                  if (m.pinned) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(Ionicons.pin, size: 12)),
                   Text(chatTimeLabel(m.createdAt, widget.clock()), style: theme.textTheme.labelSmall),
                 ],
               ),
@@ -265,7 +266,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
                 ),
               ),
             ),
-            IconButton(key: const Key('chat-send'), tooltip: 'Send', icon: Icon(Icons.send, color: theme.colorScheme.primary), onPressed: _send),
+            IconButton(key: const Key('chat-send'), tooltip: 'Send', icon: Icon(Ionicons.send, color: theme.colorScheme.primary), onPressed: _send),
           ],
         ),
       ),

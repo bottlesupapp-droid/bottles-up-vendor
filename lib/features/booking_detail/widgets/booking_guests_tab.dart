@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../server_desk/widgets/desk_chip.dart';
 import '../logic/booking_detail_rules.dart';
@@ -62,8 +63,8 @@ class BookingGuestsTab extends ConsumerWidget {
                     title: Text(g.holderName),
                     subtitle: const Text('Booking holder'),
                     trailing: g.holderIsIn
-                        ? DeskChip(key: const Key('holder-in'), text: 'In ${_when(g.holderCheckedInAt!)}', color: const Color(0xFF66BB6A))
-                        : const DeskChip(key: Key('holder-not-in'), text: 'Not in yet', color: Color(0xFF9E9E9E)),
+                        ? DeskChip(key: const Key('holder-in'), text: 'In ${_when(g.holderCheckedInAt!)}', color: BuTokens.dark.green)
+                        : DeskChip(key: Key('holder-not-in'), text: 'Not in yet', color: BuTokens.dark.muted),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -75,8 +76,8 @@ class BookingGuestsTab extends ConsumerWidget {
                       title: Text(guest.name),
                       subtitle: Text(guest.ticketSent ? 'Ticket e-mailed' : 'Ticket not e-mailed yet'),
                       trailing: guest.isIn
-                          ? DeskChip(key: Key('guest-in-${guest.id}'), text: 'In ${_when(guest.checkedInAt!)}', color: const Color(0xFF66BB6A))
-                          : DeskChip(key: Key('guest-not-in-${guest.id}'), text: 'Not in yet', color: const Color(0xFF9E9E9E)),
+                          ? DeskChip(key: Key('guest-in-${guest.id}'), text: 'In ${_when(guest.checkedInAt!)}', color: BuTokens.dark.green)
+                          : DeskChip(key: Key('guest-not-in-${guest.id}'), text: 'Not in yet', color: BuTokens.dark.muted),
                     ),
                   ),
                 const SizedBox(height: 12),

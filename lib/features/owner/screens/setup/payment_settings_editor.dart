@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_tokens.dart';
 import '../../logic/payment_rules.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
@@ -120,7 +121,7 @@ class _PaymentSettingsEditorState extends ConsumerState<PaymentSettingsEditor> {
           final selected = _picked ?? saved.mode;
           return ListView(
             key: const Key('payment-settings'),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
             children: [
               Text('Bottles', style: theme.textTheme.titleMedium),
               const SizedBox(height: 4),

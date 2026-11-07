@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../logic/server_desk_rules.dart';
 
 /// What the manager chose in the picker: a server to give the table to, or nobody (take the server off).
@@ -43,7 +44,7 @@ Future<ServerChoice?> _showPicker(BuildContext context, List<ServerOption> optio
                   contentPadding: EdgeInsets.zero,
                   title: Text(o.label),
                   subtitle: o.starts ? const Text('Starts later') : null,
-                  trailing: o.membershipId == currentMembershipId ? const Icon(Icons.check) : null,
+                  trailing: o.membershipId == currentMembershipId ? const Icon(Ionicons.checkmark) : null,
                   onTap: () => Navigator.of(sheet).pop(ServerChoice(o.membershipId)),
                 ),
               if (currentMembershipId != null && noneLabel != null)
@@ -89,7 +90,7 @@ class AssignServerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final warn = unavailable ? const Color(0xFFFFB300) : null;
+    final warn = unavailable ? BuTokens.dark.amber : null;
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Row(

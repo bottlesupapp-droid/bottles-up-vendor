@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/widgets/setup_common.dart' show ProblemsBox, say;
 import '../logic/table_map_rules.dart';
@@ -83,7 +84,7 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
             enabled: !_busy,
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() => _problems = const []),
-            decoration: InputDecoration(labelText: label, suffixText: '%', border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: label, suffixText: '%'),
           ),
         ),
       );
@@ -167,7 +168,7 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
           final purposes = purposesFor(depositIsCredit: s.depositIsCredit);
           return ListView(
             key: const Key('deposit-terms'),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
             children: [
               Text(
                 s.terms == null
@@ -207,7 +208,6 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
                         final n = int.tryParse(_pct.text.trim());
                         return n != null && n >= 1 && n <= 99 ? 'The organizer gets ${100 - n}%.' : 'Between 1 and 99. The organizer gets the rest.';
                       }(),
-                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),

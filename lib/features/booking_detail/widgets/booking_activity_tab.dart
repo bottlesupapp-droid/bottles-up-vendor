@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../logic/booking_detail_rules.dart';
@@ -58,7 +59,7 @@ class BookingActivityTab extends ConsumerWidget {
                         ListTile(
                           key: Key('activity-$i'),
                           contentPadding: EdgeInsets.zero,
-                          leading: Icon(entries[i].kind == 'scan' ? Icons.qr_code_scanner : Icons.history, size: 20),
+                          leading: Icon(entries[i].kind == 'scan' ? Ionicons.qr_code_outline : Ionicons.time_outline, size: 20),
                           title: Text(activitySentence(entries[i])),
                           subtitle: Text('${entries[i].actor} · ${DateFormat('MMM d, HH:mm').format(entries[i].at)}'),
                         ),

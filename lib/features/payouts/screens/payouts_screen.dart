@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../server_desk/widgets/desk_chip.dart';
@@ -67,10 +68,10 @@ class PayoutsScreen extends ConsumerWidget {
   Widget _account(ThemeData theme, MyPayouts p) {
     final a = p.account;
     final color = switch (a.status) {
-      PayoutAccountStatus.ready => const Color(0xFF66BB6A),
-      PayoutAccountStatus.underReview => const Color(0xFF42A5F5),
-      PayoutAccountStatus.actionRequired => const Color(0xFFEF5350),
-      PayoutAccountStatus.incomplete => const Color(0xFFFFB300),
+      PayoutAccountStatus.ready => BuTokens.dark.green,
+      PayoutAccountStatus.underReview => BuTokens.dark.orangeSoft,
+      PayoutAccountStatus.actionRequired => BuTokens.dark.red,
+      PayoutAccountStatus.incomplete => BuTokens.dark.amber,
     };
     return Card(
       key: const Key('payout-account'),
@@ -129,10 +130,10 @@ class PayoutsScreen extends ConsumerWidget {
 
   Widget _item(ThemeData theme, PayoutItem i) {
     final color = switch (i.status) {
-      PayoutItemStatus.paid => const Color(0xFF66BB6A),
-      PayoutItemStatus.processing => const Color(0xFF42A5F5),
-      PayoutItemStatus.failed => const Color(0xFFEF5350),
-      PayoutItemStatus.pending => const Color(0xFFFFB300),
+      PayoutItemStatus.paid => BuTokens.dark.green,
+      PayoutItemStatus.processing => BuTokens.dark.orangeSoft,
+      PayoutItemStatus.failed => BuTokens.dark.red,
+      PayoutItemStatus.pending => BuTokens.dark.amber,
     };
     return Card(
       key: Key('payout-${i.id}'),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../../core/theme/app_tokens.dart';
 import '../../logic/venue_profile_rules.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
@@ -63,7 +65,7 @@ class _FloorsEditorState extends ConsumerState<FloorsEditor> {
     final floors = ref.watch(floorsProvider(widget.venueId));
     return Scaffold(
       appBar: AppBar(title: const Text('Floor plans')),
-      floatingActionButton: FloatingActionButton.extended(key: const Key('add-floor'), onPressed: () => _openForm(null), icon: const Icon(Icons.add), label: const Text('Add a floor')),
+      floatingActionButton: FloatingActionButton.extended(key: const Key('add-floor'), onPressed: () => _openForm(null), icon: const Icon(Ionicons.add), label: const Text('Add a floor')),
       body: floors.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => EditorLoadError(error: e, onRetry: () => ref.invalidate(floorsProvider(widget.venueId))),
@@ -91,8 +93,8 @@ class _FloorsEditorState extends ConsumerState<FloorsEditor> {
                       height: 140,
                       width: double.infinity,
                       child: f.imageUrl.isEmpty
-                          ? const Center(child: Icon(Icons.image_outlined))
-                          : Image.network(f.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined))),
+                          ? const Center(child: Icon(Ionicons.image_outline))
+                          : Image.network(f.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Ionicons.image_outline))),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
@@ -109,7 +111,7 @@ class _FloorsEditorState extends ConsumerState<FloorsEditor> {
                         TextButton(key: Key('edit-${f.floorId}'), onPressed: () => _openForm(f), child: const Text('Edit')),
                         TextButton(
                           key: Key('remove-${f.floorId}'),
-                          style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF5350)),
+                          style: TextButton.styleFrom(foregroundColor: BuTokens.dark.red),
                           onPressed: () => _remove(f),
                           child: const Text('Remove'),
                         ),

@@ -3,7 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../providers/owner_providers.dart';
 import '../services/media_service.dart';
 
@@ -95,8 +97,8 @@ class _PhotoFieldState extends ConsumerState<PhotoField> {
               decoration: BoxDecoration(border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)), borderRadius: BorderRadius.circular(8)),
               clipBehavior: Clip.antiAlias,
               child: widget.value.isEmpty
-                  ? const Icon(Icons.image_outlined)
-                  : Image.network(widget.value, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_outlined)),
+                  ? const Icon(Ionicons.image_outline)
+                  : Image.network(widget.value, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Ionicons.image_outline)),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -114,7 +116,7 @@ class _PhotoFieldState extends ConsumerState<PhotoField> {
           ],
         ),
         if (widget.hint != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(widget.hint!, style: theme.textTheme.bodySmall)),
-        if (_error != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(_error!, key: const Key('photo-error'), style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFFEF5350)))),
+        if (_error != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(_error!, key: const Key('photo-error'), style: theme.textTheme.bodySmall?.copyWith(color: BuTokens.dark.red))),
       ],
     );
   }
@@ -133,7 +135,7 @@ class PhotoThumb extends StatelessWidget {
         child: SizedBox(
           height: height,
           width: double.infinity,
-          child: Image.network(url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined))),
+          child: Image.network(url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Ionicons.image_outline))),
         ),
       );
 }

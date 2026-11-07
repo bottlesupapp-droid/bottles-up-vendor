@@ -100,24 +100,24 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        TextField(key: const Key('field-name'), controller: _name, maxLength: 140, decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder(), counterText: '')),
+        TextField(key: const Key('field-name'), controller: _name, maxLength: 140, decoration: const InputDecoration(labelText: 'Name', counterText: '')),
         const SizedBox(height: 12),
         TextField(
           key: const Key('field-description'),
           controller: _description,
           minLines: 3,
           maxLines: 6,
-          decoration: const InputDecoration(labelText: 'Description (optional)', alignLabelWithHint: true, border: OutlineInputBorder()),
+          decoration: const InputDecoration(labelText: 'Description (optional)', alignLabelWithHint: true),
         ),
         const SizedBox(height: 12),
-        TextField(key: const Key('field-address'), controller: _address, decoration: const InputDecoration(labelText: 'Address (optional)', border: OutlineInputBorder())),
+        TextField(key: const Key('field-address'), controller: _address, decoration: const InputDecoration(labelText: 'Address (optional)')),
         if (widget.profile.timeZoneSupported) ...[
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             key: const Key('field-timezone'),
             initialValue: _zone,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Time zone', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Time zone'),
             items: [for (final c in timeZoneChoicesFor(widget.profile.effectiveTimeZone)) DropdownMenuItem(value: c.zone, child: Text(c.label, overflow: TextOverflow.ellipsis))],
             onChanged: _saving ? null : (z) => setState(() => _zone = z ?? _zone),
           ),

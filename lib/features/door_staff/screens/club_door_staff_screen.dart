@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/providers/owner_providers.dart';
 import '../../owner/services/owner_service.dart';
@@ -154,7 +155,7 @@ class _ClubDoorStaffScreenState extends ConsumerState<ClubDoorStaffScreen> {
       child: ListView(
         key: Key('club-door-$venueId'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
           Text('Organizers\' door staff', style: theme.textTheme.titleLarge),
           const SizedBox(height: 4),

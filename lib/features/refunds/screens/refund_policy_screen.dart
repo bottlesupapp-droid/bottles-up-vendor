@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/widgets/setup_common.dart' show ProblemsBox, say;
 import '../logic/refund_rules.dart';
@@ -134,7 +136,7 @@ class _RefundPolicyScreenState extends ConsumerState<RefundPolicyScreen> {
           final preview = previewLines(_form);
           return ListView(
             key: const Key('refund-policy'),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
             children: [
               Text(
                 saved.hasPolicy
@@ -167,7 +169,7 @@ class _RefundPolicyScreenState extends ConsumerState<RefundPolicyScreen> {
                           enabled: !_busy,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => _changed(),
-                          decoration: const InputDecoration(labelText: 'Hours before arrival', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(labelText: 'Hours before arrival'),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -178,17 +180,17 @@ class _RefundPolicyScreenState extends ConsumerState<RefundPolicyScreen> {
                           enabled: !_busy,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => _changed(),
-                          decoration: const InputDecoration(labelText: 'Percent back', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(labelText: 'Percent back'),
                         ),
                       ),
-                      IconButton(key: Key('rule-$i-remove'), tooltip: 'Remove this rule', onPressed: _busy ? null : () => _remove(i), icon: const Icon(Icons.remove_circle_outline)),
+                      IconButton(key: Key('rule-$i-remove'), tooltip: 'Remove this rule', onPressed: _busy ? null : () => _remove(i), icon: const Icon(Ionicons.remove_circle_outline)),
                     ],
                   ),
                 ),
               Wrap(
                 spacing: 8,
                 children: [
-                  OutlinedButton.icon(key: const Key('rule-add'), onPressed: _busy || _rules.length >= maxRefundRules ? null : _add, icon: const Icon(Icons.add, size: 18), label: const Text('Add a rule')),
+                  OutlinedButton.icon(key: const Key('rule-add'), onPressed: _busy || _rules.length >= maxRefundRules ? null : _add, icon: const Icon(Ionicons.add, size: 18), label: const Text('Add a rule')),
                   if (_rules.isNotEmpty)
                     TextButton(
                       key: const Key('rule-clear'),
@@ -227,7 +229,7 @@ class _RefundPolicyScreenState extends ConsumerState<RefundPolicyScreen> {
                 maxLines: 2,
                 maxLength: maxPolicyNote,
                 onChanged: (_) => _changed(),
-                decoration: const InputDecoration(labelText: 'A note for guests (optional)', border: OutlineInputBorder(), counterText: ''),
+                decoration: const InputDecoration(labelText: 'A note for guests (optional)', counterText: ''),
               ),
               const SizedBox(height: 16),
               Text('What guests will read', style: theme.textTheme.titleMedium),

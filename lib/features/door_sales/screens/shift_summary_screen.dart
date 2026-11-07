@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../door/logic/door_rules.dart';
 import '../../door/providers/door_providers.dart';
 import '../../door/services/door_service.dart';
@@ -52,7 +53,7 @@ class _Body extends ConsumerWidget {
     final theme = Theme.of(context);
     final summary = ref.watch(shiftSummaryProvider(event.eventId));
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
         DoorEventBar(
           events: events,

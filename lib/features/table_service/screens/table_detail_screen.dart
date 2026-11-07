@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../bottle_signs/providers/bottle_sign_providers.dart';
 import '../../bottle_signs/widgets/signs_load_notice.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
@@ -245,8 +247,8 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
                     child: Wrap(
                       spacing: 6,
                       children: [
-                        if (m.closedOut) const DeskChip(key: Key('closed-out'), text: 'Closed out', color: Color(0xFF9E9E9E)),
-                        if (m.closeoutRequested && !m.closedOut) const DeskChip(key: Key('closeout-requested'), text: 'Closing asked for', color: Color(0xFFFFB300)),
+                        if (m.closedOut) DeskChip(key: Key('closed-out'), text: 'Closed out', color: BuTokens.dark.muted),
+                        if (m.closeoutRequested && !m.closedOut) DeskChip(key: Key('closeout-requested'), text: 'Closing asked for', color: BuTokens.dark.amber),
                       ],
                     ),
                   ),
@@ -262,7 +264,7 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
           const SizedBox(height: 8),
         ],
         if (m.canRecord)
-          FilledButton.icon(key: const Key('record-payment'), onPressed: () => _record(m), icon: const Icon(Icons.add_card_outlined), label: const Text('Record a payment'))
+          FilledButton.icon(key: const Key('record-payment'), onPressed: () => _record(m), icon: const Icon(Ionicons.card_outline), label: const Text('Record a payment'))
         else if (m.closedOut)
           Text('This table has been closed out. Nothing more can be recorded or changed.', key: const Key('closed-note'), style: theme.textTheme.bodySmall),
       ]);
@@ -278,7 +280,7 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
         children: [
           Expanded(child: Text('Bottle orders', style: theme.textTheme.titleMedium)),
           if (m.canRecord)
-            OutlinedButton.icon(key: const Key('add-bottles'), onPressed: () => _addBottles(m), icon: const Icon(Icons.add, size: 18), label: const Text('Add bottles')),
+            OutlinedButton.icon(key: const Key('add-bottles'), onPressed: () => _addBottles(m), icon: const Icon(Ionicons.add, size: 18), label: const Text('Add bottles')),
         ],
       ),
       orders.when(
@@ -335,7 +337,7 @@ class _TableDetailScreenState extends ConsumerState<TableDetailScreen> {
           for (final p in m.payments) PaymentTile(payment: p, now: now, onViewReceipt: (path) => showReceipt(context, ref, path)),
         if (m.canRecord) ...[
           const SizedBox(height: 12),
-          FilledButton.icon(key: const Key('record-payment-payments'), onPressed: () => _record(m), icon: const Icon(Icons.add_card_outlined), label: const Text('Record a payment')),
+          FilledButton.icon(key: const Key('record-payment-payments'), onPressed: () => _record(m), icon: const Icon(Ionicons.card_outline), label: const Text('Record a payment')),
         ],
       ]);
 }

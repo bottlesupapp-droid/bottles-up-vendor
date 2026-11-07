@@ -85,9 +85,9 @@ class VenueSetupList extends ConsumerWidget {
       };
 
   Color _color(SetupStatus s) => switch (s) {
-        SetupStatus.done => const Color(0xFF66BB6A),
-        SetupStatus.todo => const Color(0xFFFFB300),
-        SetupStatus.unavailable => const Color(0xFF9E9E9E),
+        SetupStatus.done => BuTokens.dark.green,
+        SetupStatus.todo => BuTokens.dark.amber,
+        SetupStatus.unavailable => BuTokens.dark.muted,
       };
 
   @override
@@ -111,7 +111,7 @@ class VenueSetupList extends ConsumerWidget {
           data: (steps) {
             final s = summarizeSetup(steps);
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
               children: [
                 if (s.requiredTotal > 0) ...[
                   Text(
@@ -155,7 +155,7 @@ class VenueSetupList extends ConsumerWidget {
                                 Text(step.required ? stepLabel(step.step) : '${stepLabel(step.step)} (optional)', style: theme.textTheme.titleSmall),
                                 if (stepDescription(step.step).isNotEmpty) Text(stepDescription(step.step), style: theme.textTheme.bodySmall),
                                 if (step.status == SetupStatus.todo && step.detail != null)
-                                  Text('To do: ${step.detail}', style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFFFFB300))),
+                                  Text('To do: ${step.detail}', style: theme.textTheme.bodySmall?.copyWith(color: BuTokens.dark.amber)),
                               ],
                             ),
                           ),

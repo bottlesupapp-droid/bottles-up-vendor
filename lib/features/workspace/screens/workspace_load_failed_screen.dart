@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../logic/workspace_routing.dart';
@@ -32,7 +33,7 @@ class WorkspaceLoadFailedScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.cloud_off_outlined, size: 48, color: theme.colorScheme.onSurfaceVariant),
+              Icon(Ionicons.cloud_offline_outline, size: 48, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(height: 16),
               Text('We could not load your workspace', key: const Key('workspace-failed-title'), textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),

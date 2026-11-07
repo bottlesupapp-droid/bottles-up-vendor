@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/ui/bu_kit.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/venue_picker.dart';
 import '../../workspace/models/workspace.dart';
@@ -59,19 +62,14 @@ class _VipScreenState extends ConsumerState<VipScreen> {
       child: ListView(
         key: const Key('vip-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Row(
-            children: [
-              Expanded(child: Text('VIP guests', style: theme.textTheme.headlineSmall)),
-              FilledButton.icon(key: const Key('vip-add'), onPressed: _add, icon: const Icon(Icons.person_add_alt, size: 18), label: const Text('Add')),
-            ],
-          ),
+          BuPageHeader(eyebrow: 'Guests', title: 'VIP guests', trailing: FilledButton.icon(key: const Key('vip-add'), onPressed: _add, icon: const Icon(Ionicons.person_add_outline, size: 18), label: const Text('Add'))),
           if (widget.workspace.venueId == null) TextButton(key: const Key('vip-change-club'), onPressed: () => setState(() => _chosenVenue = null), child: const Text('Choose another club')),
           TextField(
             key: const Key('vip-search'),
             controller: _search,
-            decoration: InputDecoration(labelText: 'Search by name or credential code', suffixIcon: IconButton(key: const Key('vip-search-go'), icon: const Icon(Icons.search), onPressed: () => setState(() => _query = _search.text.trim()))),
+            decoration: InputDecoration(labelText: 'Search by name or credential code', suffixIcon: IconButton(key: const Key('vip-search-go'), icon: const Icon(Ionicons.search_outline), onPressed: () => setState(() => _query = _search.text.trim()))),
             onSubmitted: (v) => setState(() => _query = v.trim()),
           ),
           SwitchListTile(key: const Key('vip-show-ended'), contentPadding: EdgeInsets.zero, title: const Text('Show ended memberships'), value: _includeEnded, onChanged: (v) => setState(() => _includeEnded = v)),

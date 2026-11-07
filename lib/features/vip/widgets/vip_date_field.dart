@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../logic/vip_rules.dart';
 
@@ -30,7 +31,7 @@ class VipDateField extends StatelessWidget {
       title: Text(label),
       subtitle: Text(value == null ? emptyLabel : formatVipDate(value), key: Key('${label.toLowerCase().replaceAll(' ', '-')}-value')),
       onTap: () => _pick(context),
-      trailing: optional && value != null ? IconButton(tooltip: 'Clear', icon: const Icon(Icons.clear), onPressed: () => onChanged(null)) : const Icon(Icons.calendar_today_outlined, size: 18),
+      trailing: optional && value != null ? IconButton(tooltip: 'Clear', icon: const Icon(Ionicons.close), onPressed: () => onChanged(null)) : const Icon(Ionicons.calendar_outline, size: 18),
     );
   }
 }

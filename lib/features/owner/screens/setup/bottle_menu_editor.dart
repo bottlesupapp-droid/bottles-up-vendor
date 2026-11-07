@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../../core/theme/app_tokens.dart';
 import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
@@ -89,7 +91,7 @@ class _BottleMenuEditorState extends ConsumerState<BottleMenuEditor> {
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('add-bottle'),
         onPressed: () => _openForm(null),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Ionicons.add),
         label: const Text('Add a bottle'),
       ),
       body: bottles.when(
@@ -134,9 +136,9 @@ class _BottleMenuEditorState extends ConsumerState<BottleMenuEditor> {
   Widget _tile(BuildContext context, BottleRow b) {
     final theme = Theme.of(context);
     final (label, color) = switch (bottleState(b)) {
-      BottleState.available => ('On menu', const Color(0xFF66BB6A)),
-      BottleState.soldOut => ('Sold out', const Color(0xFFFFB300)),
-      BottleState.offMenu => ('Off the menu', const Color(0xFF9E9E9E)),
+      BottleState.available => ('On menu', BuTokens.dark.green),
+      BottleState.soldOut => ('Sold out', BuTokens.dark.amber),
+      BottleState.offMenu => ('Off the menu', BuTokens.dark.muted),
     };
     return Card(
       key: Key('bottle-${b.bottleId}'),
@@ -209,7 +211,7 @@ class _BottleMenuEditorState extends ConsumerState<BottleMenuEditor> {
                 TextButton(
                   key: Key('remove-${b.bottleId}'),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFEF5350),
+                    foregroundColor: BuTokens.dark.red,
                   ),
                   onPressed: () => _remove(b),
                   child: const Text('Remove'),

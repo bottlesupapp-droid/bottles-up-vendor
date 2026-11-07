@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/widgets/ops_async_view.dart';
 import '../../report_emails/logic/report_email_rules.dart';
@@ -58,7 +60,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
       child: ListView(
         key: const Key('report-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           const SizedBox(height: 8),
@@ -77,14 +79,14 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   const SizedBox(height: 4),
                   Chip(
                     key: const Key('report-status'),
-                    avatar: Icon(r.isFinal ? Icons.lock_outline : Icons.hourglass_empty, size: 16),
+                    avatar: Icon(r.isFinal ? Ionicons.lock_closed_outline : Ionicons.hourglass_outline, size: 16),
                     label: Text(doc.statusLine, style: theme.textTheme.labelMedium),
                   ),
                   const SizedBox(height: 8),
                   FilledButton.icon(
                     key: const Key('report-share'),
                     onPressed: _sharing ? null : () => _share(r),
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    icon: const Icon(Ionicons.document_outline, size: 18),
                     label: Text(_sharing ? 'Making the PDF…' : 'Share as PDF'),
                   ),
                   if (widget.emailOrgId != null) ...[

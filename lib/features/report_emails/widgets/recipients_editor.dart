@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
@@ -94,9 +95,9 @@ class _RecipientsEditorState extends ConsumerState<RecipientsEditor> {
                   key: Key('$k-person-$i'),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.mail_outline, size: 20),
+                  leading: const Icon(Ionicons.mail_outline, size: 20),
                   title: Text(r.email),
-                  trailing: IconButton(key: Key('$k-remove-$i'), tooltip: 'Remove ${r.email}', icon: const Icon(Icons.close), onPressed: _busy ? null : () => _remove(r)),
+                  trailing: IconButton(key: Key('$k-remove-$i'), tooltip: 'Remove ${r.email}', icon: const Icon(Ionicons.close), onPressed: _busy ? null : () => _remove(r)),
                 ),
               const SizedBox(height: 4),
               Row(

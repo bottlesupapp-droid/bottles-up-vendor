@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/widgets/setup_common.dart' show ProblemsBox;
@@ -100,7 +101,7 @@ class _MoveBookingSheetState extends ConsumerState<MoveBookingSheet> {
                                 ].join(' · ')
                               : o.whyNot!,
                         ),
-                        trailing: o.tableTypeId == _to ? const Icon(Icons.check_circle) : null,
+                        trailing: o.tableTypeId == _to ? const Icon(Ionicons.checkmark_circle) : null,
                         onTap: o.canChoose && !_busy ? () => setState(() {
                               _to = o.tableTypeId;
                               _problems = const [];
@@ -113,7 +114,7 @@ class _MoveBookingSheetState extends ConsumerState<MoveBookingSheet> {
                     controller: _reason,
                     enabled: !_busy,
                     maxLength: 200,
-                    decoration: const InputDecoration(labelText: 'Why is it being moved?', border: OutlineInputBorder(), counterText: ''),
+                    decoration: const InputDecoration(labelText: 'Why is it being moved?', counterText: ''),
                   ),
                   if (_problems.isNotEmpty) ...[const SizedBox(height: 8), ProblemsBox(problems: _problems)],
                   const SizedBox(height: 12),

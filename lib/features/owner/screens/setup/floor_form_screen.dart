@@ -66,7 +66,7 @@ class _FloorFormScreenState extends ConsumerState<FloorFormScreen> {
             key: const Key('field-label'),
             controller: _label,
             maxLength: ProfileLimits.floorLabel + 20,
-            decoration: const InputDecoration(labelText: 'Floor name', hintText: 'Main room', border: OutlineInputBorder(), counterText: ''),
+            decoration: const InputDecoration(labelText: 'Floor name', hintText: 'Main room', counterText: ''),
           ),
           const SizedBox(height: 16),
           PhotoField(

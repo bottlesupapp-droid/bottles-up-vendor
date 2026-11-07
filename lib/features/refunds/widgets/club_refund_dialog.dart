@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/logic/media_rules.dart' show imageProblem;
@@ -102,7 +103,7 @@ class _ClubRefundDialogState extends ConsumerState<ClubRefundDialog> {
               controller: _reference,
               enabled: !_busy,
               maxLength: 200,
-              decoration: const InputDecoration(labelText: 'Terminal or receipt reference', border: OutlineInputBorder(), counterText: ''),
+              decoration: const InputDecoration(labelText: 'Terminal or receipt reference', counterText: ''),
             ),
             const SizedBox(height: 8),
             if (_photo != null)
@@ -113,8 +114,8 @@ class _ClubRefundDialogState extends ConsumerState<ClubRefundDialog> {
             Wrap(
               spacing: 8,
               children: [
-                OutlinedButton.icon(key: const Key('club-photo-camera'), onPressed: _busy ? null : () => _pick(camera: true), icon: const Icon(Icons.photo_camera_outlined, size: 18), label: Text(_photo == null ? 'Take a photo' : 'Take another')),
-                OutlinedButton.icon(key: const Key('club-photo-gallery'), onPressed: _busy ? null : () => _pick(camera: false), icon: const Icon(Icons.photo_library_outlined, size: 18), label: const Text('Choose a photo')),
+                OutlinedButton.icon(key: const Key('club-photo-camera'), onPressed: _busy ? null : () => _pick(camera: true), icon: const Icon(Ionicons.camera_outline, size: 18), label: Text(_photo == null ? 'Take a photo' : 'Take another')),
+                OutlinedButton.icon(key: const Key('club-photo-gallery'), onPressed: _busy ? null : () => _pick(camera: false), icon: const Icon(Ionicons.images_outline, size: 18), label: const Text('Choose a photo')),
                 if (_photo != null) TextButton(key: const Key('club-photo-remove'), onPressed: _busy ? null : () => setState(() => _photo = _uploaded = null), child: const Text('Remove')),
               ],
             ),

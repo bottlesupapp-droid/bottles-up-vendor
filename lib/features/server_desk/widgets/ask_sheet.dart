@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../logic/server_desk_rules.dart';
 
@@ -77,7 +78,7 @@ class _AskSheetState extends State<_AskSheet> {
                   key: Key('kind-${k.value}'),
                   contentPadding: EdgeInsets.zero,
                   title: Text(k.label),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Ionicons.chevron_forward),
                   onTap: () => _choose(k),
                 ),
             ],

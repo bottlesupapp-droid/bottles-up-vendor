@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../night/logic/report_pdf.dart';
 import '../../night/providers/night_providers.dart' show shareReportProvider;
 import '../../ops/widgets/ops_async_view.dart';
@@ -50,7 +53,7 @@ class _OrganizerSalesScreenState extends ConsumerState<OrganizerSalesScreen> {
       key: const Key('organizer-sales'),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
-        Text('Sales', style: theme.textTheme.headlineSmall),
+        const BuPageHeader(eyebrow: 'Organizer', title: 'Sales'),
         const SizedBox(height: 8),
         OpsAsyncView<List<OrgEvent>>(
           value: events,
@@ -89,7 +92,7 @@ class _OrganizerSalesScreenState extends ConsumerState<OrganizerSalesScreen> {
                         FilledButton.icon(
                           key: const Key('sales-share'),
                           onPressed: _sharing ? null : () => _share(s),
-                          icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                          icon: const Icon(Ionicons.document_outline, size: 18),
                           label: Text(_sharing ? 'Making the PDF…' : 'Share as PDF'),
                         ),
                         const SizedBox(height: 8),

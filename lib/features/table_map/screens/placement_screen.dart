@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/logic/venue_profile_rules.dart' show FloorRow;
 import '../../owner/providers/owner_providers.dart' show floorsProvider, venueSetupProvider;
@@ -173,7 +175,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           boxes: [
             for (final t in all)
               if (_boxOf(t) != null)
-                FloorBoxData(id: t.typeId, box: _boxOf(t)!, label: t.name, color: const Color(0xFF42A5F5), selected: t.typeId == _selected),
+                FloorBoxData(id: t.typeId, box: _boxOf(t)!, label: t.name, color: BuTokens.dark.orangeSoft, selected: t.typeId == _selected),
           ],
           onTap: (id) => setState(() => _selected = id),
           onGrab: (g) {
@@ -237,14 +239,14 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
           Text('${t.name}: ${b.x.toStringAsFixed(0)}% across, ${b.y.toStringAsFixed(0)}% down, ${b.w.toStringAsFixed(0)}% wide, ${b.h.toStringAsFixed(0)}% high', key: const Key('placement-numbers'), style: theme.textTheme.bodySmall),
           Wrap(
             children: [
-              btn('nudge-left', Icons.arrow_back, 'Left', () => moveBox(b, -1, 0)),
-              btn('nudge-right', Icons.arrow_forward, 'Right', () => moveBox(b, 1, 0)),
-              btn('nudge-up', Icons.arrow_upward, 'Up', () => moveBox(b, 0, -1)),
-              btn('nudge-down', Icons.arrow_downward, 'Down', () => moveBox(b, 0, 1)),
-              btn('wider', Icons.unfold_more, 'Wider', () => resizeBox(b, 1, 0)),
-              btn('narrower', Icons.unfold_less, 'Narrower', () => resizeBox(b, -1, 0)),
-              btn('taller', Icons.height, 'Taller', () => resizeBox(b, 0, 1)),
-              btn('shorter', Icons.vertical_align_center, 'Shorter', () => resizeBox(b, 0, -1)),
+              btn('nudge-left', Ionicons.arrow_back, 'Left', () => moveBox(b, -1, 0)),
+              btn('nudge-right', Ionicons.arrow_forward, 'Right', () => moveBox(b, 1, 0)),
+              btn('nudge-up', Ionicons.arrow_up, 'Up', () => moveBox(b, 0, -1)),
+              btn('nudge-down', Ionicons.arrow_down, 'Down', () => moveBox(b, 0, 1)),
+              btn('wider', Ionicons.expand_outline, 'Wider', () => resizeBox(b, 1, 0)),
+              btn('narrower', Ionicons.contract_outline, 'Narrower', () => resizeBox(b, -1, 0)),
+              btn('taller', Ionicons.resize_outline, 'Taller', () => resizeBox(b, 0, 1)),
+              btn('shorter', Ionicons.reorder_two_outline, 'Shorter', () => resizeBox(b, 0, -1)),
             ],
           ),
         ],

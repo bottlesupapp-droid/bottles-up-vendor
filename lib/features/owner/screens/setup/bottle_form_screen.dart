@@ -106,7 +106,6 @@ class _BottleFormScreenState extends ConsumerState<BottleFormScreen> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          border: const OutlineInputBorder(),
           counterText: '',
         ),
       ),

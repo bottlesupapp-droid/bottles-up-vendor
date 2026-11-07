@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../logic/bottle_orders_rules.dart';
 import '../logic/table_service_rules.dart';
@@ -34,9 +35,9 @@ class _DeliverPartDialogState extends State<DeliverPartDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(key: const Key('deliver-less'), onPressed: _n <= 1 ? null : () => setState(() => _n--), icon: const Icon(Icons.remove_circle_outline)),
+              IconButton(key: const Key('deliver-less'), onPressed: _n <= 1 ? null : () => setState(() => _n--), icon: const Icon(Ionicons.remove_circle_outline)),
               SizedBox(width: 40, child: Text('$_n', key: const Key('deliver-n'), textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge)),
-              IconButton(key: const Key('deliver-more'), onPressed: _n >= left ? null : () => setState(() => _n++), icon: const Icon(Icons.add_circle_outline)),
+              IconButton(key: const Key('deliver-more'), onPressed: _n >= left ? null : () => setState(() => _n++), icon: const Icon(Ionicons.add_circle_outline)),
             ],
           ),
           if (_n >= left) Text('That is all that is left: the order will be marked Delivered.', key: const Key('deliver-all'), style: Theme.of(context).textTheme.bodySmall),

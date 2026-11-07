@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../auth/services/supabase_auth_service.dart';
 import '../../workspace/models/workspace.dart';
@@ -46,7 +47,7 @@ class _DeleteAccountSectionState extends State<DeleteAccountSection> {
       context: context,
       builder: (dialog) => AlertDialog(
         key: const Key('delete-account-dialog'),
-        icon: Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error, size: 32),
+        icon: Icon(Ionicons.warning_outline, color: theme.colorScheme.error, size: 32),
         title: const Text('Delete your account?'),
         content: SingleChildScrollView(
           child: Column(
@@ -117,7 +118,7 @@ class _DeleteAccountSectionState extends State<DeleteAccountSection> {
           enabled: !_busy,
           leading: _busy
               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(key: Key('delete-account-busy'), strokeWidth: 2))
-              : Icon(Icons.delete_forever_outlined, color: theme.colorScheme.error),
+              : Icon(Ionicons.trash_outline, color: theme.colorScheme.error),
           title: Text(_busy ? 'Deleting your account...' : 'Delete my account', style: TextStyle(color: theme.colorScheme.error)),
           subtitle: const Text('Permanently removes your sign-in. Your business keeps its records.'),
           onTap: _busy ? null : _ask,
