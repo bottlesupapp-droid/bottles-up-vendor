@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,16 +39,16 @@ class ScheduledReleasesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Ionicons.calendar_outline, size: 64, color: Colors.grey[600]),
+                  Icon(Ionicons.calendar_outline, size: 64, color: BuTokens.dark.muted),
                   const SizedBox(height: 16),
                   Text(
                     'No scheduled releases',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 18, color: BuTokens.dark.muted),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Create timed ticket releases to build anticipation',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: BuTokens.dark.muted),
                   ),
                 ],
               ),
@@ -73,7 +74,7 @@ class ScheduledReleasesScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Ionicons.alert_circle_outline, size: 64, color: Colors.red),
+              Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.red),
               const SizedBox(height: 16),
               Text(couldNotLoad('this page', error)),
               const SizedBox(height: 16),
@@ -110,7 +111,7 @@ class ScheduledReleasesScreen extends ConsumerWidget {
               children: [
                 Icon(
                   isUpcoming ? Ionicons.time_outline : Ionicons.checkmark_circle,
-                  color: isUpcoming ? Colors.orange : Colors.green,
+                  color: isUpcoming ? BuTokens.dark.amber : BuTokens.dark.green,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -126,12 +127,12 @@ class ScheduledReleasesScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: BuTokens.dark.muted.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       'INACTIVE',
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                      style: TextStyle(fontSize: 10, color: BuTokens.dark.muted),
                     ),
                   ),
               ],
@@ -169,14 +170,14 @@ class ScheduledReleasesScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 if (isPast)
-                  const Text(
+                  Text(
                     'Released',
-                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: BuTokens.dark.green, fontWeight: FontWeight.w600),
                   )
                 else if (isUpcoming)
                   Text(
                     'Releases ${_getTimeUntil(release.releaseDate)}',
-                    style: const TextStyle(color: Colors.orange),
+                    style: TextStyle(color: BuTokens.dark.amber),
                   ),
                 Row(
                   children: [
@@ -187,7 +188,7 @@ class ScheduledReleasesScreen extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: const Icon(Ionicons.trash_outline, size: 20),
-                      color: Colors.red,
+                      color: BuTokens.dark.red,
                       onPressed: () => _confirmDelete(context, ref, release.id),
                       tooltip: 'Delete',
                     ),
@@ -204,9 +205,9 @@ class ScheduledReleasesScreen extends ConsumerWidget {
   Widget _buildDetailItem(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey),
+        Icon(icon, size: 16, color: BuTokens.dark.muted),
         const SizedBox(width: 8),
-        Text(text, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        Text(text, style: TextStyle(fontSize: 13, color: BuTokens.dark.muted)),
       ],
     );
   }
@@ -242,7 +243,6 @@ class ScheduledReleasesScreen extends ConsumerWidget {
                   decoration: const InputDecoration(
                     labelText: 'Release Name *',
                     hintText: 'e.g., Early Bird, General Sale',
-                    border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -250,7 +250,6 @@ class ScheduledReleasesScreen extends ConsumerWidget {
                   controller: quantityController,
                   decoration: const InputDecoration(
                     labelText: 'Ticket Quantity *',
-                    border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -260,7 +259,6 @@ class ScheduledReleasesScreen extends ConsumerWidget {
                   decoration: const InputDecoration(
                     labelText: 'Price *',
                     prefixText: '\$',
-                    border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -340,9 +338,9 @@ class ScheduledReleasesScreen extends ConsumerWidget {
 
       if (success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Scheduled release added'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
         ref.invalidate(scheduledReleasesProvider(eventId));
@@ -371,7 +369,7 @@ class ScheduledReleasesScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: BuTokens.dark.red),
             child: const Text('Delete'),
           ),
         ],
@@ -385,9 +383,9 @@ class ScheduledReleasesScreen extends ConsumerWidget {
 
       if (success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Release deleted'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
         ref.invalidate(scheduledReleasesProvider(eventId));

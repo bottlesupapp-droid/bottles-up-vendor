@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ionicons/ionicons.dart';
+import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../shared/services/stripe_service.dart';
 import '../../providers/supabase_auth_provider.dart';
@@ -120,9 +122,9 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
         if (mounted) {
           setState(() => _payoutConnected = true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Complete Stripe onboarding in your browser'),
-              backgroundColor: Colors.blue,
+              backgroundColor: BuTokens.dark.orangeSoft,
             ),
           );
         }
@@ -192,9 +194,9 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
       if (mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Profile completed successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
 
@@ -236,7 +238,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
         elevation: 0,
         leading: _currentStep > 0
             ? IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Ionicons.arrow_back),
                 onPressed: _previousStep,
               )
             : null,
@@ -348,7 +350,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              prefixIcon: const Icon(Icons.business),
+              prefixIcon: const Icon(Ionicons.business_outline),
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -375,19 +377,19 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: BuTokens.dark.orangeSoft.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue),
+              border: Border.all(color: BuTokens.dark.orangeSoft),
             ),
             child: Row(
               children: [
-                Icon(Icons.info, color: Colors.blue),
+                Icon(Ionicons.information_circle_outline, color: BuTokens.dark.orangeSoft),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'As an organizer, you can browse venues and send event proposals',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.blue,
+                      color: BuTokens.dark.orangeSoft,
                     ),
                   ),
                 ),
@@ -431,7 +433,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _logoUrl != null ? Colors.green : theme.dividerColor,
+                    color: _logoUrl != null ? BuTokens.dark.green : theme.dividerColor,
                     width: 2,
                   ),
                 ),
@@ -447,7 +449,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.add_photo_alternate,
+                            Ionicons.image_outline,
                             size: 64,
                             color: theme.colorScheme.primary,
                           ),
@@ -470,7 +472,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
             Center(
               child: TextButton.icon(
                 onPressed: _pickLogo,
-                icon: const Icon(Icons.edit),
+                icon: const Icon(Ionicons.create_outline),
                 label: const Text('Change Logo'),
               ),
             ),
@@ -511,7 +513,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              prefixIcon: const Icon(Icons.camera_alt),
+              prefixIcon: const Icon(Ionicons.camera_outline),
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -528,7 +530,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              prefixIcon: const Icon(Icons.facebook),
+              prefixIcon: const Icon(Ionicons.logo_facebook),
             ),
           ),
 
@@ -538,18 +540,18 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: BuTokens.dark.amber.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                Icon(Icons.lightbulb, color: Colors.orange),
+                Icon(Ionicons.bulb_outline, color: BuTokens.dark.amber),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'These links will be visible to venue owners when you send proposals',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.orange.shade800,
+                      color: BuTokens.dark.amber,
                     ),
                   ),
                 ),
@@ -589,15 +591,15 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _payoutConnected ? Colors.green : theme.dividerColor,
+                color: _payoutConnected ? BuTokens.dark.green : theme.dividerColor,
               ),
             ),
             child: Column(
               children: [
                 Icon(
-                  _payoutConnected ? Icons.check_circle : Icons.account_balance,
+                  _payoutConnected ? Ionicons.checkmark_circle : Ionicons.business_outline,
                   size: 64,
-                  color: _payoutConnected ? Colors.green : theme.colorScheme.primary,
+                  color: _payoutConnected ? BuTokens.dark.green : theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -629,7 +631,7 @@ class _OrganizerOnboardingScreenState extends ConsumerState<OrganizerOnboardingS
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.link),
+                          : const Icon(Ionicons.link_outline),
                       label: Text(_isConnectingStripe ? 'Connecting...' : 'Connect Stripe'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/glass_kit.dart';
 import '../providers/dashboard_provider.dart';
@@ -144,7 +145,7 @@ class DashboardScreen extends ConsumerWidget {
               title: 'Sales',
               value: '\$${NumberFormat('#,###').format(data.monthlyRevenue.toInt())}',
               subtitle: 'This month',
-              color: Colors.green,
+              color: BuTokens.dark.green,
               trend: data.monthlyRevenue > 0 ? 'This month' : null,
             ),
             // Events — active events, upcoming count, taps to events
@@ -167,7 +168,7 @@ class DashboardScreen extends ConsumerWidget {
               title: 'Payouts',
               value: '\$${NumberFormat('#,###').format(data.confirmedRevenue.toInt())}',
               subtitle: 'Est. earnings',
-              color: Colors.blue,
+              color: BuTokens.dark.orangeSoft,
               trend: data.confirmedRevenue > 0 ? '85% rate' : null,
             ),
             // Bookings — total, confirmed count, taps to bookings
@@ -177,7 +178,7 @@ class DashboardScreen extends ConsumerWidget {
               title: 'Bookings',
               value: data.totalBookings.toString(),
               subtitle: '${data.confirmedBookings} confirmed',
-              color: Colors.purple,
+              color: BuTokens.dark.soft,
               trend: data.totalBookings > 0
                   ? '${data.confirmedBookings}/${data.totalBookings}'
                   : null,
@@ -190,7 +191,7 @@ class DashboardScreen extends ConsumerWidget {
               title: 'Pending',
               value: data.monthlyBookings.toString(), // reused for pendingBookings
               subtitle: 'Awaiting confirm',
-              color: Colors.orange,
+              color: BuTokens.dark.amber,
               trend: data.monthlyBookings > 0 ? 'Action needed' : null,
               isAlert: data.monthlyBookings > 0,
               onTap: () => context.go('/bookings'),
@@ -202,7 +203,7 @@ class DashboardScreen extends ConsumerWidget {
               title: 'Low Stock',
               value: data.lowStockItems.toString(),
               subtitle: 'Items need restock',
-              color: Colors.amber,
+              color: BuTokens.dark.amber,
               trend: data.lowStockItems > 0
                   ? '${data.lowStockItems} alerts'
                   : null,
@@ -325,7 +326,7 @@ class DashboardScreen extends ConsumerWidget {
                 icon: Ionicons.cash_outline,
                 title: 'Payout processed',
                 subtitle: 'Transferred to bank account',
-                color: Colors.green,
+                color: BuTokens.dark.green,
                 trailing: '\$${NumberFormat('#,###').format((data.monthlyRevenue * 0.4).toInt())}',
               ),
               Divider(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
@@ -334,7 +335,7 @@ class DashboardScreen extends ConsumerWidget {
                 icon: Ionicons.pricetag_outline,
                 title: 'Promo code used',
                 subtitle: 'SUMMER2024 • Table booking',
-                color: Colors.purple,
+                color: BuTokens.dark.soft,
                 trailing: '-15%',
               ),
               Divider(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
@@ -343,7 +344,7 @@ class DashboardScreen extends ConsumerWidget {
                 icon: Ionicons.cube_outline,
                 title: 'Low stock alert',
                 subtitle: '${data.lowStockItems} items need restock',
-                color: Colors.amber,
+                color: BuTokens.dark.amber,
                 trailing: '!',
                 isAlert: data.lowStockItems > 0,
               ),
@@ -491,14 +492,14 @@ class DashboardScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
+        color: BuTokens.dark.amber.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+        border: Border.all(color: BuTokens.dark.amber.withValues(alpha: 0.4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+          Icon(Ionicons.warning_outline, color: BuTokens.dark.amber, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -507,7 +508,7 @@ class DashboardScreen extends ConsumerWidget {
                 Text(
                   'Complete your venue profile',
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: Colors.orange,
+                    color: BuTokens.dark.amber,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -523,7 +524,7 @@ class DashboardScreen extends ConsumerWidget {
                   (item) => Text(
                     '• $item',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.orange.shade700,
+                      color: BuTokens.dark.amber,
                     ),
                   ),
                 ),
@@ -533,7 +534,7 @@ class DashboardScreen extends ConsumerWidget {
                   child: Text(
                     'Go to Venue Profile →',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.orange,
+                      color: BuTokens.dark.amber,
                       fontWeight: FontWeight.w600,
                       decoration: TextDecoration.underline,
                     ),
@@ -656,7 +657,7 @@ class DashboardScreen extends ConsumerWidget {
               context,
               title: 'Top Events',
               icon: Ionicons.trophy,
-              iconColor: Colors.amber,
+              iconColor: BuTokens.dark.amber,
               items: [
                 _AnalyticsItem('Summer Bash 2024', 156, 0.95),
                 _AnalyticsItem('Friday Night Live', 142, 0.86),
@@ -669,7 +670,7 @@ class DashboardScreen extends ConsumerWidget {
               context,
               title: 'Best Promoters',
               icon: Ionicons.people,
-              iconColor: Colors.blue,
+              iconColor: BuTokens.dark.orangeSoft,
               items: [
                 _AnalyticsItem('John Smith', 45, 0.90),
                 _AnalyticsItem('Sarah Johnson', 38, 0.76),
@@ -682,7 +683,7 @@ class DashboardScreen extends ConsumerWidget {
               context,
               title: 'Popular Bottles',
               icon: Ionicons.wine,
-              iconColor: Colors.purple,
+              iconColor: BuTokens.dark.soft,
               items: [
                 _AnalyticsItem('Grey Goose', 89, 1.0),
                 _AnalyticsItem('Hennessy VS', 76, 0.85),

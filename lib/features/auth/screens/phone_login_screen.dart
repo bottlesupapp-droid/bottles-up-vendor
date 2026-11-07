@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../providers/supabase_auth_provider.dart';
 import '../widgets/auth_text_field.dart';
@@ -72,7 +73,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+          icon: Icon(Ionicons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
       ),
@@ -103,7 +104,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
-                      Icons.phone_android,
+                      Ionicons.phone_portrait_outline,
                       size: 40,
                       color: theme.colorScheme.primary,
                     ),
@@ -146,7 +147,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                     controller: _phoneController,
                     label: 'Phone Number',
                     keyboardType: TextInputType.phone,
-                    prefixIcon: const Icon(Icons.phone),
+                    prefixIcon: const Icon(Ionicons.call_outline),
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(10),

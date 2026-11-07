@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../shared/models/venue_model.dart';
 import '../../../shared/models/user_model.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
@@ -43,13 +45,13 @@ class VenueDetailScreen extends ConsumerWidget {
                       venue.gallery.first,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stack) => Container(
-                        color: Colors.grey[900],
-                        child: const Icon(Icons.location_city, size: 80),
+                        color: BuTokens.dark.muted,
+                        child: const Icon(Ionicons.business_outline, size: 80),
                       ),
                     )
                   : Container(
-                      color: Colors.grey[900],
-                      child: const Icon(Icons.location_city, size: 80),
+                      color: BuTokens.dark.muted,
+                      child: const Icon(Ionicons.business_outline, size: 80),
                     ),
             ),
           ),
@@ -70,7 +72,7 @@ class VenueDetailScreen extends ConsumerWidget {
                   if (venue.fullAddress != null)
                     _buildInfoSection(
                       context,
-                      icon: Icons.location_on,
+                      icon: Ionicons.location,
                       title: 'Location',
                       content: venue.fullAddress!,
                     ),
@@ -81,7 +83,7 @@ class VenueDetailScreen extends ConsumerWidget {
                   if (venue.capacity != null)
                     _buildInfoSection(
                       context,
-                      icon: Icons.people,
+                      icon: Ionicons.people_outline,
                       title: 'Capacity',
                       content: '${venue.capacity} guests',
                     ),
@@ -115,8 +117,8 @@ class VenueDetailScreen extends ConsumerWidget {
                                 errorBuilder: (context, error, stack) => Container(
                                   width: 160,
                                   height: 120,
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.image_not_supported),
+                                  color: BuTokens.dark.muted,
+                                  child: const Icon(Ionicons.image_outline),
                                 ),
                               ),
                             ),
@@ -138,12 +140,12 @@ class VenueDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.verified, color: Colors.green[600], size: 20),
+                        Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           '${venue.licenseDocuments.length} license document(s) on file',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
+                                color: BuTokens.dark.muted,
                               ),
                         ),
                       ],
@@ -157,7 +159,7 @@ class VenueDetailScreen extends ConsumerWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () => _navigateToProposal(context, userAsync),
-                        icon: const Icon(Icons.send),
+                        icon: const Icon(Ionicons.send),
                         label: const Text('Send Event Proposal'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -181,19 +183,19 @@ class VenueDetailScreen extends ConsumerWidget {
 
     switch (venue.status) {
       case VenueStatus.active:
-        badgeColor = Colors.green;
+        badgeColor = BuTokens.dark.green;
         statusText = 'Active';
         break;
       case VenueStatus.approved:
-        badgeColor = Colors.blue;
+        badgeColor = BuTokens.dark.orangeSoft;
         statusText = 'Approved';
         break;
       case VenueStatus.pending:
-        badgeColor = Colors.orange;
+        badgeColor = BuTokens.dark.amber;
         statusText = 'Pending';
         break;
       case VenueStatus.suspended:
-        badgeColor = Colors.red;
+        badgeColor = BuTokens.dark.red;
         statusText = 'Suspended';
         break;
     }
@@ -211,7 +213,7 @@ class VenueDetailScreen extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.circle, size: 8, color: badgeColor),
+          Icon(Ionicons.ellipse, size: 8, color: badgeColor),
           const SizedBox(width: 6),
           Text(
             statusText,
@@ -243,7 +245,7 @@ class VenueDetailScreen extends ConsumerWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.grey[600],
+                      color: BuTokens.dark.muted,
                     ),
               ),
               const SizedBox(height: 4),

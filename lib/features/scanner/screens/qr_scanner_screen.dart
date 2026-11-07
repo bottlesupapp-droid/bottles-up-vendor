@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,7 +74,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Ionicons.checkmark_circle, color: Colors.green, size: 32),
+            Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green, size: 32),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -114,9 +115,9 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Ionicons.warning, color: Colors.orange, size: 32),
+              Icon(Ionicons.warning, color: BuTokens.dark.amber, size: 32),
               SizedBox(width: 12),
               Text('Already Checked In'),
             ],
@@ -136,9 +137,9 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Ionicons.close_circle, color: Colors.red, size: 32),
+            Icon(Ionicons.close_circle, color: BuTokens.dark.red, size: 32),
             SizedBox(width: 12),
             Text('Check-In Failed'),
           ],
@@ -162,7 +163,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
             SizedBox(
               width: 90,
               child: Text(label,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                  style: TextStyle(color: BuTokens.dark.muted, fontSize: 13)),
             ),
             Expanded(
               child: Text(value,
@@ -236,7 +237,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                        Icon(Ionicons.alert_circle_outline, color: BuTokens.dark.red, size: 64),
                         const SizedBox(height: 16),
                         Text(couldNot('start the scanner', error), style: const TextStyle(color: Colors.white)),
                       ],
@@ -249,9 +250,9 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
                 if (isProcessing)
                   Container(
                     color: Colors.black54,
-                    child: const Center(
+                    child: Center(
                       child: CircularProgressIndicator(
-                          color: Color(0xFFFF6B35)),
+                          color: BuTokens.dark.orange),
                     ),
                   ),
               ],
@@ -264,8 +265,8 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
             color: theme.scaffoldBackgroundColor,
             child: Column(
               children: [
-                const Icon(Ionicons.qr_code_outline,
-                    size: 40, color: Color(0xFFFF6B35)),
+                Icon(Ionicons.qr_code_outline,
+                    size: 40, color: BuTokens.dark.orange),
                 const SizedBox(height: 12),
                 const Text(
                   'Position the QR code within the frame',
@@ -277,7 +278,7 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
                   isEventScoped
                       ? 'Scanning event tickets only'
                       : 'Scanning event tickets and table reservations',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 12, color: BuTokens.dark.muted),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -291,9 +292,9 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
   Widget _statsRow(ScanStats s) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _statItem('Total', s.total.toString(), Colors.blue),
-          _statItem('Checked In', s.checkedIn.toString(), Colors.green),
-          _statItem('Pending', s.pending.toString(), Colors.orange),
+          _statItem('Total', s.total.toString(), BuTokens.dark.orangeSoft),
+          _statItem('Checked In', s.checkedIn.toString(), BuTokens.dark.green),
+          _statItem('Pending', s.pending.toString(), BuTokens.dark.amber),
         ],
       );
 
@@ -302,16 +303,16 @@ class _QRScannerScreenState extends ConsumerState<QRScannerScreen> {
           Text(value,
               style: TextStyle(
                   fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 11, color: BuTokens.dark.muted)),
         ],
       );
 }
 
 class ScannerOverlay extends CustomPainter {
-  const ScannerOverlay({
+  ScannerOverlay({
     required this.scanWindow,
-    this.borderColor = const Color(0xFFFF6B35),
+    this.borderColor = const Color(0xFFFF5A2F), // the design's orange
   });
 
   final Rect scanWindow;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ionicons/ionicons.dart';
+import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../providers/supabase_auth_provider.dart';
 
@@ -29,37 +31,37 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
       'id': 'door',
       'title': 'Door Staff',
       'description': 'Guest check-ins and entry',
-      'icon': Icons.door_front_door,
+      'icon': Ionicons.enter_outline,
     },
     {
       'id': 'bottle_service',
       'title': 'Bottle Service',
       'description': 'VIP table service',
-      'icon': Icons.wine_bar,
+      'icon': Ionicons.wine_outline,
     },
     {
       'id': 'bartender',
       'title': 'Bartender',
       'description': 'Bar operations',
-      'icon': Icons.local_bar,
+      'icon': Ionicons.wine_outline,
     },
     {
       'id': 'server',
       'title': 'Server',
       'description': 'Food and beverage service',
-      'icon': Icons.room_service,
+      'icon': Ionicons.restaurant_outline,
     },
     {
       'id': 'security',
       'title': 'Security',
       'description': 'Venue security',
-      'icon': Icons.security,
+      'icon': Ionicons.shield_outline,
     },
     {
       'id': 'manager',
       'title': 'Manager',
       'description': 'Event management',
-      'icon': Icons.manage_accounts,
+      'icon': Ionicons.settings_outline,
     },
   ];
 
@@ -169,9 +171,9 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
       if (mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Profile completed successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
 
@@ -222,7 +224,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
         elevation: 0,
         leading: _currentStep > 0
             ? IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Ionicons.arrow_back),
                 onPressed: _previousStep,
               )
             : null,
@@ -336,7 +338,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                   shape: BoxShape.circle,
                   color: theme.cardColor,
                   border: Border.all(
-                    color: _photoUrl != null ? Colors.green : theme.dividerColor,
+                    color: _photoUrl != null ? BuTokens.dark.green : theme.dividerColor,
                     width: 2,
                   ),
                 ),
@@ -351,7 +353,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.add_a_photo,
+                            Ionicons.camera_outline,
                             size: 40,
                             color: theme.colorScheme.primary,
                           ),
@@ -380,7 +382,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
               ),
               filled: true,
               enabled: false,
-              prefixIcon: const Icon(Icons.email),
+              prefixIcon: const Icon(Ionicons.mail_outline),
             ),
           ),
 
@@ -396,7 +398,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              prefixIcon: const Icon(Icons.phone),
+              prefixIcon: const Icon(Ionicons.call_outline),
             ),
             keyboardType: TextInputType.phone,
           ),
@@ -407,19 +409,19 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: BuTokens.dark.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green),
+              border: Border.all(color: BuTokens.dark.green),
             ),
             child: Row(
               children: [
-                Icon(Icons.info, color: Colors.green),
+                Icon(Ionicons.information_circle_outline, color: BuTokens.dark.green),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'As staff, you\'ll be assigned to events by venue owners and organizers',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.green.shade800,
+                      color: BuTokens.dark.green,
                     ),
                   ),
                 ),
@@ -480,11 +482,11 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.green.withOpacity(0.1)
+                        ? BuTokens.dark.green.withOpacity(0.1)
                         : theme.cardColor,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? Colors.green : theme.dividerColor,
+                      color: isSelected ? BuTokens.dark.green : theme.dividerColor,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -496,14 +498,14 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                         Icon(
                           role['icon'],
                           size: 40,
-                          color: isSelected ? Colors.green : theme.colorScheme.primary,
+                          color: isSelected ? BuTokens.dark.green : theme.colorScheme.primary,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           role['title'],
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.green : null,
+                            color: isSelected ? BuTokens.dark.green : null,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -520,8 +522,8 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                         if (isSelected) ...[
                           const SizedBox(height: 8),
                           Icon(
-                            Icons.check_circle,
-                            color: Colors.green,
+                            Ionicons.checkmark_circle,
+                            color: BuTokens.dark.green,
                             size: 20,
                           ),
                         ],
@@ -540,18 +542,18 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: BuTokens.dark.green.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green),
+                  Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green),
                   const SizedBox(width: 8),
                   Text(
                     '${_selectedRoles.length} role(s) selected',
                     style: TextStyle(
-                      color: Colors.green,
+                      color: BuTokens.dark.green,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -562,18 +564,18 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: BuTokens.dark.amber.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.info, color: Colors.orange),
+                  Icon(Ionicons.information_circle_outline, color: BuTokens.dark.amber),
                   const SizedBox(width: 8),
                   Text(
                     'Please select at least one role',
                     style: TextStyle(
-                      color: Colors.orange,
+                      color: BuTokens.dark.amber,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -616,7 +618,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _idDocumentUrl != null ? Colors.green : theme.dividerColor,
+                  color: _idDocumentUrl != null ? BuTokens.dark.green : theme.dividerColor,
                   width: 2,
                 ),
               ),
@@ -635,7 +637,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                     )
                   else
                     Icon(
-                      Icons.badge,
+                      Ionicons.id_card_outline,
                       size: 64,
                       color: theme.colorScheme.primary,
                     ),
@@ -644,7 +646,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                     _idDocumentUrl != null ? 'ID Uploaded' : 'Upload ID Document',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: _idDocumentUrl != null ? Colors.green : null,
+                      color: _idDocumentUrl != null ? BuTokens.dark.green : null,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -659,7 +661,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                     const SizedBox(height: 16),
                     TextButton.icon(
                       onPressed: _pickIDDocument,
-                      icon: const Icon(Icons.edit),
+                      icon: const Icon(Ionicons.create_outline),
                       label: const Text('Change Document'),
                     ),
                   ],
@@ -674,13 +676,13 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: BuTokens.dark.orangeSoft.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.security, color: Colors.blue),
+                Icon(Ionicons.shield_outline, color: BuTokens.dark.orangeSoft),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -690,14 +692,14 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                         'Why we need this',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: BuTokens.dark.orangeSoft,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'ID verification helps venues ensure compliance and security. You can skip this now and upload later.',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.blue.shade800,
+                          color: BuTokens.dark.orangeSoft,
                         ),
                       ),
                     ],
@@ -713,12 +715,12 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: BuTokens.dark.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 32),
+                Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green, size: 32),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -727,7 +729,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                       Text(
                         'Almost Done!',
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.green,
+                          color: BuTokens.dark.green,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -735,7 +737,7 @@ class _StaffOnboardingScreenState extends ConsumerState<StaffOnboardingScreen> {
                       Text(
                         'Wait for venue owners or organizers to assign you to events',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.green.shade800,
+                          color: BuTokens.dark.green,
                         ),
                       ),
                     ],

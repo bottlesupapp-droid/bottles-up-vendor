@@ -1,9 +1,11 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../../core/config/supabase_config.dart';
 import '../../../features/auth/providers/supabase_auth_provider.dart';
@@ -179,10 +181,10 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Image uploaded!'),
             duration: Duration(seconds: 2),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
         setState(() {
@@ -204,7 +206,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('We could not upload. Your entries are still here. Try again.'),
-          backgroundColor: Colors.red,
+          backgroundColor: BuTokens.dark.red,
           duration: const Duration(seconds: 4),
         ));
       }
@@ -317,9 +319,9 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Venue updated successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
         context.pop();
@@ -328,7 +330,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(couldNot('save', e)),
-          backgroundColor: Colors.red,
+          backgroundColor: BuTokens.dark.red,
         ));
       }
     } finally {
@@ -408,7 +410,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
               const SizedBox(height: 12),
               _field(_capacityCtrl, 'Capacity',
                   keyboard: TextInputType.number,
-                  prefix: const Icon(Icons.people_outline, size: 18)),
+                  prefix: const Icon(Ionicons.people_outline, size: 18)),
               const SizedBox(height: 12),
               _field(_descCtrl, 'About the Venue', maxLines: 4),
 
@@ -498,7 +500,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
               OutlinedButton.icon(
                 onPressed:
                     _isUploadingPhoto ? null : () => _pickPhoto('interior'),
-                icon: const Icon(Icons.add_photo_alternate_outlined),
+                icon: const Icon(Ionicons.image_outline),
                 label: const Text('Add Interior Photo'),
                 style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
@@ -517,7 +519,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
               OutlinedButton.icon(
                 onPressed:
                     _isUploadingPhoto ? null : () => _pickPhoto('menu'),
-                icon: const Icon(Icons.add_photo_alternate_outlined),
+                icon: const Icon(Ionicons.image_outline),
                 label: const Text('Add Menu Photo'),
                 style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
@@ -594,7 +596,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
             errorBuilder: (_, __, ___) => Container(
               height: 160,
               color: theme.colorScheme.surfaceContainerHighest,
-              child: const Icon(Icons.broken_image_outlined, size: 48),
+              child: const Icon(Ionicons.image_outline, size: 48),
             ),
           ),
         ),
@@ -603,22 +605,22 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
           right: 8,
           child: Row(children: [
             _overlayBtn(
-                Icons.edit_outlined,
+                Ionicons.create_outline,
                 _isUploadingPhoto
                     ? null
                     : () => _pickPhoto('banner')),
             const SizedBox(width: 4),
             _overlayBtn(
-                Icons.close,
+                Ionicons.close,
                 () => setState(() => _bannerPhoto = null),
-                color: Colors.red),
+                color: BuTokens.dark.red),
           ]),
         ),
       ]);
     }
     return OutlinedButton.icon(
       onPressed: _isUploadingPhoto ? null : () => _pickPhoto('banner'),
-      icon: const Icon(Icons.add_photo_alternate_outlined),
+      icon: const Icon(Ionicons.image_outline),
       label: const Text('Add Banner Photo'),
       style: OutlinedButton.styleFrom(
           padding:
@@ -649,14 +651,14 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
               height: double.infinity,
               errorBuilder: (_, __, ___) => Container(
                 color: theme.colorScheme.surfaceContainerHighest,
-                child: const Icon(Icons.broken_image_outlined),
+                child: const Icon(Ionicons.image_outline),
               ),
             ),
           ),
           Positioned(
             top: 4,
             right: 4,
-            child: _overlayBtn(Icons.close, () {
+            child: _overlayBtn(Ionicons.close, () {
               setState(() {
                 if (category == 'interior') {
                   _interiorPhotos.removeAt(index);
@@ -664,7 +666,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
                   _menuPhotos.removeAt(index);
                 }
               });
-            }, color: Colors.red),
+            }, color: BuTokens.dark.red),
           ),
         ],
       ),

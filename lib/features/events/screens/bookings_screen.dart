@@ -1,6 +1,8 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 import '../providers/bookings_provider.dart';
 import '../../../shared/services/supabase_service.dart';
 
@@ -19,20 +21,20 @@ class BookingsScreen extends ConsumerWidget {
       body: bookingsAsync.when(
         data: (bookings) {
           if (bookings.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.event_busy, size: 64, color: Colors.grey),
+                  Icon(Ionicons.calendar_outline, size: 64, color: BuTokens.dark.muted),
                   SizedBox(height: 16),
                   Text(
                     'No bookings yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    style: TextStyle(fontSize: 18, color: BuTokens.dark.muted),
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Bookings will appear here when customers reserve your events',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: BuTokens.dark.muted),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -59,7 +61,7 @@ class BookingsScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error, size: 64, color: Colors.red),
+              Icon(Ionicons.alert_circle, size: 64, color: BuTokens.dark.red),
               const SizedBox(height: 16),
               Text(couldNotLoad('bookings', error)),
               const SizedBox(height: 16),
@@ -149,13 +151,13 @@ class _BookingCard extends ConsumerWidget {
             if (eventDetails['venue'] != null) ...[
               Row(
                 children: [
-                  const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                  Icon(Ionicons.location, size: 16, color: BuTokens.dark.muted),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       eventDetails['venue'],
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color: BuTokens.dark.muted,
                           ),
                     ),
                   ),
@@ -167,13 +169,13 @@ class _BookingCard extends ConsumerWidget {
             if (eventDetails['date'] != null) ...[
               Row(
                 children: [
-                  const Icon(Icons.calendar_today,
-                      size: 16, color: Colors.grey),
+                  Icon(Ionicons.calendar_outline,
+                      size: 16, color: BuTokens.dark.muted),
                   const SizedBox(width: 4),
                   Text(
                     _formatDate(eventDetails['date']),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
+                          color: BuTokens.dark.muted,
                         ),
                   ),
                 ],
@@ -214,10 +216,10 @@ class _BookingCard extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () => _updateStatus(
                           context, ref, booking['id'], 'cancelled'),
-                      icon: const Icon(Icons.close, size: 16),
+                      icon: const Icon(Ionicons.close, size: 16),
                       label: const Text('Cancel'),
                       style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red),
+                          foregroundColor: BuTokens.dark.red),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -225,7 +227,7 @@ class _BookingCard extends ConsumerWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => _updateStatus(
                           context, ref, booking['id'], 'confirmed'),
-                      icon: const Icon(Icons.check, size: 16),
+                      icon: const Icon(Ionicons.checkmark, size: 16),
                       label: const Text('Confirm'),
                     ),
                   ),
@@ -238,7 +240,7 @@ class _BookingCard extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => _updateStatus(
                       context, ref, booking['id'], 'completed'),
-                  icon: const Icon(Icons.done_all, size: 16),
+                  icon: const Icon(Ionicons.checkmark_done, size: 16),
                   label: const Text('Mark Completed'),
                 ),
               ),
@@ -263,7 +265,7 @@ class _BookingCard extends ConsumerWidget {
           content: Text(ok
               ? 'Booking $newStatus'
               : 'Failed to update booking'),
-          backgroundColor: ok ? Colors.green : Colors.red,
+          backgroundColor: ok ? BuTokens.dark.green : BuTokens.dark.red,
         ),
       );
     }
@@ -289,15 +291,15 @@ class _BookingCard extends ConsumerWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'confirmed':
-        return Colors.green;
+        return BuTokens.dark.green;
       case 'completed':
-        return Colors.blue;
+        return BuTokens.dark.orangeSoft;
       case 'pending':
-        return Colors.orange;
+        return BuTokens.dark.amber;
       case 'cancelled':
-        return Colors.red;
+        return BuTokens.dark.red;
       default:
-        return Colors.grey;
+        return BuTokens.dark.muted;
     }
   }
 

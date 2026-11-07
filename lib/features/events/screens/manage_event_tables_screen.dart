@@ -1,7 +1,9 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ionicons/ionicons.dart';
 import '../../../../core/config/supabase_config.dart';
 
 // ─── Provider ────────────────────────────────────────────────────────────────
@@ -33,7 +35,7 @@ class ManageEventTablesScreen extends ConsumerWidget {
         title: const Text('Table Management'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Ionicons.add),
             tooltip: 'Add Table',
             onPressed: () => _showAddTableDialog(context, ref),
           ),
@@ -46,21 +48,21 @@ class ManageEventTablesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.table_restaurant_outlined,
-                      size: 64, color: Colors.grey),
+                  Icon(Icons.table_restaurant_outlined,
+                      size: 64, color: BuTokens.dark.muted),
                   const SizedBox(height: 16),
-                  const Text('No tables yet',
-                      style: TextStyle(fontSize: 18, color: Colors.grey)),
+                  Text('No tables yet',
+                      style: TextStyle(fontSize: 18, color: BuTokens.dark.muted)),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Add tables so customers can make\nVIP table reservations.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: BuTokens.dark.muted),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => _showAddTableDialog(context, ref),
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(Ionicons.add),
                     label: const Text('Add First Table'),
                   ),
                 ],
@@ -85,7 +87,7 @@ class ManageEventTablesScreen extends ConsumerWidget {
             ? null
             : FloatingActionButton.extended(
                 onPressed: () => _showAddTableDialog(context, ref),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Ionicons.add),
                 label: const Text('Add Table'),
               ),
         orElse: () => null,
@@ -128,11 +130,11 @@ class _TableCard extends ConsumerWidget {
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           backgroundColor: isVip
-              ? Colors.orange.withOpacity(0.15)
-              : Colors.blue.withOpacity(0.15),
+              ? BuTokens.dark.amber.withOpacity(0.15)
+              : BuTokens.dark.orangeSoft.withOpacity(0.15),
           child: Icon(
-            isVip ? Icons.star : Icons.table_restaurant,
-            color: isVip ? Colors.orange : Colors.blue,
+            isVip ? Ionicons.star : Icons.table_restaurant,
+            color: isVip ? BuTokens.dark.amber : BuTokens.dark.orangeSoft,
           ),
         ),
         title: Row(
@@ -147,15 +149,15 @@ class _TableCard extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.15),
+                  color: BuTokens.dark.amber.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
+                child: Text(
                   'VIP',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+                    color: BuTokens.dark.amber,
                   ),
                 ),
               ),
@@ -184,7 +186,7 @@ class _TableCard extends ConsumerWidget {
               onChanged: (val) => _toggleActive(context, ref, val),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              icon: Icon(Ionicons.trash_outline, color: BuTokens.dark.red),
               onPressed: () => _confirmDelete(context, ref),
             ),
           ],
@@ -214,7 +216,7 @@ class _TableCard extends ConsumerWidget {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(foregroundColor: BuTokens.dark.red),
               child: const Text('Delete')),
         ],
       ),
@@ -285,7 +287,7 @@ class _AddTableSheetState extends State<_AddTableSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(couldNot('add table', e)),
-              backgroundColor: Colors.red),
+              backgroundColor: BuTokens.dark.red),
         );
       }
     } finally {
@@ -313,7 +315,7 @@ class _AddTableSheetState extends State<_AddTableSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: BuTokens.dark.muted,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -333,7 +335,6 @@ class _AddTableSheetState extends State<_AddTableSheet> {
               decoration: const InputDecoration(
                 labelText: 'Table Name *',
                 hintText: 'e.g. VIP Booth 1, Table A',
-                border: OutlineInputBorder(),
               ),
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Enter a table name' : null,
@@ -350,7 +351,6 @@ class _AddTableSheetState extends State<_AddTableSheet> {
                     decoration: const InputDecoration(
                       labelText: 'Capacity *',
                       hintText: '4',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Required';
@@ -368,7 +368,6 @@ class _AddTableSheetState extends State<_AddTableSheet> {
                     decoration: const InputDecoration(
                       labelText: 'Deposit (\$) *',
                       hintText: '100',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Required';
@@ -388,7 +387,6 @@ class _AddTableSheetState extends State<_AddTableSheet> {
               decoration: const InputDecoration(
                 labelText: 'Minimum Spend (\$) — optional',
                 hintText: 'e.g. 500',
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -399,7 +397,6 @@ class _AddTableSheetState extends State<_AddTableSheet> {
               decoration: const InputDecoration(
                 labelText: 'Location / Description — optional',
                 hintText: 'e.g. Front left, near stage',
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),

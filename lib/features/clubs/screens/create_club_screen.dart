@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -399,8 +400,8 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
                               SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.5),
                               TextButton.icon(
                                 onPressed: () => setState(() => _coverImage = null),
-                                icon: const Icon(Ionicons.trash_outline, color: Colors.red),
-                                label: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                                icon: Icon(Ionicons.trash_outline, color: BuTokens.dark.red),
+                                label: Text('Remove Photo', style: TextStyle(color: BuTokens.dark.red)),
                               ),
                             ],
                           ],
@@ -498,7 +499,6 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
         labelText: label,
         hintText: hint,
         prefixText: prefix,
-        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -515,7 +515,6 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
       ),
     );
   }

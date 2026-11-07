@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ionicons/ionicons.dart';
 import 'sales_progress_bar.dart';
+import '../../../core/theme/app_tokens.dart';
 
 class EventCardEnhanced extends StatelessWidget {
   final Map<String, dynamic> event;
@@ -246,17 +247,17 @@ class EventCardEnhanced extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.1),
+              color: BuTokens.dark.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.orange.withValues(alpha: 0.3),
+                color: BuTokens.dark.amber.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
             child: Text(
               'Low Stock',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.orange,
+                color: BuTokens.dark.amber,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -267,17 +268,17 @@ class EventCardEnhanced extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFB800).withValues(alpha: 0.1),
+              color: BuTokens.dark.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFFFFB800).withValues(alpha: 0.3),
+                color: BuTokens.dark.amber.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
             child: Text(
               'Featured',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: const Color(0xFFFFB800),
+                color: BuTokens.dark.amber,
                 fontWeight: FontWeight.w600,
               ),
             ),

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ionicons/ionicons.dart';
+import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../shared/services/stripe_service.dart';
 import '../../providers/supabase_auth_provider.dart';
@@ -100,9 +102,9 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
       if (mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Profile completed successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
 
@@ -144,7 +146,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
         elevation: 0,
         leading: _currentStep > 0
             ? IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Ionicons.arrow_back),
                 onPressed: _previousStep,
               )
             : null,
@@ -258,7 +260,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
                   shape: BoxShape.circle,
                   color: theme.cardColor,
                   border: Border.all(
-                    color: _photoUrl != null ? Colors.orange : theme.dividerColor,
+                    color: _photoUrl != null ? BuTokens.dark.amber : theme.dividerColor,
                     width: 2,
                   ),
                 ),
@@ -273,7 +275,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.add_a_photo,
+                            Ionicons.camera_outline,
                             size: 40,
                             color: theme.colorScheme.primary,
                           ),
@@ -302,7 +304,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
               ),
               filled: true,
               enabled: false,
-              prefixIcon: const Icon(Icons.email),
+              prefixIcon: const Icon(Ionicons.mail_outline),
             ),
           ),
 
@@ -318,7 +320,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              prefixIcon: const Icon(Icons.phone),
+              prefixIcon: const Icon(Ionicons.call_outline),
             ),
             keyboardType: TextInputType.phone,
           ),
@@ -329,19 +331,19 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: BuTokens.dark.amber.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange),
+              border: Border.all(color: BuTokens.dark.amber),
             ),
             child: Row(
               children: [
-                Icon(Icons.info, color: Colors.orange),
+                Icon(Ionicons.information_circle_outline, color: BuTokens.dark.amber),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'As a promoter, you\'ll earn commissions by promoting events',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.orange.shade800,
+                      color: BuTokens.dark.amber,
                     ),
                   ),
                 ),
@@ -385,16 +387,16 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
             child: Column(
               children: [
                 Icon(
-                  Icons.card_giftcard,
+                  Ionicons.gift_outline,
                   size: 64,
-                  color: Colors.orange,
+                  color: BuTokens.dark.amber,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   _promoCode ?? 'Waiting for Assignment',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: _promoCode != null ? Colors.orange : theme.colorScheme.onSurfaceVariant,
+                    color: _promoCode != null ? BuTokens.dark.amber : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -417,7 +419,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: BuTokens.dark.orangeSoft.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -425,13 +427,13 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
               children: [
                 Row(
                   children: [
-                    Icon(Icons.lightbulb, color: Colors.blue),
+                    Icon(Ionicons.bulb_outline, color: BuTokens.dark.orangeSoft),
                     const SizedBox(width: 12),
                     Text(
                       'How Promo Codes Work',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: BuTokens.dark.orangeSoft,
                       ),
                     ),
                   ],
@@ -458,7 +460,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
           width: 24,
           height: 24,
           decoration: BoxDecoration(
-            color: Colors.blue,
+            color: BuTokens.dark.orangeSoft,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -476,7 +478,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
           child: Text(
             text,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.blue.shade800,
+              color: BuTokens.dark.orangeSoft,
             ),
           ),
         ),
@@ -512,15 +514,15 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _payoutConnected ? Colors.green : theme.dividerColor,
+                color: _payoutConnected ? BuTokens.dark.green : theme.dividerColor,
               ),
             ),
             child: Column(
               children: [
                 Icon(
-                  _payoutConnected ? Icons.check_circle : Icons.account_balance,
+                  _payoutConnected ? Ionicons.checkmark_circle : Ionicons.business_outline,
                   size: 64,
-                  color: _payoutConnected ? Colors.green : theme.colorScheme.primary,
+                  color: _payoutConnected ? BuTokens.dark.green : theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -551,7 +553,7 @@ class _PromoterOnboardingScreenState extends ConsumerState<PromoterOnboardingScr
                           _payoutConnected = true;
                         });
                       },
-                      icon: const Icon(Icons.link),
+                      icon: const Icon(Ionicons.link_outline),
                       label: const Text('Connect Account'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),

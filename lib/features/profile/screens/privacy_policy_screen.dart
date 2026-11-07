@@ -49,7 +49,7 @@ class PrivacyPolicyScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          FilledButton.icon(key: const Key('open-full-policy'), onPressed: () => _openPolicy(context, ref), icon: const Icon(Icons.open_in_new, size: 18), label: const Text('Read the full privacy policy')),
+          FilledButton.icon(key: const Key('open-full-policy'), onPressed: () => _openPolicy(context, ref), icon: const Icon(Ionicons.open_outline, size: 18), label: const Text('Read the full privacy policy')),
           const SizedBox(height: 24),
           for (final s in dataCollected)
             Padding(

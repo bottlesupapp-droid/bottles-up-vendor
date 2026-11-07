@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ionicons/ionicons.dart';
 import '../../../shared/models/venue_model.dart';
 import '../providers/venues_provider.dart';
 import 'venue_detail_screen.dart';
@@ -24,7 +26,7 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
         title: const Text('My Venues'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Ionicons.add),
             onPressed: _navigateToCreateVenue,
             tooltip: 'Create New Venue',
           ),
@@ -71,9 +73,9 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.location_city,
+            Ionicons.business_outline,
             size: 80,
-            color: Colors.grey[400],
+            color: BuTokens.dark.muted,
           ),
           const SizedBox(height: 24),
           Text(
@@ -84,14 +86,14 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
           Text(
             'Create your first venue to get started',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
+                  color: BuTokens.dark.muted,
                 ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _navigateToCreateVenue,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Ionicons.add),
             label: const Text('Create Venue'),
           ),
         ],
@@ -105,9 +107,9 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.error_outline,
+            Ionicons.alert_circle_outline,
             size: 80,
-            color: Colors.red[400],
+            color: BuTokens.dark.red,
           ),
           const SizedBox(height: 24),
           Text(
@@ -120,7 +122,7 @@ class _VenueDirectoryScreenState extends ConsumerState<VenueDirectoryScreen> {
             child: Text(
               error,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: BuTokens.dark.muted,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -178,8 +180,8 @@ class _VenueCard extends StatelessWidget {
                   venue.gallery.first,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stack) => Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image_not_supported, size: 48),
+                    color: BuTokens.dark.muted,
+                    child: const Icon(Ionicons.image_outline, size: 48),
                   ),
                 ),
               )
@@ -187,8 +189,8 @@ class _VenueCard extends StatelessWidget {
               AspectRatio(
                 aspectRatio: 16 / 9,
                 child: Container(
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.location_city, size: 48),
+                  color: BuTokens.dark.muted,
+                  child: const Icon(Ionicons.business_outline, size: 48),
                 ),
               ),
 
@@ -215,13 +217,13 @@ class _VenueCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green[100],
+                            color: BuTokens.dark.green,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             'Active',
                             style: TextStyle(
-                              color: Colors.green[800],
+                              color: BuTokens.dark.green,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -233,12 +235,12 @@ class _VenueCard extends StatelessWidget {
                   if (venue.city != null)
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                        Icon(Ionicons.location, size: 16, color: BuTokens.dark.muted),
                         const SizedBox(width: 4),
                         Text(
                           venue.city!,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
+                                color: BuTokens.dark.muted,
                               ),
                         ),
                       ],
@@ -247,12 +249,12 @@ class _VenueCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.people, size: 16, color: Colors.grey[600]),
+                        Icon(Ionicons.people_outline, size: 16, color: BuTokens.dark.muted),
                         const SizedBox(width: 4),
                         Text(
                           'Capacity: ${venue.capacity}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
+                                color: BuTokens.dark.muted,
                               ),
                         ),
                       ],
@@ -264,7 +266,7 @@ class _VenueCard extends StatelessWidget {
                     children: [
                       TextButton.icon(
                         onPressed: onTap,
-                        icon: const Icon(Icons.arrow_forward),
+                        icon: const Icon(Ionicons.arrow_forward),
                         label: const Text('View Details'),
                       ),
                     ],

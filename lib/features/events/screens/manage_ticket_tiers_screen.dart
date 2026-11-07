@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -244,7 +245,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: BuTokens.dark.red),
             child: const Text('Delete'),
           ),
         ],
@@ -377,7 +378,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
                                     'Sold',
                                     _summary!['total_sold'].toString(),
                                     Ionicons.ticket_outline,
-                                    Colors.green,
+                                    BuTokens.dark.green,
                                   ),
                                 ),
                               ],
@@ -390,7 +391,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
                                     'Available',
                                     _summary!['total_available'].toString(),
                                     Ionicons.checkmark_circle_outline,
-                                    Colors.blue,
+                                    BuTokens.dark.orangeSoft,
                                   ),
                                 ),
                                 Expanded(
@@ -541,7 +542,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.2),
+                              color: BuTokens.dark.muted.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
@@ -553,12 +554,12 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.2),
+                              color: BuTokens.dark.red.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Sold Out',
-                              style: TextStyle(fontSize: 10, color: Colors.red),
+                              style: TextStyle(fontSize: 10, color: BuTokens.dark.red),
                             ),
                           ),
                       ],
@@ -608,11 +609,11 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
                   if (tier.soldCount == 0)
                     PopupMenuItem(
                       onTap: () => Future.delayed(Duration.zero, () => _deleteTier(tier)),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Ionicons.trash_outline, size: 18, color: Colors.red),
+                          Icon(Ionicons.trash_outline, size: 18, color: BuTokens.dark.red),
                           SizedBox(width: 12),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
+                          Text('Delete', style: TextStyle(color: BuTokens.dark.red)),
                         ],
                       ),
                     ),
@@ -694,10 +695,10 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
             value: percentSold / 100,
             backgroundColor: theme.colorScheme.surfaceVariant,
             color: percentSold >= 90
-                ? Colors.red
+                ? BuTokens.dark.red
                 : percentSold >= 70
-                    ? Colors.orange
-                    : Colors.green,
+                    ? BuTokens.dark.amber
+                    : BuTokens.dark.green,
           ),
           const SizedBox(height: 4),
           Text(

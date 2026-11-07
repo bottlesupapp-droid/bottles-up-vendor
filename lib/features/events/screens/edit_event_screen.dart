@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -363,24 +364,24 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                     margin: EdgeInsets.only(
                         bottom: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.12),
-                      border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                      color: BuTokens.dark.amber.withValues(alpha: 0.12),
+                      border: Border.all(color: BuTokens.dark.amber.withValues(alpha: 0.5)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Ionicons.lock_closed_outline,
-                            color: Colors.orange, size: 20),
+                        Icon(Ionicons.lock_closed_outline,
+                            color: BuTokens.dark.amber, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Editing locked — event is within 72 hours',
                                 style: TextStyle(
-                                  color: Colors.orange,
+                                  color: BuTokens.dark.amber,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -388,7 +389,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                               Text(
                                 'To protect attendees, event details cannot be changed within 72 hours of the start time.',
                                 style: TextStyle(
-                                  color: Colors.orange.withValues(alpha: 0.8),
+                                  color: BuTokens.dark.amber.withValues(alpha: 0.8),
                                   fontSize: 13,
                                 ),
                               ),
@@ -620,7 +621,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                               return Container(
                                 height: 200,
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[800],
+                                  color: BuTokens.dark.muted,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Ionicons.image_outline, size: 48),
@@ -653,8 +654,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                                     _existingFlyerUrl = null;
                                   });
                                 },
-                          icon: const Icon(Ionicons.trash_outline, color: Colors.red),
-                          label: const Text('Remove Flyer', style: TextStyle(color: Colors.red)),
+                          icon: Icon(Ionicons.trash_outline, color: BuTokens.dark.red),
+                          label: Text('Remove Flyer', style: TextStyle(color: BuTokens.dark.red)),
                         ),
                       ],
                     ],
@@ -777,7 +778,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         labelText: label,
         hintText: hint,
         prefixText: prefix,
-        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -796,7 +796,6 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -811,8 +810,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: const Icon(Icons.calendar_today),
+          suffixIcon: const Icon(Ionicons.calendar_outline),
         ),
         child: Text(
           '${value.day}/${value.month}/${value.year}',
@@ -832,8 +830,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: const Icon(Icons.access_time),
+          suffixIcon: const Icon(Ionicons.time_outline),
         ),
         child: Text(
           value.format(context),

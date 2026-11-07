@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_theme.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -290,9 +291,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               child: FilledButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Notification preferences saved'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: BuTokens.dark.green,
                     ),
                   );
                   Navigator.of(context).pop();

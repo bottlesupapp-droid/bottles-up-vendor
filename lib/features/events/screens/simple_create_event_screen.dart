@@ -1,9 +1,11 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../../core/config/supabase_config.dart';
 import '../../../features/auth/providers/supabase_auth_provider.dart';
@@ -152,7 +154,7 @@ class _SimpleCreateEventScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(couldNot('upload flyer', e)),
-          backgroundColor: Colors.red,
+          backgroundColor: BuTokens.dark.red,
         ));
       }
     } finally {
@@ -243,9 +245,9 @@ class _SimpleCreateEventScreenState
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Event created successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
         context.pop();
@@ -254,7 +256,7 @@ class _SimpleCreateEventScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(couldNot('create event', e)),
-          backgroundColor: Colors.red,
+          backgroundColor: BuTokens.dark.red,
         ));
       }
     } finally {
@@ -307,7 +309,7 @@ class _SimpleCreateEventScreenState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_city, size: 64, color: Colors.grey),
+                    Icon(Ionicons.business_outline, size: 64, color: BuTokens.dark.muted),
                     const SizedBox(height: 16),
                     Text('No Venues Found',
                         style: theme.textTheme.titleLarge
@@ -318,7 +320,7 @@ class _SimpleCreateEventScreenState
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
                       onPressed: () => context.go('/clubs/create'),
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(Ionicons.add),
                       label: const Text('Create Venue'),
                     ),
                   ],
@@ -371,7 +373,7 @@ class _SimpleCreateEventScreenState
           const SizedBox(height: 12),
           _pickerTile(
             theme,
-            icon: Icons.calendar_today_outlined,
+            icon: Ionicons.calendar_outline,
             label: 'Event Date',
             value:
                 '${_eventDate.day.toString().padLeft(2, '0')}/${_eventDate.month.toString().padLeft(2, '0')}/${_eventDate.year}',
@@ -381,14 +383,14 @@ class _SimpleCreateEventScreenState
           Row(children: [
             Expanded(
                 child: _pickerTile(theme,
-                    icon: Icons.access_time_outlined,
+                    icon: Ionicons.time_outline,
                     label: 'Start',
                     value: _startTime.format(context),
                     onTap: () => _pickTime(true))),
             const SizedBox(width: 12),
             Expanded(
                 child: _pickerTile(theme,
-                    icon: Icons.access_time_outlined,
+                    icon: Ionicons.time_outline,
                     label: 'End',
                     value: _endTime.format(context),
                     onTap: () => _pickTime(false))),
@@ -400,7 +402,7 @@ class _SimpleCreateEventScreenState
             Expanded(child: _sectionTitle(theme, 'Ticket Zones')),
             TextButton.icon(
               onPressed: _addTier,
-              icon: const Icon(Icons.add, size: 18),
+              icon: const Icon(Ionicons.add, size: 18),
               label: const Text('Add Zone'),
             ),
           ]),
@@ -493,8 +495,8 @@ class _SimpleCreateEventScreenState
                 const Spacer(),
                 if (_tiers.length > 1)
                   IconButton(
-                    icon: const Icon(Icons.delete_outline,
-                        color: Colors.red, size: 20),
+                    icon: Icon(Ionicons.trash_outline,
+                        color: BuTokens.dark.red, size: 20),
                     onPressed: () => _removeTier(index),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -621,7 +623,7 @@ class _SimpleCreateEventScreenState
             errorBuilder: (_, __, ___) => Container(
               height: 200,
               color: theme.colorScheme.surfaceContainerHighest,
-              child: const Icon(Icons.broken_image_outlined, size: 48),
+              child: const Icon(Ionicons.image_outline, size: 48),
             ),
           ),
         ),
@@ -629,18 +631,18 @@ class _SimpleCreateEventScreenState
           top: 8,
           right: 8,
           child: Row(children: [
-            _iconBtn(Icons.edit_outlined, _pickFlyer),
+            _iconBtn(Ionicons.create_outline, _pickFlyer),
             const SizedBox(width: 4),
-            _iconBtn(Icons.close,
+            _iconBtn(Ionicons.close,
                 () => setState(() => _flyerImageUrl = null),
-                color: Colors.red),
+                color: BuTokens.dark.red),
           ]),
         ),
       ]);
     }
     return OutlinedButton.icon(
       onPressed: _pickFlyer,
-      icon: const Icon(Icons.add_photo_alternate_outlined),
+      icon: const Icon(Ionicons.image_outline),
       label: const Text('Upload Event Flyer'),
       style: OutlinedButton.styleFrom(
         padding:
@@ -697,7 +699,7 @@ class _SimpleCreateEventScreenState
               ],
             ),
             const Spacer(),
-            Icon(Icons.chevron_right,
+            Icon(Ionicons.chevron_forward,
                 size: 18,
                 color: theme.colorScheme.onSurfaceVariant),
           ]),
