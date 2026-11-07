@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../door/screens/door_guests_screen.dart';
 import '../../door/screens/door_scan_screen.dart';
 import '../../door_sales/screens/door_sales_screen.dart';
@@ -175,25 +177,14 @@ class NotBuiltYetSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
-        Row(
-          children: [
-            Icon(section.activeIcon, size: 28, color: theme.colorScheme.primary),
-            const SizedBox(width: 12),
-            Text(section.label, style: theme.textTheme.headlineSmall),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(section.summary, style: theme.textTheme.bodyLarge),
-        const SizedBox(height: 20),
-        Container(
+        BuPageHeader(eyebrow: workspace.role.label, title: section.label),
+        const SizedBox(height: BuSpace.m),
+        Text(section.summary, style: theme.textTheme.bodyLarge?.copyWith(color: context.bu.muted)),
+        const SizedBox(height: BuSpace.xl),
+        BuCard(
           key: const Key('not-built-yet'),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.4)),
-          ),
           child: Text(
             'Not built yet. This is where it will appear for ${workspace.role.label.toLowerCase()}s of ${workspace.scopeLabel}.',
             style: theme.textTheme.bodyMedium,

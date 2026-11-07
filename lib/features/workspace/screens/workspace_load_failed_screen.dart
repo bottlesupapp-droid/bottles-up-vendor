@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../logic/workspace_routing.dart';
 import '../providers/workspace_providers.dart';
@@ -27,28 +29,34 @@ class WorkspaceLoadFailedScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Ionicons.cloud_offline_outline, size: 48, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(height: 16),
-              Text('We could not load your workspace', key: const Key('workspace-failed-title'), textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
-              const Text(
-                'Check your connection and try again. Your account and your business are not affected.',
-                key: Key('workspace-failed-body'),
-                textAlign: TextAlign.center,
+      body: BuBackdrop(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(BuSpace.page),
+            child: BuCard(
+              padding: const EdgeInsets.all(BuSpace.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  BuIconTile(icon: Ionicons.cloud_offline_outline, size: 56, color: context.bu.amber, background: context.bu.amber.withValues(alpha: 0.12)),
+                  const SizedBox(height: BuSpace.l),
+                  Text('We could not load your workspace', key: const Key('workspace-failed-title'), textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
+                  const SizedBox(height: BuSpace.s),
+                  Text(
+                    'Check your connection and try again. Your account and your business are not affected.',
+                    key: const Key('workspace-failed-body'),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted),
+                  ),
+                  const SizedBox(height: BuSpace.xl),
+                  FilledButton(
+                    key: const Key('workspace-retry'),
+                    onPressed: retrying ? null : () => ref.invalidate(workspaceSnapshotProvider),
+                    child: Text(retrying ? 'Retrying...' : 'Retry'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              FilledButton(
-                key: const Key('workspace-retry'),
-                onPressed: retrying ? null : () => ref.invalidate(workspaceSnapshotProvider),
-                child: Text(retrying ? 'Retrying...' : 'Retry'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

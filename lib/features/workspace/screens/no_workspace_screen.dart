@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../logic/business_signup.dart';
 import '../logic/workspace_routing.dart';
@@ -54,16 +56,17 @@ class _NoWorkspaceScreenState extends ConsumerState<NoWorkspaceScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: BuBackdrop(
+        child: ListView(
+        padding: const EdgeInsets.all(BuSpace.page),
         children: [
-          Text('This account is not part of a business yet.', key: const Key('no-workspace-title'), style: theme.textTheme.titleLarge),
-          const SizedBox(height: 16),
+          const BuEyebrow('Welcome'),
+          const SizedBox(height: BuSpace.s),
+          Text('This account is not part of a business yet.', key: const Key('no-workspace-title'), style: theme.textTheme.headlineSmall),
+          const SizedBox(height: BuSpace.l),
           const BusinessSignupCard(),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+          const SizedBox(height: BuSpace.m),
+          BuCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -89,15 +92,15 @@ class _NoWorkspaceScreenState extends ConsumerState<NoWorkspaceScreen> {
                   ),
                 ],
               ),
-            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: BuSpace.m),
           OutlinedButton(
             key: const Key('check-again-button'),
             onPressed: checking ? null : () => ref.invalidate(workspaceSnapshotProvider),
             child: Text(checking ? 'Checking...' : 'Check again'),
           ),
         ],
+      ),
       ),
     );
   }
