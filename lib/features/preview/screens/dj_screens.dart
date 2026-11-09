@@ -625,16 +625,19 @@ class DjMoreTab extends StatelessWidget {
       title: 'More',
       children: [
         PvSection(title: 'Public profile', children: [
-          const BuCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Profile visibility'),
-                SizedBox(height: BuSpace.xs),
-                Text('Anyone can find and book you', key: Key('dj-visibility-line')),
-                SizedBox(height: BuSpace.m),
-                PvFilterChips(labels: ['Public', 'Private']),
-              ],
+          BuCard(
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Profile visibility', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 15)),
+                  const SizedBox(height: BuSpace.xs),
+                  Text('Anyone can find and book you', key: const Key('dj-visibility-line'), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.bu.muted)),
+                  const SizedBox(height: BuSpace.m),
+                  const PvFilterChips(labels: ['Public', 'Private']),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: BuSpace.m),

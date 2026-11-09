@@ -83,6 +83,16 @@ void main() {
       expect(find.text('Northwind Agency'), findsOneWidget);
     });
 
+    testWidgets('a countered request waits under "Awaiting client", not under Past', (tester) async {
+      await show(tester, Builder(builder: previewEntryFor('dj')!.build));
+      await tapText(tester, 'Awaiting client · 1');
+      expect(find.text('Maya Chen'), findsOneWidget);
+      expect(find.text('Awaiting client'), findsWidgets, reason: 'its pill');
+      await tapText(tester, 'Past');
+      expect(find.text('Maya Chen'), findsNothing);
+      expect(find.text('Northwind Agency'), findsOneWidget);
+    });
+
     testWidgets('a clash with another gig is said on the row', (tester) async {
       await show(tester, Builder(builder: previewEntryFor('dj')!.build));
       expect(find.textContaining('Date conflict with Nova Room residency'), findsOneWidget);
@@ -128,7 +138,8 @@ void main() {
       await tapTab(tester, 'Calendar');
       await tester.tap(find.byKey(const Key('pv-day-21')));
       await tester.pumpAndSettle();
-      expect(find.text('Nova Room residency'), findsWidgets);
+      expect(find.text('Confirmed'), findsOneWidget, reason: 'the sheet of a booked day says the gig is confirmed');
+      expect(find.text('Block this date'), findsNothing, reason: 'a booked day cannot be blocked');
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('pv-day-3')));
