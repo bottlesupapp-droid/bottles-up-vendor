@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../preview/preview_config.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
 
@@ -125,6 +126,7 @@ RedirectDecision decideWorkspaceRedirect({
   required WorkspaceSnapshot snapshot,
   required ClassicVendorStatus classicVendor,
   String? pendingToken,
+  bool previewsEnabled = kPreviewsEnabled,
 }) {
   if (!isLoggedIn) {
     // An invitation opened signed out: go sign in; the token is kept (see above).
@@ -137,6 +139,9 @@ RedirectDecision decideWorkspaceRedirect({
   if (pendingToken != null && pendingToken.isNotEmpty) {
     return RedirectDecision.go('${WorkspaceRoutes.acceptInvite}?token=${Uri.encodeQueryComponent(pendingToken)}');
   }
+
+  // The sample screens belong to nobody's workspace: a signed-in person may open them, whatever they have (when they are switched on).
+  if (previewsEnabled && (path == PreviewRoutes.gallery || path.startsWith(PreviewRoutes.prefix))) return const RedirectDecision.stay();
 
   if (!snapshot.hasWorkspaces) return _withoutWorkspace(path, snapshot, classicVendor);
 

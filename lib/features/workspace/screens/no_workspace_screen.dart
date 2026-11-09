@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/ui/bu_kit.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
+import '../../preview/screens/preview_gallery_screen.dart';
 import '../logic/business_signup.dart';
 import '../logic/workspace_routing.dart';
 import '../providers/workspace_providers.dart';
@@ -99,6 +100,7 @@ class _NoWorkspaceScreenState extends ConsumerState<NoWorkspaceScreen> {
             onPressed: checking ? null : () => ref.invalidate(workspaceSnapshotProvider),
             child: Text(checking ? 'Checking...' : 'Check again'),
           ),
+          const PreviewMoreRow(),
         ],
       ),
       ),

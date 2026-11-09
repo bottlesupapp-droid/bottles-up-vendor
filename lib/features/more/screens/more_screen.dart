@@ -8,6 +8,7 @@ import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
 import '../../bottle_signs/screens/bottle_signs_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../discounts/screens/discounts_screen.dart';
+import '../../preview/screens/preview_gallery_screen.dart';
 import '../../door_sales/screens/shift_summary_screen.dart';
 import '../../door_staff/screens/club_door_staff_screen.dart';
 import '../../door_staff/screens/organizer_team_screen.dart';
@@ -131,6 +132,8 @@ class MoreScreen extends StatelessWidget {
                 }),
             ],
           ),
+        // Sample screens for what the design has and the app does not yet (debug builds only, unless switched on).
+        const PreviewMoreRow(),
       ],
     );
   }
