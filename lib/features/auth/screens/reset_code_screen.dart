@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../logic/password_recovery_logic.dart';
 import '../providers/password_recovery_provider.dart';
 import '../services/password_recovery_service.dart';
@@ -165,7 +166,7 @@ class _ResetCodeScreenState extends ConsumerState<ResetCodeScreen> {
               ],
               if (_notice != null) ...[
                 const SizedBox(height: 12),
-                Text(_notice!, key: const Key('reset-code-notice'), style: TextStyle(color: Colors.green.shade300), textAlign: TextAlign.center),
+                Text(_notice!, key: const Key('reset-code-notice'), style: TextStyle(color: context.bu.green), textAlign: TextAlign.center),
               ],
               const SizedBox(height: 24),
               AuthButton(key: const Key('reset-code-submit'), text: 'Continue', onPressed: _checking ? null : _verify, isLoading: _checking),
