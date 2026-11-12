@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../../core/utils/date_time_picker.dart';
 import '../../owner/widgets/photo_field.dart';
@@ -98,7 +99,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
             maxLines: lines,
             maxLength: maxLength,
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(labelText: label, hintText: hint, border: const OutlineInputBorder(), counterText: ''),
+            decoration: InputDecoration(labelText: label, hintText: hint, counterText: ''),
           ),
         );
 
@@ -122,7 +123,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           Row(
             children: [
               Expanded(child: OutlinedButton(key: const Key('pick-end'), onPressed: () => _pick(false), child: Text(_when(_ends, 'Choose when it ends')))),
-              if (_ends != null) IconButton(key: const Key('clear-end'), tooltip: 'Remove the end', icon: const Icon(Icons.close), onPressed: () => setState(() => _ends = null)),
+              if (_ends != null) IconButton(key: const Key('clear-end'), tooltip: 'Remove the end', icon: const Icon(Ionicons.close), onPressed: () => setState(() => _ends = null)),
             ],
           ),
           const SizedBox(height: 4),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../owner/widgets/setup_common.dart' show ProblemsBox;
@@ -96,13 +98,13 @@ class BookingDiscountsCard extends ConsumerWidget {
                     OutlinedButton.icon(
                       key: const Key('give-discount'),
                       onPressed: canGive ? () => _give(context, ref, GiveDiscountSheet(bookingId: bookingId, limits: l, existing: list)) : null,
-                      icon: const Icon(Icons.percent, size: 18),
+                      icon: const Icon(Ionicons.pricetag_outline, size: 18),
                       label: const Text('Give a discount'),
                     ),
                     OutlinedButton.icon(
                       key: const Key('give-free-bottle'),
                       onPressed: canGive ? () => _give(context, ref, GiveFreeBottleSheet(bookingId: bookingId, limits: l)) : null,
-                      icon: const Icon(Icons.card_giftcard_outlined, size: 18),
+                      icon: const Icon(Ionicons.gift_outline, size: 18),
                       label: const Text('Give a free bottle'),
                     ),
                   ],
@@ -138,10 +140,10 @@ class BookingDiscountsCard extends ConsumerWidget {
   }
 
   Color _color(ConcessionStatus s) => switch (s) {
-        ConcessionStatus.applied => const Color(0xFF66BB6A),
-        ConcessionStatus.pending => const Color(0xFFFFB300),
-        ConcessionStatus.declined => const Color(0xFF9E9E9E),
-        ConcessionStatus.voided => const Color(0xFFEF5350),
+        ConcessionStatus.applied => BuTokens.dark.green,
+        ConcessionStatus.pending => BuTokens.dark.amber,
+        ConcessionStatus.declined => BuTokens.dark.muted,
+        ConcessionStatus.voided => BuTokens.dark.red,
       };
 }
 
@@ -239,7 +241,7 @@ class _GiveDiscountSheetState extends ConsumerState<GiveDiscountSheet> {
               enabled: !_busy,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => setState(() => _problems = const []),
-              decoration: InputDecoration(labelText: _kind == DiscountKind.percent ? 'Percent off (1 to 100)' : 'Amount off (\$)', border: const OutlineInputBorder()),
+              decoration: InputDecoration(labelText: _kind == DiscountKind.percent ? 'Percent off (1 to 100)' : 'Amount off (\$)'),
             ),
             if (preview != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(preview, key: const Key('discount-preview'), style: theme.textTheme.bodySmall)),
             const SizedBox(height: 12),
@@ -248,7 +250,7 @@ class _GiveDiscountSheetState extends ConsumerState<GiveDiscountSheet> {
               controller: _reason,
               enabled: !_busy,
               maxLength: 300,
-              decoration: const InputDecoration(labelText: 'Reason', helperText: 'Kept with who gave it and who approved it.', border: OutlineInputBorder(), counterText: ''),
+              decoration: const InputDecoration(labelText: 'Reason', helperText: 'Kept with who gave it and who approved it.', counterText: ''),
             ),
             if (_problems.isNotEmpty) ...[const SizedBox(height: 8), ProblemsBox(problems: _problems)],
             const SizedBox(height: 12),
@@ -350,7 +352,7 @@ class _GiveFreeBottleSheetState extends ConsumerState<GiveFreeBottleSheet> {
                               selected: b.id == _bottle?.id,
                               title: Text(b.title),
                               subtitle: Text('${formatDollars(b.priceCents)}${b.leftCount == null ? '' : ' · ${b.leftCount} left'}'),
-                              trailing: b.id == _bottle?.id ? const Icon(Icons.check_circle) : null,
+                              trailing: b.id == _bottle?.id ? const Icon(Ionicons.checkmark_circle) : null,
                               onTap: _busy || b.soldOutByCount
                                   ? null
                                   : () => setState(() {
@@ -367,12 +369,12 @@ class _GiveFreeBottleSheetState extends ConsumerState<GiveFreeBottleSheet> {
             Row(
               children: [
                 const Expanded(child: Text('How many')),
-                IconButton(key: const Key('free-less'), onPressed: _busy || _quantity <= 1 ? null : () => setState(() => _quantity--), icon: const Icon(Icons.remove_circle_outline)),
+                IconButton(key: const Key('free-less'), onPressed: _busy || _quantity <= 1 ? null : () => setState(() => _quantity--), icon: const Icon(Ionicons.remove_circle_outline)),
                 SizedBox(width: 32, child: Text('$_quantity', key: const Key('free-quantity'), textAlign: TextAlign.center)),
                 IconButton(
                   key: const Key('free-more'),
                   onPressed: _busy || _quantity >= (_bottle?.most ?? maxFreeBottles) ? null : () => setState(() => _quantity++),
-                  icon: const Icon(Icons.add_circle_outline),
+                  icon: const Icon(Ionicons.add_circle_outline),
                 ),
               ],
             ),
@@ -383,7 +385,7 @@ class _GiveFreeBottleSheetState extends ConsumerState<GiveFreeBottleSheet> {
               controller: _reason,
               enabled: !_busy,
               maxLength: 300,
-              decoration: const InputDecoration(labelText: 'Reason', helperText: 'Kept with who gave it and who approved it.', border: OutlineInputBorder(), counterText: ''),
+              decoration: const InputDecoration(labelText: 'Reason', helperText: 'Kept with who gave it and who approved it.', counterText: ''),
             ),
             if (_problems.isNotEmpty) ...[const SizedBox(height: 8), ProblemsBox(problems: _problems)],
             const SizedBox(height: 12),
@@ -451,7 +453,7 @@ class _TakeBackDialogState extends ConsumerState<TakeBackDialog> {
             controller: _note,
             enabled: !_busy,
             maxLength: 300,
-            decoration: InputDecoration(labelText: 'Why is it taken back?', errorText: _problem, errorMaxLines: 3, border: const OutlineInputBorder(), counterText: ''),
+            decoration: InputDecoration(labelText: 'Why is it taken back?', errorText: _problem, errorMaxLines: 3, counterText: ''),
           ),
         ],
       ),

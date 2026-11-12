@@ -113,7 +113,7 @@ class _InviteDoorStaffScreenState extends ConsumerState<InviteDoorStaffScreen> {
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             enabled: !_busy,
-            decoration: const InputDecoration(labelText: 'Email', helperText: 'They must sign in with this address to accept.', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Email', helperText: 'They must sign in with this address to accept.'),
           ),
           SwitchListTile(
             key: const Key('invite-door-limit'),

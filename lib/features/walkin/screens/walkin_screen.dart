@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../refunds/providers/refund_providers.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
@@ -134,7 +136,7 @@ class _WalkinScreenState extends ConsumerState<WalkinScreen> {
         key: const Key('walkin-done'),
         padding: const EdgeInsets.all(16),
         children: [
-          const Icon(Icons.check_circle_outline, size: 48, color: Color(0xFF66BB6A)),
+          Icon(Ionicons.checkmark_circle_outline, size: 48, color: BuTokens.dark.green),
           const SizedBox(height: 8),
           Text('Booked', style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
           Text(_resultTitle, textAlign: TextAlign.center),
@@ -156,7 +158,7 @@ class _WalkinScreenState extends ConsumerState<WalkinScreen> {
           Text('The guest is seated and a confirmation e-mail is queued. ${r.tablesLeft == 0 ? 'No tables of this kind are left for that time.' : '${r.tablesLeft} of this kind left for that time.'}', textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
           const SizedBox(height: 20),
           if (r.dueCents > 0)
-            FilledButton.icon(key: const Key('walkin-record'), onPressed: () => _openTable(r), icon: const Icon(Icons.add_card_outlined), label: const Text('Record the deposit')),
+            FilledButton.icon(key: const Key('walkin-record'), onPressed: () => _openTable(r), icon: const Icon(Ionicons.card_outline), label: const Text('Record the deposit')),
           if (r.dueCents <= 0) FilledButton(key: const Key('walkin-open'), onPressed: () => _openTable(r), child: const Text('Open the table')),
           const SizedBox(height: 8),
           OutlinedButton(key: const Key('walkin-finish'), onPressed: () => Navigator.of(context).pop(true), child: const Text('Done')),
@@ -237,7 +239,7 @@ class _WalkinScreenState extends ConsumerState<WalkinScreen> {
                     selected: t.id == _tableId,
                     title: Text(t.name),
                     subtitle: Text(tableLine(t)),
-                    trailing: t.id == _tableId ? const Icon(Icons.check_circle) : null,
+                    trailing: t.id == _tableId ? const Icon(Ionicons.checkmark_circle) : null,
                     onTap: t.isFree && !_busy ? () => _pickTable(t) : null,
                   ),
                 ),
@@ -246,11 +248,11 @@ class _WalkinScreenState extends ConsumerState<WalkinScreen> {
               const SizedBox(height: 16),
               Text('Guest', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
-              TextField(key: const Key('walkin-name'), controller: _name, enabled: !_busy, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder())),
+              TextField(key: const Key('walkin-name'), controller: _name, enabled: !_busy, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name')),
               const SizedBox(height: 8),
-              TextField(key: const Key('walkin-email'), controller: _email, enabled: !_busy, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: const InputDecoration(labelText: 'Email', helperText: 'The booking confirmation goes here.', border: OutlineInputBorder())),
+              TextField(key: const Key('walkin-email'), controller: _email, enabled: !_busy, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: const InputDecoration(labelText: 'Email', helperText: 'The booking confirmation goes here.')),
               const SizedBox(height: 8),
-              TextField(key: const Key('walkin-phone'), controller: _phone, enabled: !_busy, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone (optional)', border: OutlineInputBorder())),
+              TextField(key: const Key('walkin-phone'), controller: _phone, enabled: !_busy, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone (optional)')),
               const SizedBox(height: 12),
               _stepper('Guests', _guests, table.minGuests ?? 1, table.maxGuests, (v) => setState(() => _guests = v), 'walkin-guests'),
               if (table.hourly) _stepper('Hours', _hours, table.minHours ?? 1, 24, (v) => setState(() => _hours = v), 'walkin-hours'),
@@ -296,9 +298,9 @@ class _WalkinScreenState extends ConsumerState<WalkinScreen> {
   Widget _stepper(String label, int value, int min, int max, void Function(int) onChanged, String key) => Row(
         children: [
           Expanded(child: Text(label)),
-          IconButton(key: Key('$key-less'), onPressed: _busy || value <= min ? null : () => onChanged(value - 1), icon: const Icon(Icons.remove_circle_outline)),
+          IconButton(key: Key('$key-less'), onPressed: _busy || value <= min ? null : () => onChanged(value - 1), icon: const Icon(Ionicons.remove_circle_outline)),
           SizedBox(width: 32, child: Text('$value', key: Key('$key-value'), textAlign: TextAlign.center)),
-          IconButton(key: Key('$key-more'), onPressed: _busy || value >= max ? null : () => onChanged(value + 1), icon: const Icon(Icons.add_circle_outline)),
+          IconButton(key: Key('$key-more'), onPressed: _busy || value >= max ? null : () => onChanged(value + 1), icon: const Icon(Ionicons.add_circle_outline)),
         ],
       );
 }

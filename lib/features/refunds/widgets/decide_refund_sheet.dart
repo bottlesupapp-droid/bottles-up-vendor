@@ -101,7 +101,7 @@ class _DecideRefundSheetState extends ConsumerState<DecideRefundSheet> {
                 controller: _amount,
                 enabled: !_busy,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Amount to refund (\$)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Amount to refund (\$)'),
               ),
               const SizedBox(height: 8),
               Text('How is it paid back?', style: theme.textTheme.titleSmall),
@@ -140,7 +140,6 @@ class _DecideRefundSheetState extends ConsumerState<DecideRefundSheet> {
               maxLength: 500,
               decoration: InputDecoration(
                 labelText: _approve ? 'Note (needed if more than the policy suggests)' : 'Why is it declined? (the guest is told)',
-                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),

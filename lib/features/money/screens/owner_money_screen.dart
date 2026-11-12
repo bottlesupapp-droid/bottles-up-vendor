@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/ui/bu_kit.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../workspace/models/workspace.dart';
@@ -36,9 +38,9 @@ class _OwnerMoneyScreenState extends ConsumerState<OwnerMoneyScreen> {
       child: ListView(
         key: const Key('money-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Text('Money', style: theme.textTheme.headlineSmall),
+          const BuPageHeader(eyebrow: 'Payments', title: 'Money'),
           Text(widget.workspace.orgName, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 8),
           Wrap(

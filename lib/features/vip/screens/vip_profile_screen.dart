@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
@@ -161,7 +162,7 @@ class _VipProfileScreenState extends ConsumerState<VipProfileScreen> {
                                   IconButton(
                                     key: Key('vip-end-perk-${k.id}'),
                                     tooltip: 'End this perk',
-                                    icon: const Icon(Icons.block, size: 20),
+                                    icon: const Icon(Ionicons.ban_outline, size: 20),
                                     onPressed: _busy.contains(k.id)
                                         ? null
                                         : () => _run(k.id, () async {

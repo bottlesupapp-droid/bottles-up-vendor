@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../../core/theme/app_tokens.dart';
 import '../../logic/setup_forms.dart';
 import '../../providers/owner_providers.dart';
 import '../../services/venue_setup_service.dart';
@@ -72,7 +73,7 @@ class _TableTypesEditorState extends ConsumerState<TableTypesEditor> {
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('add-table'),
         onPressed: () => _openForm(null),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Ionicons.add),
         label: const Text('Add a table'),
       ),
       body: types.when(
@@ -127,11 +128,11 @@ class _TableTypesEditorState extends ConsumerState<TableTypesEditor> {
                               ),
                               if (t.isFeatured) ...[
                                 const SizedBox(width: 6),
-                                const Icon(
+                                Icon(
                                   Ionicons.star,
                                   key: Key('featured'),
                                   size: 16,
-                                  color: Color(0xFFFFB300),
+                                  color: BuTokens.dark.amber,
                                 ),
                               ],
                               if (t.badgeLabel != null) ...[
@@ -186,7 +187,7 @@ class _TableTypesEditorState extends ConsumerState<TableTypesEditor> {
                               TextButton(
                                 key: Key('remove-${t.typeId}'),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFFEF5350),
+                                  foregroundColor: BuTokens.dark.red,
                                 ),
                                 onPressed:
                                     t.bookingCount > 0

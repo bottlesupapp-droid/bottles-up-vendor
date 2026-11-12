@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart' show OpsActionException;
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/venue_picker.dart';
@@ -74,7 +76,7 @@ class _SettleSheetState extends State<_SettleSheet> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(c.label),
                 subtitle: Text(c.hint),
-                leading: Icon(_how == c ? Icons.radio_button_checked : Icons.radio_button_unchecked),
+                leading: Icon(_how == c ? Ionicons.radio_button_on : Ionicons.radio_button_off),
                 onTap: () => setState(() {
                   _how = c;
                   _problem = null;
@@ -261,7 +263,7 @@ class _BookingConflictsScreenState extends ConsumerState<BookingConflictsScreen>
                 DeskChip(
                   key: Key('conflict-status-${c.conflictId}'),
                   text: c.isOpen ? 'Needs you' : 'Settled',
-                  color: c.isOpen ? const Color(0xFFFFB300) : const Color(0xFF66BB6A),
+                  color: c.isOpen ? BuTokens.dark.amber : BuTokens.dark.green,
                 ),
               ],
             ),
@@ -286,14 +288,14 @@ class _BookingConflictsScreenState extends ConsumerState<BookingConflictsScreen>
                     OutlinedButton.icon(
                       key: Key('call-${c.conflictId}'),
                       onPressed: () => _call(Uri(scheme: 'tel', path: c.customerPhone)),
-                      icon: const Icon(Icons.phone_outlined, size: 18),
+                      icon: const Icon(Ionicons.call_outline, size: 18),
                       label: const Text('Call'),
                     ),
                   if (c.customerEmail != null)
                     OutlinedButton.icon(
                       key: Key('email-${c.conflictId}'),
                       onPressed: () => _call(Uri(scheme: 'mailto', path: c.customerEmail)),
-                      icon: const Icon(Icons.mail_outline, size: 18),
+                      icon: const Icon(Ionicons.mail_outline, size: 18),
                       label: const Text('E-mail'),
                     ),
                   OutlinedButton(key: Key('open-${c.conflictId}'), onPressed: () => _open(c), child: const Text('Open booking')),

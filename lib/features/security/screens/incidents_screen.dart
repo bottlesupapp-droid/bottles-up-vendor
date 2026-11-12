@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/ui/bu_kit.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../workspace/models/workspace.dart';
@@ -77,14 +80,9 @@ class _IncidentsScreenState extends ConsumerState<IncidentsScreen> {
       child: ListView(
         key: const Key('incidents-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Row(
-            children: [
-              Expanded(child: Text('Incidents', style: theme.textTheme.headlineSmall)),
-              FilledButton.icon(key: const Key('incident-report'), onPressed: _report, icon: const Icon(Icons.edit_note, size: 20), label: const Text('Report')),
-            ],
-          ),
+          BuPageHeader(eyebrow: 'Security', title: 'Incidents', trailing: FilledButton.icon(key: const Key('incident-report'), onPressed: _report, icon: const Icon(Ionicons.create_outline, size: 20), label: const Text('Report'))),
           if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 8),
           OpsAsyncView<List<IncidentRow>>(

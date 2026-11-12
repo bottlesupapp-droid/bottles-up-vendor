@@ -126,8 +126,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             _lockoutRemaining = AuthRateLimiter.lockoutRemaining(email));
       } else if (remaining <= 2) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('$remaining attempt${remaining == 1 ? '' : 's'} remaining before lockout'),
-          backgroundColor: Colors.orange,
+          content: Text('$remaining attempt${remaining == 1 ? '' : 's'} remaining before lockout', style: const TextStyle(color: Colors.black)),
+          backgroundColor: context.bu.amber,
         ));
       }
     } else if (newError == null) {

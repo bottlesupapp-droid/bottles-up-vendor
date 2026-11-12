@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../floor/logic/bookings_rules.dart' show addDays;
 import '../../ops/services/ops_rpc.dart';
@@ -227,7 +228,7 @@ class _TableMapScreenState extends ConsumerState<TableMapScreen> {
       shape: selected ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: theme.colorScheme.primary, width: 2)) : null,
       child: ListTile(
         onTap: () => setState(() => _selected = t.tableTypeId),
-        leading: Tooltip(message: kind.label, child: Icon(Icons.circle, color: colorOfKind(kind), size: 18)),
+        leading: Tooltip(message: kind.label, child: Icon(Ionicons.ellipse, color: colorOfKind(kind), size: 18)),
         title: Text(t.tableName),
         subtitle: Text('${countsLine(t)} · seats up to ${t.maxGuests}', key: Key('map-counts-${t.tableTypeId}')),
         trailing: TextButton(

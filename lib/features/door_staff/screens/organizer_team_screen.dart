@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/date_time_picker.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/widgets/setup_common.dart' show confirmRemove;
@@ -101,7 +103,7 @@ class _OrganizerTeamScreenState extends ConsumerState<OrganizerTeamScreen> {
       child: ListView(
         key: const Key('organizer-team'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
           Text('Door staff for your events', style: theme.textTheme.titleLarge),
           const SizedBox(height: 4),
@@ -140,9 +142,9 @@ class _OrganizerTeamScreenState extends ConsumerState<OrganizerTeamScreen> {
     final staff = [for (final m in members) if (m.eventId == e.eventId && m.role == 'door' && m.state != MemberState.revoked) m];
     final waiting = [for (final i in invitations) if (i.eventId == e.eventId && i.role == 'door' && (i.state == InvitationState.pending || i.state == InvitationState.expired)) i];
     final color = switch (e.state) {
-      EventDoorState.ownEvent || EventDoorState.allowed => const Color(0xFF66BB6A),
-      EventDoorState.notAllowed => const Color(0xFFFFB300),
-      EventDoorState.awaitingApproval => const Color(0xFF42A5F5),
+      EventDoorState.ownEvent || EventDoorState.allowed => BuTokens.dark.green,
+      EventDoorState.notAllowed => BuTokens.dark.amber,
+      EventDoorState.awaitingApproval => BuTokens.dark.orangeSoft,
     };
     return Card(
       key: Key('team-event-${e.eventId}'),
@@ -191,7 +193,7 @@ class _OrganizerTeamScreenState extends ConsumerState<OrganizerTeamScreen> {
             if (e.state.canInvite)
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton.icon(key: Key('team-invite-${e.eventId}'), onPressed: () => _invite(e), icon: const Icon(Icons.person_add_alt, size: 18), label: const Text('Invite door staff')),
+                child: TextButton.icon(key: Key('team-invite-${e.eventId}'), onPressed: () => _invite(e), icon: const Icon(Ionicons.person_add_outline, size: 18), label: const Text('Invite door staff')),
               ),
           ],
         ),

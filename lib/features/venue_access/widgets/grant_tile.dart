@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../server_desk/widgets/desk_chip.dart';
 import '../logic/access_rules.dart';
 
-Color accessColor(AccessGrant g) => !g.allowed ? const Color(0xFF9E9E9E) : (g.available ? const Color(0xFF66BB6A) : const Color(0xFFFFB300));
+Color accessColor(AccessGrant g) => !g.allowed ? BuTokens.dark.muted : (g.available ? BuTokens.dark.green : BuTokens.dark.amber);
 
 /// One of the six things with where it stands: Shared, Allowed but not available yet, or Not shared. Read only; the club's switches are in [AgreementGrantsCard].
 class GrantLine extends StatelessWidget {

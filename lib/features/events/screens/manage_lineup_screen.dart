@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -247,7 +248,7 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: BuTokens.dark.red),
             child: const Text('Remove'),
           ),
         ],
@@ -298,21 +299,21 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
   Color _getRoleColor(String role) {
     switch (role) {
       case TeamRole.dj:
-        return Colors.purple;
+        return BuTokens.dark.soft;
       case TeamRole.coordinator:
-        return Colors.blue;
+        return BuTokens.dark.orangeSoft;
       case TeamRole.security:
-        return Colors.orange;
+        return BuTokens.dark.amber;
       case TeamRole.bartender:
-        return Colors.teal;
+        return BuTokens.dark.soft;
       case TeamRole.host:
-        return Colors.pink;
+        return BuTokens.dark.soft;
       case TeamRole.manager:
-        return Colors.indigo;
+        return BuTokens.dark.soft;
       case TeamRole.photographer:
-        return Colors.amber;
+        return BuTokens.dark.amber;
       default:
-        return Colors.grey;
+        return BuTokens.dark.muted;
     }
   }
 
@@ -395,7 +396,7 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
                       children: [
                         Icon(
                           Ionicons.musical_notes_outline,
-                          color: Colors.purple,
+                          color: BuTokens.dark.soft,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -640,11 +641,11 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
               ),
               PopupMenuItem(
                 onTap: () => Future.delayed(Duration.zero, () => _deleteMember(member)),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Ionicons.trash_outline, size: 18, color: Colors.red),
+                    Icon(Ionicons.trash_outline, size: 18, color: BuTokens.dark.red),
                     SizedBox(width: 12),
-                    Text('Remove', style: TextStyle(color: Colors.red)),
+                    Text('Remove', style: TextStyle(color: BuTokens.dark.red)),
                   ],
                 ),
               ),

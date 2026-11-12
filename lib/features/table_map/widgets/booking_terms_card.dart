@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
@@ -82,7 +83,7 @@ class BookingTermsCard extends ConsumerWidget {
             ],
             if (canMove) ...[
               const SizedBox(height: 6),
-              OutlinedButton.icon(key: const Key('move-booking'), onPressed: () => _move(context, ref), icon: const Icon(Icons.swap_horiz, size: 18), label: const Text('Move to another table')),
+              OutlinedButton.icon(key: const Key('move-booking'), onPressed: () => _move(context, ref), icon: const Icon(Ionicons.swap_horizontal_outline, size: 18), label: const Text('Move to another table')),
             ],
           ],
         ),

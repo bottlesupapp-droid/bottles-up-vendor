@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -66,12 +67,12 @@ class EventDetailsScreen extends ConsumerWidget {
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             height: 200,
-                            color: Colors.grey[800],
+                            color: BuTokens.dark.muted,
                             child: const Center(child: CircularProgressIndicator()),
                           ),
                           errorWidget: (context, url, error) => Container(
                             height: 200,
-                            color: Colors.grey[800],
+                            color: BuTokens.dark.muted,
                             child: const Icon(Ionicons.image_outline, size: 48),
                           ),
                         ),
@@ -219,7 +220,7 @@ class EventDetailsScreen extends ConsumerWidget {
               icon: Ionicons.qr_code_outline,
               title: 'QR Scanner',
               subtitle: 'Scan tickets & check-in guests',
-              color: const Color(0xFFFF6B35),
+              color: BuTokens.dark.orange,
               onTap: () {
                 context.push('/events/$eventId/scanner');
               },
@@ -233,7 +234,7 @@ class EventDetailsScreen extends ConsumerWidget {
               icon: Ionicons.people_outline,
               title: 'Guest List',
               subtitle: 'Manage guests & bulk upload CSV',
-              color: Colors.blue,
+              color: BuTokens.dark.orangeSoft,
               onTap: () {
                 context.push('/events/$eventId/guests');
               },
@@ -247,7 +248,7 @@ class EventDetailsScreen extends ConsumerWidget {
               icon: Ionicons.time_outline,
               title: 'Scheduled Releases',
               subtitle: 'Set up timed ticket releases',
-              color: Colors.purple,
+              color: BuTokens.dark.soft,
               onTap: () {
                 context.push('/events/$eventId/releases');
               },
@@ -261,7 +262,7 @@ class EventDetailsScreen extends ConsumerWidget {
               icon: Ionicons.pricetags_outline,
               title: 'Ticket Tiers',
               subtitle: 'Manage ticket pricing & capacity',
-              color: Colors.teal,
+              color: BuTokens.dark.soft,
               onTap: () {
                 final name = Uri.encodeComponent(event.name);
                 context.push('/events/$eventId/tiers?name=$name');
@@ -276,7 +277,7 @@ class EventDetailsScreen extends ConsumerWidget {
               icon: Ionicons.musical_notes_outline,
               title: 'Team & Lineup',
               subtitle: 'Manage DJs, security & staff',
-              color: Colors.purple,
+              color: BuTokens.dark.soft,
               onTap: () {
                 final name = Uri.encodeComponent(event.name);
                 context.push('/events/$eventId/lineup?name=$name');
@@ -291,7 +292,7 @@ class EventDetailsScreen extends ConsumerWidget {
               icon: Ionicons.grid_outline,
               title: 'Table Management',
               subtitle: 'Add & manage VIP tables for booking',
-              color: Colors.orange,
+              color: BuTokens.dark.amber,
               onTap: () {
                 context.push('/events/$eventId/tables');
               },
@@ -305,7 +306,7 @@ class EventDetailsScreen extends ConsumerWidget {
               icon: Ionicons.ticket_outline,
               title: 'View Bookings',
               subtitle: 'See all event bookings',
-              color: Colors.green,
+              color: BuTokens.dark.green,
               onTap: () {
                 context.go('/bookings');
               },
@@ -334,7 +335,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.ticket,
                           label: 'Tickets Sold',
                           value: '${stats['tickets_sold'] ?? event.currentBookings}',
-                          color: const Color(0xFFFF6B35),
+                          color: BuTokens.dark.orange,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -344,7 +345,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.people,
                           label: 'Capacity',
                           value: '${event.maxCapacity}',
-                          color: Colors.blue,
+                          color: BuTokens.dark.orangeSoft,
                         ),
                       ),
                     ],
@@ -358,7 +359,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.cash,
                           label: 'Revenue',
                           value: '\$${(stats['total_revenue'] ?? 0).toStringAsFixed(0)}',
-                          color: Colors.green,
+                          color: BuTokens.dark.green,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -368,7 +369,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.ticket_outline,
                           label: 'Available',
                           value: '${stats['available_tickets'] ?? event.maxCapacity - event.currentBookings}',
-                          color: Colors.purple,
+                          color: BuTokens.dark.soft,
                         ),
                       ),
                     ],
@@ -385,7 +386,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.ticket,
                           label: 'Tickets Sold',
                           value: '${event.currentBookings}',
-                          color: const Color(0xFFFF6B35),
+                          color: BuTokens.dark.orange,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -395,7 +396,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.people,
                           label: 'Capacity',
                           value: '${event.maxCapacity}',
-                          color: Colors.blue,
+                          color: BuTokens.dark.orangeSoft,
                         ),
                       ),
                     ],
@@ -409,7 +410,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.cash,
                           label: 'Revenue',
                           value: '...',
-                          color: Colors.green,
+                          color: BuTokens.dark.green,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -419,7 +420,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.ticket_outline,
                           label: 'Available',
                           value: '${event.maxCapacity - event.currentBookings}',
-                          color: Colors.purple,
+                          color: BuTokens.dark.soft,
                         ),
                       ),
                     ],
@@ -436,7 +437,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.ticket,
                           label: 'Tickets Sold',
                           value: '${event.currentBookings}',
-                          color: const Color(0xFFFF6B35),
+                          color: BuTokens.dark.orange,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -446,7 +447,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.people,
                           label: 'Capacity',
                           value: '${event.maxCapacity}',
-                          color: Colors.blue,
+                          color: BuTokens.dark.orangeSoft,
                         ),
                       ),
                     ],
@@ -460,7 +461,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.cash,
                           label: 'Revenue',
                           value: 'N/A',
-                          color: Colors.green,
+                          color: BuTokens.dark.green,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -470,7 +471,7 @@ class EventDetailsScreen extends ConsumerWidget {
                           icon: Ionicons.ticket_outline,
                           label: 'Available',
                           value: '${event.maxCapacity - event.currentBookings}',
-                          color: Colors.purple,
+                          color: BuTokens.dark.soft,
                         ),
                       ),
                     ],
@@ -516,7 +517,7 @@ class EventDetailsScreen extends ConsumerWidget {
               context,
               icon: Ionicons.trash_outline,
               title: 'Delete Event',
-              titleColor: Colors.red,
+              titleColor: BuTokens.dark.red,
               onTap: () {
                 _showDeleteConfirmation(context);
               },
@@ -538,7 +539,7 @@ class EventDetailsScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Ionicons.alert_circle_outline, size: 64, color: Colors.red),
+                Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.red),
                 const SizedBox(height: 16),
                 Text(
                   'Error loading event',
@@ -567,15 +568,15 @@ class EventDetailsScreen extends ConsumerWidget {
     switch (status.toLowerCase()) {
       case 'active':
       case 'upcoming':
-        return Colors.green;
+        return BuTokens.dark.green;
       case 'draft':
-        return Colors.orange;
+        return BuTokens.dark.amber;
       case 'completed':
-        return Colors.blue;
+        return BuTokens.dark.orangeSoft;
       case 'cancelled':
-        return Colors.red;
+        return BuTokens.dark.red;
       default:
-        return Colors.grey;
+        return BuTokens.dark.muted;
     }
   }
 
@@ -765,9 +766,9 @@ class EventDetailsScreen extends ConsumerWidget {
                 const SnackBar(content: Text('Delete Event - Coming Soon')),
               );
             },
-            child: const Text(
+            child: Text(
               'Delete',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: BuTokens.dark.red),
             ),
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/widgets/ops_async_view.dart';
 import '../logic/chat_rules.dart';
@@ -51,7 +52,7 @@ class _PeopleSheet extends ConsumerWidget {
                           ListTile(
                             key: Key('chat-person-${p.userId}'),
                             contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.person_outline),
+                            leading: const Icon(Ionicons.person_outline),
                             title: Text(p.name),
                             subtitle: Text(p.roleLabel),
                             onTap: () => Navigator.of(context).pop(p),

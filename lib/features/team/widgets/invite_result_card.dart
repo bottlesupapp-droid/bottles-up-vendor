@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../logic/team_rules.dart';
 
 /// What was just issued: the link and what happened to the email.
@@ -58,7 +60,7 @@ class _InviteResultCardState extends State<InviteResultCard> {
     final theme = Theme.of(context);
     final i = widget.invite;
     final message = emailOutcomeMessage(i.outcome, i.email);
-    final color = message.tone == Tone.success ? const Color(0xFF66BB6A) : const Color(0xFFFFB300);
+    final color = message.tone == Tone.success ? BuTokens.dark.green : BuTokens.dark.amber;
     return Card(
       key: const Key('invite-result'),
       margin: const EdgeInsets.only(bottom: 20),
@@ -71,7 +73,7 @@ class _InviteResultCardState extends State<InviteResultCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: Text(message.text, key: const Key('invite-outcome'), style: theme.textTheme.bodyMedium?.copyWith(color: color))),
-                IconButton(key: const Key('close-result'), tooltip: 'Close', icon: const Icon(Icons.close, size: 20), onPressed: widget.onClose),
+                IconButton(key: const Key('close-result'), tooltip: 'Close', icon: const Icon(Ionicons.close, size: 20), onPressed: widget.onClose),
               ],
             ),
             const SizedBox(height: 8),
@@ -82,12 +84,12 @@ class _InviteResultCardState extends State<InviteResultCard> {
                 OutlinedButton.icon(
                   key: const Key('copy-link'),
                   onPressed: _copy,
-                  icon: Icon(_copied ? Icons.check : Icons.copy, size: 18),
+                  icon: Icon(_copied ? Ionicons.checkmark : Ionicons.copy_outline, size: 18),
                   label: Text(_copied ? 'Copied' : 'Copy'),
                 ),
                 if (!i.outcome.sent) ...[
                   const SizedBox(width: 8),
-                  TextButton.icon(key: const Key('open-mail'), onPressed: _mail, icon: const Icon(Icons.mail_outline, size: 18), label: const Text('Open in your email app')),
+                  TextButton.icon(key: const Key('open-mail'), onPressed: _mail, icon: const Icon(Ionicons.mail_outline, size: 18), label: const Text('Open in your email app')),
                 ],
               ],
             ),

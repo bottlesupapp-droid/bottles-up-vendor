@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,7 +83,7 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Successfully uploaded ${guests.length} guests'),
-              backgroundColor: Colors.green,
+              backgroundColor: BuTokens.dark.green,
             ),
           );
           ref.invalidate(guestListProvider(widget.eventId));
@@ -97,7 +98,7 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: BuTokens.dark.red,
       ),
     );
   }
@@ -120,7 +121,6 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                 controller: nameController,
                 decoration: const InputDecoration(
                   labelText: 'Name *',
-                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -128,7 +128,6 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                 controller: emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
-                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -137,7 +136,6 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                 controller: phoneController,
                 decoration: const InputDecoration(
                   labelText: 'Phone',
-                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.phone,
               ),
@@ -146,7 +144,6 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                 controller: notesController,
                 decoration: const InputDecoration(
                   labelText: 'Notes',
-                  border: OutlineInputBorder(),
                 ),
                 maxLines: 2,
               ),
@@ -188,9 +185,9 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Guest added successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
         ref.invalidate(guestListProvider(widget.eventId));
@@ -318,7 +315,7 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                         Icon(
                           Ionicons.people_outline,
                           size: 64,
-                          color: Colors.grey[600],
+                          color: BuTokens.dark.muted,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -327,14 +324,14 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                               : 'No guests found',
                           style: TextStyle(
                             fontSize: 18,
-                            color: Colors.grey[600],
+                            color: BuTokens.dark.muted,
                           ),
                         ),
                         const SizedBox(height: 8),
                         if (_searchQuery.isEmpty)
-                          const Text(
+                          Text(
                             'Add guests manually or upload a CSV file',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: BuTokens.dark.muted),
                           ),
                       ],
                     ),
@@ -360,8 +357,8 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Ionicons.alert_circle_outline,
-                        size: 64, color: Colors.red),
+                    Icon(Ionicons.alert_circle_outline,
+                        size: 64, color: BuTokens.dark.red),
                     const SizedBox(height: 16),
                     Text(couldNotLoad('this page', error)),
                     const SizedBox(height: 16),
@@ -393,7 +390,7 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
-          backgroundColor: guest.checkedIn ? Colors.green : Colors.orange,
+          backgroundColor: guest.checkedIn ? BuTokens.dark.green : BuTokens.dark.amber,
           child: Icon(
             guest.checkedIn ? Ionicons.checkmark : Ionicons.person,
             color: Colors.white,
@@ -422,14 +419,14 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B35).withOpacity(0.2),
+                  color: BuTokens.dark.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   guest.ticketType!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFFFF6B35),
+                    color: BuTokens.dark.orange,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -441,13 +438,13 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Ionicons.checkmark_circle, color: Colors.green),
+                  Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green),
                   const SizedBox(height: 4),
                   Text(
                     'Checked In',
                     style: TextStyle(
                       fontSize: 10,
-                      color: Colors.grey[600],
+                      color: BuTokens.dark.muted,
                     ),
                   ),
                 ],
@@ -463,7 +460,7 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${guest.name} checked in'),
-                        backgroundColor: Colors.green,
+                        backgroundColor: BuTokens.dark.green,
                       ),
                     );
                     ref.invalidate(guestListProvider(widget.eventId));

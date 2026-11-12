@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_tokens.dart';
 
 class SalesProgressBar extends StatelessWidget {
   final int sold;
@@ -20,7 +21,7 @@ class SalesProgressBar extends StatelessWidget {
     if (progress >= 0.8) {
       progressColor = theme.colorScheme.error; // Red for > 80%
     } else if (progress >= 0.5) {
-      progressColor = Colors.orange; // Orange for 50-80%
+      progressColor = BuTokens.dark.amber; // Orange for 50-80%
     } else {
       progressColor = theme.colorScheme.primary; // Primary for < 50%
     }

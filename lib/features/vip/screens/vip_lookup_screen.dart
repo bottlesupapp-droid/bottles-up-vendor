@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/services/ops_rpc.dart';
@@ -91,7 +92,7 @@ class _VipLookupScreenState extends ConsumerState<VipLookupScreen> {
               key: const Key('lookup-query'),
               controller: _query,
               textInputAction: TextInputAction.search,
-              decoration: InputDecoration(labelText: 'Name or credential code', errorText: _problem, suffixIcon: IconButton(key: const Key('lookup-go'), icon: const Icon(Icons.search), onPressed: _busy ? null : _search)),
+              decoration: InputDecoration(labelText: 'Name or credential code', errorText: _problem, suffixIcon: IconButton(key: const Key('lookup-go'), icon: const Icon(Ionicons.search_outline), onPressed: _busy ? null : _search)),
               onSubmitted: (_) => _search(),
               onChanged: (_) {
                 if (_problem != null) setState(() => _problem = null);

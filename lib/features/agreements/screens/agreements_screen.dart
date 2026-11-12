@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/ui/bu_kit.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/venue_picker.dart';
 import '../../workspace/models/workspace.dart';
@@ -56,14 +59,9 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
       child: ListView(
         key: const Key('agreements-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Row(
-            children: [
-              Expanded(child: Text(_organizer ? 'Venue agreements' : 'Events and agreements', style: theme.textTheme.headlineSmall)),
-              if (_organizer) FilledButton.icon(key: const Key('agreements-ask'), onPressed: _ask, icon: const Icon(Icons.add, size: 18), label: const Text('Ask a club')),
-            ],
-          ),
+          BuPageHeader(eyebrow: 'Events', title: _organizer ? 'Venue agreements' : 'Events and agreements', trailing: _organizer ? FilledButton.icon(key: const Key('agreements-ask'), onPressed: _ask, icon: const Icon(Ionicons.add, size: 18), label: const Text('Ask a club')) : null),
           if (!_organizer && widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
           if (!_organizer && widget.workspace.venueId == null) TextButton(key: const Key('agreements-change-club'), onPressed: () => setState(() => _chosenVenue = null), child: const Text('Choose another club')),
           const SizedBox(height: 8),
@@ -85,7 +83,7 @@ class _AgreementsScreenState extends ConsumerState<AgreementsScreen> {
                       title: Text(a.eventTitle),
                       subtitle: Text('${_organizer ? a.venueName : a.organizerName} · ${agreementStatusLabel(a.status)}\n${waitingLine(a)}', key: Key('agreement-line-${a.id}')),
                       isThreeLine: true,
-                      trailing: a.waitingOnMe ? Icon(Icons.circle, size: 12, color: theme.colorScheme.primary, semanticLabel: 'Waiting for you') : null,
+                      trailing: a.waitingOnMe ? Icon(Ionicons.ellipse, size: 12, color: theme.colorScheme.primary, semanticLabel: 'Waiting for you') : null,
                     ),
                   ),
               ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../providers/supabase_auth_provider.dart';
 
@@ -139,7 +140,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+          icon: Icon(Ionicons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
       ),
@@ -178,7 +179,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       ],
                     ),
                     child: Icon(
-                      Icons.local_bar,
+                      Ionicons.wine_outline,
                       size: 60,
                       color: Colors.black,
                     ),

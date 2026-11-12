@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight, formatNight;
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
@@ -118,7 +120,7 @@ class _NightScreenState extends ConsumerState<NightScreen> {
       child: ListView(
         key: const Key('night-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
           Text('Prepare and close the night', style: theme.textTheme.headlineSmall),
           if (widget.venueName != null) Text(widget.venueName!, style: theme.textTheme.bodyMedium),
@@ -136,7 +138,7 @@ class _NightScreenState extends ConsumerState<NightScreen> {
                 Card(
                   key: const Key('night-state'),
                   child: ListTile(
-                    leading: Icon(s.closed ? Icons.lock_outline : Icons.lock_open_outlined),
+                    leading: Icon(s.closed ? Ionicons.lock_closed_outline : Ionicons.lock_open_outline),
                     title: Text(s.closed ? 'Closed' : (s.reopened ? 'Reopened' : 'Open')),
                     subtitle: Text(
                       s.closed
@@ -188,7 +190,7 @@ class _NightScreenState extends ConsumerState<NightScreen> {
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
                     builder: (_) => Scaffold(appBar: AppBar(title: const Text('Report')), body: ReportScreen(venueId: widget.venueId, venueName: widget.venueName, emailOrgId: widget.emailOrgId, initialNight: _night, clock: widget.clock)),
                   )),
-                  icon: const Icon(Icons.description_outlined),
+                  icon: const Icon(Ionicons.document_text_outline),
                   label: Text(s.closed ? 'Final report' : 'Preliminary report'),
                 ),
               ],

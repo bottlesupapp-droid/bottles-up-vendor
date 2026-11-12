@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,7 +82,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(couldNot('upload photo', e)),
-            backgroundColor: Colors.red,
+            backgroundColor: BuTokens.dark.red,
           ),
         );
       }
@@ -119,9 +120,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Profile updated successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
         Navigator.of(context).pop();
@@ -131,7 +132,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(couldNot('update profile', e)),
-            backgroundColor: Colors.red,
+            backgroundColor: BuTokens.dark.red,
           ),
         );
       }

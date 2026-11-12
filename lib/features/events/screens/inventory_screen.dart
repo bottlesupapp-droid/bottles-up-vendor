@@ -1,6 +1,8 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 import '../providers/inventory_provider.dart';
 
 class InventoryScreen extends ConsumerWidget {
@@ -16,7 +18,7 @@ class InventoryScreen extends ConsumerWidget {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Ionicons.add),
             onPressed: () {
               // TODO: Add new bottle dialog
             },
@@ -26,20 +28,20 @@ class InventoryScreen extends ConsumerWidget {
       body: inventoryAsync.when(
         data: (inventory) {
           if (inventory.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.liquor, size: 64, color: Colors.grey),
+                  Icon(Ionicons.wine_outline, size: 64, color: BuTokens.dark.muted),
                   SizedBox(height: 16),
                   Text(
                     'No inventory found',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    style: TextStyle(fontSize: 18, color: BuTokens.dark.muted),
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Add bottles to your inventory',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: BuTokens.dark.muted),
                   ),
                 ],
               ),
@@ -65,7 +67,7 @@ class InventoryScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error, size: 64, color: Colors.red),
+              Icon(Ionicons.alert_circle, size: 64, color: BuTokens.dark.red),
               const SizedBox(height: 16),
               Text(couldNotLoad('inventory', error)),
               const SizedBox(height: 16),
@@ -118,7 +120,7 @@ class _BottleCard extends StatelessWidget {
               ),
               child: bottle['imageUrl'] == null
                   ? Icon(
-                      Icons.liquor,
+                      Ionicons.wine_outline,
                       size: 32,
                       color: Theme.of(context).primaryColor,
                     )
@@ -148,7 +150,7 @@ class _BottleCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.amber,
+                            color: BuTokens.dark.amber,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -235,17 +237,17 @@ class _BottleCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: quantity > 5 
-                                  ? Colors.green.withOpacity(0.1)
+                                  ? BuTokens.dark.green.withOpacity(0.1)
                                   : quantity > 0 
-                                      ? Colors.orange.withOpacity(0.1)
-                                      : Colors.red.withOpacity(0.1),
+                                      ? BuTokens.dark.amber.withOpacity(0.1)
+                                      : BuTokens.dark.red.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: quantity > 5 
-                                    ? Colors.green
+                                    ? BuTokens.dark.green
                                     : quantity > 0 
-                                        ? Colors.orange
-                                        : Colors.red,
+                                        ? BuTokens.dark.amber
+                                        : BuTokens.dark.red,
                               ),
                             ),
                             child: Text(
@@ -253,10 +255,10 @@ class _BottleCard extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: quantity > 5 
-                                    ? Colors.green
+                                    ? BuTokens.dark.green
                                     : quantity > 0 
-                                        ? Colors.orange
-                                        : Colors.red,
+                                        ? BuTokens.dark.amber
+                                        : BuTokens.dark.red,
                               ),
                             ),
                           ),
@@ -272,13 +274,13 @@ class _BottleCard extends StatelessWidget {
             Column(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit),
+                  icon: const Icon(Ionicons.create_outline),
                   onPressed: () {
                     // TODO: Edit bottle dialog
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                  icon: Icon(Ionicons.trash, color: BuTokens.dark.red),
                   onPressed: () {
                     // TODO: Delete confirmation dialog
                   },

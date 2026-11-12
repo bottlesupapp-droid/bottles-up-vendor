@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/widgets/setup_common.dart' show ProblemsBox;
@@ -101,9 +102,9 @@ class _BlockTablesSheetState extends ConsumerState<BlockTablesSheet> {
             Row(
               children: [
                 const Expanded(child: Text('How many tables')),
-                IconButton(key: const Key('block-less'), onPressed: _busy || _quantity <= 1 ? null : () => setState(() => _quantity--), icon: const Icon(Icons.remove_circle_outline)),
+                IconButton(key: const Key('block-less'), onPressed: _busy || _quantity <= 1 ? null : () => setState(() => _quantity--), icon: const Icon(Ionicons.remove_circle_outline)),
                 SizedBox(width: 32, child: Text('$_quantity', key: const Key('block-quantity'), textAlign: TextAlign.center)),
-                IconButton(key: const Key('block-more'), onPressed: _busy || _quantity >= max ? null : () => setState(() => _quantity++), icon: const Icon(Icons.add_circle_outline)),
+                IconButton(key: const Key('block-more'), onPressed: _busy || _quantity >= max ? null : () => setState(() => _quantity++), icon: const Icon(Ionicons.add_circle_outline)),
               ],
             ),
             if (_kind == 'held') ...[
@@ -124,7 +125,7 @@ class _BlockTablesSheetState extends ConsumerState<BlockTablesSheet> {
               controller: _reason,
               enabled: !_busy,
               maxLength: 200,
-              decoration: const InputDecoration(labelText: 'Reason', helperText: 'Kept with who did it and when.', border: OutlineInputBorder(), counterText: ''),
+              decoration: const InputDecoration(labelText: 'Reason', helperText: 'Kept with who did it and when.', counterText: ''),
             ),
             if (_problems.isNotEmpty) ...[const SizedBox(height: 8), ProblemsBox(problems: _problems)],
             const SizedBox(height: 12),

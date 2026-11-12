@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../owner/logic/owner_rules.dart' show OrgVenue;
 import '../../owner/providers/owner_providers.dart';
@@ -36,7 +37,7 @@ class VenuePicker extends ConsumerWidget {
           onRetry: () => ref.invalidate(ownerVenuesProvider(workspace.orgId)),
           builder: (list) => Column(
             children: [
-              for (final v in list) ListTile(key: Key('$itemKeyPrefix${v.id}'), contentPadding: EdgeInsets.zero, title: Text(v.name), trailing: const Icon(Icons.chevron_right), onTap: () => onPick(v.id)),
+              for (final v in list) ListTile(key: Key('$itemKeyPrefix${v.id}'), contentPadding: EdgeInsets.zero, title: Text(v.name), trailing: const Icon(Ionicons.chevron_forward), onTap: () => onPick(v.id)),
             ],
           ),
         ),

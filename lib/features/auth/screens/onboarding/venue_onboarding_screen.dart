@@ -1,9 +1,11 @@
+import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ionicons/ionicons.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../providers/supabase_auth_provider.dart';
 
@@ -212,10 +214,10 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Image uploaded successfully!'),
             duration: Duration(seconds: 2),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
 
@@ -241,7 +243,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('We could not upload image. Your entries are still here. Try again.'),
-            backgroundColor: Colors.red,
+            backgroundColor: BuTokens.dark.red,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -349,9 +351,9 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
       if (mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Venue created successfully! Pending approval.'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
 
@@ -393,7 +395,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
         elevation: 0,
         leading: _currentStep > 0
             ? IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Ionicons.arrow_back),
                 onPressed: _previousStep,
               )
             : null,
@@ -630,7 +632,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              prefixIcon: const Icon(Icons.people),
+              prefixIcon: const Icon(Ionicons.people_outline),
             ),
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
@@ -854,7 +856,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _bannerPhoto != null ? Colors.green : theme.dividerColor,
+                  color: _bannerPhoto != null ? BuTokens.dark.green : theme.dividerColor,
                   width: 2,
                 ),
                 image: _bannerPhoto != null
@@ -869,7 +871,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.add_photo_alternate,
+                          Ionicons.image_outline,
                           size: 48,
                           color: theme.colorScheme.primary,
                         ),
@@ -901,7 +903,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
               ),
               TextButton.icon(
                 onPressed: () => _pickPhoto('menu'),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Ionicons.add),
                 label: const Text('Add Menu'),
               ),
             ],
@@ -958,12 +960,12 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
+                          decoration: BoxDecoration(
+                            color: BuTokens.dark.red,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
-                            Icons.close,
+                            Ionicons.close,
                             color: Colors.white,
                             size: 16,
                           ),
@@ -989,7 +991,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
               ),
               TextButton.icon(
                 onPressed: () => _pickPhoto('interior'),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Ionicons.add),
                 label: const Text('Add Photo'),
               ),
             ],
@@ -1046,12 +1048,12 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
+                          decoration: BoxDecoration(
+                            color: BuTokens.dark.red,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
-                            Icons.close,
+                            Ionicons.close,
                             color: Colors.white,
                             size: 16,
                           ),
@@ -1145,14 +1147,14 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
+                color: BuTokens.dark.amber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+                border: Border.all(color: BuTokens.dark.amber.withValues(alpha: 0.4)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.orange, size: 24),
+                  Icon(Ionicons.information_circle_outline, color: BuTokens.dark.amber, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1161,7 +1163,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                         Text(
                           'Pending info to complete',
                           style: theme.textTheme.titleSmall?.copyWith(
-                            color: Colors.orange,
+                            color: BuTokens.dark.amber,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1169,13 +1171,13 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                         if (_skippedSteps.contains(1))
                           Text(
                             '• Venue details (type, age limit, music, amenities)',
-                            style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
+                            style: theme.textTheme.bodySmall?.copyWith(color: BuTokens.dark.amber),
                             softWrap: true,
                           ),
                         if (_skippedSteps.contains(2))
                           Text(
                             '• Photos (banner, menu, interior)',
-                            style: theme.textTheme.bodySmall?.copyWith(color: Colors.orange.shade700),
+                            style: theme.textTheme.bodySmall?.copyWith(color: BuTokens.dark.amber),
                             softWrap: true,
                           ),
                         const SizedBox(height: 4),
@@ -1199,12 +1201,12 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
+              color: BuTokens.dark.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green, size: 32),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -1213,7 +1215,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                       Text(
                         'Ready to submit!',
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.green,
+                          color: BuTokens.dark.green,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1221,7 +1223,7 @@ class _VenueOnboardingScreenState extends ConsumerState<VenueOnboardingScreen> {
                       Text(
                         'Your venue will be pending approval',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.green.shade700,
+                          color: BuTokens.dark.green,
                         ),
                       ),
                     ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/ui/bu_kit.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../agreements/screens/agreement_detail_screen.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../server_desk/widgets/desk_chip.dart';
@@ -28,7 +30,7 @@ class VenueAccessScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          Text('Your venue access', style: theme.textTheme.headlineSmall),
+          const BuPageHeader(eyebrow: 'Organizer', title: 'Your venue access'),
           const SizedBox(height: 4),
           Text('What each club has chosen to share with you about your events. The club decides, and can change it at any time.', style: theme.textTheme.bodyMedium),
           OpsAsyncView<List<VenueAccessRow>>(
@@ -57,7 +59,7 @@ class VenueAccessScreen extends ConsumerWidget {
                           if (r.inForce) ...[
                             for (final g in r.grants) GrantLine(grant: g, idPrefix: 'access-${r.agreementId}'),
                           ] else
-                            const DeskChip(text: 'Nothing shared yet', color: Color(0xFF9E9E9E)),
+                            DeskChip(text: 'Nothing shared yet', color: BuTokens.dark.muted),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(

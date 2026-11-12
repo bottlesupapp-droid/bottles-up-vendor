@@ -1,3 +1,4 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,7 +30,7 @@ class ClubDetailsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.search_off, size: 48),
+                  const Icon(Ionicons.search_outline, size: 48),
                   const SizedBox(height: 12),
                   const Text('Venue not found'),
                   TextButton(
@@ -54,13 +55,13 @@ class _VenueDetailBody extends StatelessWidget {
   Color _statusColor() {
     switch (venue.status) {
       case VenueStatus.active:
-        return Colors.green;
+        return BuTokens.dark.green;
       case VenueStatus.approved:
-        return Colors.blue;
+        return BuTokens.dark.orangeSoft;
       case VenueStatus.suspended:
-        return Colors.red;
+        return BuTokens.dark.red;
       case VenueStatus.pending:
-        return Colors.orange;
+        return BuTokens.dark.amber;
     }
   }
 
@@ -77,18 +78,18 @@ class _VenueDetailBody extends StatelessWidget {
           expandedHeight: 220,
           pinned: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Ionicons.arrow_back),
             onPressed: () => context.pop(),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(Ionicons.create_outline),
               tooltip: 'Edit',
               onPressed: () =>
                   context.push('/clubs/${venue.id}/edit', extra: venue),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              icon: Icon(Ionicons.trash_outline, color: BuTokens.dark.red),
               tooltip: 'Delete',
               onPressed: () => _confirmDelete(context),
             ),
@@ -121,7 +122,7 @@ class _VenueDetailBody extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.circle, size: 8, color: statusColor),
+                      Icon(Ionicons.ellipse, size: 8, color: statusColor),
                       const SizedBox(width: 6),
                       Text(
                         venue.status.name[0].toUpperCase() +
@@ -143,7 +144,7 @@ class _VenueDetailBody extends StatelessWidget {
                     if (venue.capacity != null)
                       Expanded(
                         child: _StatCard(
-                          icon: Icons.people_outline,
+                          icon: Ionicons.people_outline,
                           label: 'Capacity',
                           value: '${venue.capacity}',
                         ),
@@ -174,7 +175,7 @@ class _VenueDetailBody extends StatelessWidget {
                 // Address
                 if (venue.fullAddress != null)
                   _Section(
-                    icon: Icons.location_on_outlined,
+                    icon: Ionicons.location_outline,
                     title: 'Location',
                     child: Text(venue.fullAddress!,
                         style: theme.textTheme.bodyMedium),
@@ -185,7 +186,7 @@ class _VenueDetailBody extends StatelessWidget {
                     venue.description!.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _Section(
-                    icon: Icons.info_outline,
+                    icon: Ionicons.information_circle_outline,
                     title: 'About',
                     child: Text(venue.description!,
                         style: theme.textTheme.bodyMedium),
@@ -195,7 +196,7 @@ class _VenueDetailBody extends StatelessWidget {
                 // Venue details
                 const SizedBox(height: 16),
                 _Section(
-                  icon: Icons.nightlife,
+                  icon: Ionicons.musical_notes_outline,
                   title: 'Venue Details',
                   child: Column(
                     children: [
@@ -214,7 +215,7 @@ class _VenueDetailBody extends StatelessWidget {
                     (sl['music_genres'] as List).isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _Section(
-                    icon: Icons.music_note_outlined,
+                    icon: Ionicons.musical_note_outline,
                     title: 'Music',
                     child: Wrap(
                       spacing: 8,
@@ -234,7 +235,7 @@ class _VenueDetailBody extends StatelessWidget {
                     (sl['amenities'] as List).isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _Section(
-                    icon: Icons.star_outline,
+                    icon: Ionicons.star_outline,
                     title: 'Amenities',
                     child: Wrap(
                       spacing: 8,
@@ -253,7 +254,7 @@ class _VenueDetailBody extends StatelessWidget {
                 if (venue.phone != null || venue.email != null) ...[
                   const SizedBox(height: 16),
                   _Section(
-                    icon: Icons.contact_phone_outlined,
+                    icon: Ionicons.call_outline,
                     title: 'Contact',
                     child: Column(
                       children: [
@@ -270,7 +271,7 @@ class _VenueDetailBody extends StatelessWidget {
                 if (venue.gallery.length > 1) ...[
                   const SizedBox(height: 16),
                   _Section(
-                    icon: Icons.photo_library_outlined,
+                    icon: Ionicons.images_outline,
                     title: 'Gallery',
                     child: SizedBox(
                       height: 100,
@@ -288,7 +289,7 @@ class _VenueDetailBody extends StatelessWidget {
                             errorBuilder: (_, __, ___) => Container(
                               width: 140, height: 100,
                               color: theme.colorScheme.surfaceContainerHighest,
-                              child: const Icon(Icons.broken_image_outlined),
+                              child: const Icon(Ionicons.image_outline),
                             ),
                           ),
                         ),
@@ -317,12 +318,12 @@ class _VenueDetailBody extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () => _confirmDelete(context),
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    label: const Text('Delete Venue',
-                        style: TextStyle(color: Colors.red)),
+                    icon: Icon(Ionicons.trash_outline, color: BuTokens.dark.red),
+                    label: Text('Delete Venue',
+                        style: TextStyle(color: BuTokens.dark.red)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Colors.red),
+                      side: BorderSide(color: BuTokens.dark.red),
                     ),
                   ),
                 ),
@@ -364,9 +365,9 @@ class _VenueDetailBody extends StatelessWidget {
                 ref.invalidate(myVenuesProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                         content: Text('Venue deleted'),
-                        backgroundColor: Colors.green),
+                        backgroundColor: BuTokens.dark.green),
                   );
                   context.go('/clubs');
                 }
@@ -375,13 +376,13 @@ class _VenueDetailBody extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                         content: Text(couldNot('delete', e)),
-                        backgroundColor: Colors.red),
+                        backgroundColor: BuTokens.dark.red),
                   );
                 }
               }
             },
             child:
-                const Text('Delete', style: TextStyle(color: Colors.red)),
+                Text('Delete', style: TextStyle(color: BuTokens.dark.red)),
           ),
         ],
       ),

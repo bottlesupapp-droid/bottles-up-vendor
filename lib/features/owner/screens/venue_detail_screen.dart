@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../floor/screens/floor_screen.dart';
 import '../../workspace/models/role_navigation.dart';
@@ -81,7 +82,7 @@ class VenueDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(4, 8, 16, 0),
                 child: Row(
                   children: [
-                    IconButton(key: const Key('venue-back'), tooltip: 'Back to venues', icon: const Icon(Icons.arrow_back), onPressed: () => _back(context)),
+                    IconButton(key: const Key('venue-back'), tooltip: 'Back to venues', icon: const Icon(Ionicons.arrow_back), onPressed: () => _back(context)),
                     Expanded(child: Text(venue.name, key: const Key('venue-title'), style: Theme.of(context).textTheme.titleLarge, overflow: TextOverflow.ellipsis)),
                     const SizedBox(width: 8),
                     VenueStatusChip(status: venue.status),

@@ -13,6 +13,7 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ionicons/ionicons.dart';
 
 import 'fake_desk_backend.dart';
 
@@ -392,8 +393,8 @@ void main() {
       expect(find.byKey(const Key('pick-m-zoe')), findsOneWidget);
       expect(find.byKey(const Key('pick-m-later')), findsOneWidget);
       expect(find.text('Starts later'), findsOneWidget);
-      expect(find.descendant(of: find.byKey(const Key('pick-m-sam')), matching: find.byIcon(Icons.check)), findsOneWidget);
-      expect(find.descendant(of: find.byKey(const Key('pick-m-zoe')), matching: find.byIcon(Icons.check)), findsNothing);
+      expect(find.descendant(of: find.byKey(const Key('pick-m-sam')), matching: find.byIcon(Ionicons.checkmark)), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('pick-m-zoe')), matching: find.byIcon(Ionicons.checkmark)), findsNothing);
       expect(find.byKey(const Key('pick-none')), findsNothing);
       await tapKey(tester, 'pick-m-zoe');
       expect(db.requests.single.assigned, 'm-zoe');

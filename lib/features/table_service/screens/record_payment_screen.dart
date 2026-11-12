@@ -3,7 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../owner/logic/media_rules.dart' show imageProblem;
 import '../../owner/logic/setup_forms.dart'
     show formatDollars, moneyInput, parseMoney;
@@ -209,7 +211,6 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
         labelText: label,
         prefixText: '\$ ',
         hintText: hint,
-        border: const OutlineInputBorder(),
         errorText: _showProblems ? problems[key] : null,
       ),
       onChanged: (_) => setState(() {}),
@@ -265,7 +266,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
               shown['method']!,
               key: const Key('pay-method-error'),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFFEF5350),
+                color: BuTokens.dark.red,
               ),
             ),
           if (_method == PayMethod.split) ...[
@@ -309,7 +310,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                     IconButton(
                       key: Key('split-remove-$i'),
                       tooltip: 'Remove this part',
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Ionicons.close),
                       onPressed:
                           _busy
                               ? null
@@ -326,7 +327,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                       ? null
                       : () =>
                           setState(() => _split.add(_SplitRow(PayMethod.cash))),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Ionicons.add),
               label: const Text('Add a part'),
             ),
             if (shown['split'] != null)
@@ -334,7 +335,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                 shown['split']!,
                 key: const Key('pay-split-error'),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFFEF5350),
+                  color: BuTokens.dark.red,
                 ),
               ),
           ],
@@ -346,7 +347,6 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
               enabled: !_busy,
               decoration: InputDecoration(
                 labelText: 'Receipt number (optional)',
-                border: const OutlineInputBorder(),
                 errorText: shown['pos'],
               ),
               onChanged: (_) => setState(() {}),
@@ -360,7 +360,6 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
               enabled: !_busy,
               decoration: InputDecoration(
                 labelText: 'Paid by (optional)',
-                border: const OutlineInputBorder(),
                 errorText: shown['payer'],
               ),
               onChanged: (_) => setState(() {}),
@@ -387,7 +386,6 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
               maxLines: 2,
               decoration: InputDecoration(
                 labelText: 'Why is there no receipt?',
-                border: const OutlineInputBorder(),
                 errorText: shown['receipt'],
               ),
               onChanged: (_) => setState(() {}),
@@ -400,14 +398,14 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                 FilledButton.icon(
                   key: const Key('receipt-take'),
                   onPressed: _busy ? null : () => _takePhoto(camera: true),
-                  icon: const Icon(Icons.photo_camera_outlined),
+                  icon: const Icon(Ionicons.camera_outline),
                   label: const Text('Take a photo of the receipt'),
                 ),
                 if (widget.manager)
                   OutlinedButton.icon(
                     key: const Key('receipt-gallery'),
                     onPressed: _busy ? null : () => _takePhoto(camera: false),
-                    icon: const Icon(Icons.photo_library_outlined),
+                    icon: const Icon(Ionicons.images_outline),
                     label: const Text('Choose a photo'),
                   ),
               ],
@@ -417,7 +415,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                 shown['receipt']!,
                 key: const Key('receipt-error'),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFFEF5350),
+                  color: BuTokens.dark.red,
                 ),
               ),
           ] else ...[
@@ -432,7 +430,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                 errorBuilder:
                     (_, __, ___) => const SizedBox(
                       height: 200,
-                      child: Center(child: Icon(Icons.image_outlined)),
+                      child: Center(child: Icon(Ionicons.image_outline)),
                     ),
               ),
             ),
@@ -457,7 +455,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                 shown['receipt']!,
                 key: const Key('receipt-error'),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFFEF5350),
+                  color: BuTokens.dark.red,
                 ),
               ),
           ],
@@ -484,7 +482,7 @@ class _RecordPaymentScreenState extends ConsumerState<RecordPaymentScreen> {
                 _error!,
                 key: const Key('pay-error'),
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFFEF5350),
+                  color: BuTokens.dark.red,
                 ),
               ),
             ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/venue_picker.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
@@ -85,10 +87,10 @@ class _RefundsScreenState extends ConsumerState<RefundsScreen> {
           Card(
             child: ListTile(
               key: const Key('open-policy'),
-              leading: const Icon(Icons.policy_outlined),
+              leading: const Icon(Ionicons.document_text_outline),
               title: const Text('Refund policy'),
               subtitle: const Text('The rules guests read before they pay. You set them; the BottlesUp team can see them.'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Ionicons.chevron_forward),
               onTap: () => Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => RefundPolicyScreen(venueId: venue))),
             ),
           ),
@@ -129,11 +131,11 @@ class _RefundsScreenState extends ConsumerState<RefundsScreen> {
 
   Widget _card(ThemeData theme, RefundRequest r) {
     final color = switch (r.status) {
-      RefundStatus.requested => const Color(0xFFFFB300),
-      RefundStatus.approved || RefundStatus.processing => const Color(0xFF42A5F5),
-      RefundStatus.completed => const Color(0xFF66BB6A),
-      RefundStatus.declined => const Color(0xFF9E9E9E),
-      RefundStatus.failed => const Color(0xFFEF5350),
+      RefundStatus.requested => BuTokens.dark.amber,
+      RefundStatus.approved || RefundStatus.processing => BuTokens.dark.orangeSoft,
+      RefundStatus.completed => BuTokens.dark.green,
+      RefundStatus.declined => BuTokens.dark.muted,
+      RefundStatus.failed => BuTokens.dark.red,
     };
     return Card(
       key: Key('refund-${r.requestId}'),
@@ -163,7 +165,7 @@ class _RefundsScreenState extends ConsumerState<RefundsScreen> {
             if (r.hasReceiptPhoto)
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton.icon(key: Key('view-receipt-${r.requestId}'), onPressed: () => showReceipt(context, ref, r.receiptPath!), icon: const Icon(Icons.receipt_long_outlined, size: 18), label: const Text('View the receipt photo')),
+                child: TextButton.icon(key: Key('view-receipt-${r.requestId}'), onPressed: () => showReceipt(context, ref, r.receiptPath!), icon: const Icon(Ionicons.receipt_outline, size: 18), label: const Text('View the receipt photo')),
               ),
             if (r.needsClubPayment)
               Align(

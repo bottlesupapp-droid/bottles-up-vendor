@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
@@ -10,7 +11,7 @@ import '../../../shared/widgets/responsive_wrapper.dart';
 import '../../../core/utils/responsive_utils.dart' as utils;
 import '../providers/analytics_provider.dart';
 
-const Color _primaryColor = Color(0xFFFF6B35);
+Color _primaryColor = BuTokens.dark.orange;
 
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
   const AnalyticsDashboardScreen({super.key});
@@ -82,7 +83,7 @@ class _AnalyticsDashboardScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Ionicons.alert_circle_outline, size: 64, color: Colors.grey),
+            Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.muted),
             const SizedBox(height: 16),
             Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -106,7 +107,7 @@ class _AnalyticsDashboardScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Ionicons.alert_circle_outline, size: 64, color: Colors.grey),
+            Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.muted),
             const SizedBox(height: 16),
             Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -167,28 +168,28 @@ class _AnalyticsDashboardScreenState
           'Total Bookings',
           data.totalBookings.toString(),
           Ionicons.ticket_outline,
-          Colors.blue,
+          BuTokens.dark.orangeSoft,
         ),
         _buildMetricCard(
           context,
           'Total Revenue',
           NumberFormat.currency(symbol: '\$').format(data.totalRevenue),
           Ionicons.cash_outline,
-          Colors.green,
+          BuTokens.dark.green,
         ),
         _buildMetricCard(
           context,
           'Pending Inquiries',
           data.pendingInquiries.toString(),
           Ionicons.mail_unread_outline,
-          Colors.orange,
+          BuTokens.dark.amber,
         ),
         _buildMetricCard(
           context,
           'Confirmed Bookings',
           data.confirmedBookings.toString(),
           Ionicons.checkmark_circle_outline,
-          Colors.teal,
+          BuTokens.dark.soft,
         ),
       ],
     );
@@ -229,7 +230,7 @@ class _AnalyticsDashboardScreenState
               Text(
                 title,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
+                  color: BuTokens.dark.muted,
                 ),
               ),
             ],
@@ -341,7 +342,7 @@ class _AnalyticsDashboardScreenState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(label, style: TextStyle(color: BuTokens.dark.muted)),
           Text(
             value,
             style: const TextStyle(
@@ -414,10 +415,10 @@ class _AnalyticsDashboardScreenState
             ),
           ),
           const SizedBox(height: 20),
-          _buildRevenueItem('Ticket Sales', data.ticketSales, Colors.blue),
-          _buildRevenueItem('Table Sales', data.tableSales, Colors.green),
-          _buildRevenueItem('Bottle Sales', data.bottleSales, Colors.purple),
-          _buildRevenueItem('Other Sales', data.otherSales, Colors.orange),
+          _buildRevenueItem('Ticket Sales', data.ticketSales, BuTokens.dark.orangeSoft),
+          _buildRevenueItem('Table Sales', data.tableSales, BuTokens.dark.green),
+          _buildRevenueItem('Bottle Sales', data.bottleSales, BuTokens.dark.soft),
+          _buildRevenueItem('Other Sales', data.otherSales, BuTokens.dark.amber),
           const Divider(height: 32),
           _buildRevenueItem(
             'Total Revenue',
@@ -450,7 +451,7 @@ class _AnalyticsDashboardScreenState
               Text(
                 label,
                 style: TextStyle(
-                  color: isTotal ? null : Colors.grey,
+                  color: isTotal ? null : BuTokens.dark.muted,
                   fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
                   fontSize: isTotal ? 18 : 16,
                 ),
@@ -491,12 +492,12 @@ class _AnalyticsDashboardScreenState
           ),
           const SizedBox(height: 16),
           if (data.revenueByEvent.isEmpty)
-            const Center(
+            Center(
               child: Padding(
                 padding: EdgeInsets.all(32.0),
                 child: Text(
                   'No revenue data available',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: BuTokens.dark.muted),
                 ),
               ),
             )
@@ -568,21 +569,21 @@ class _AnalyticsDashboardScreenState
                 child: _buildPerformanceMetric(
                   'Sold',
                   '${insight.soldTickets}/${insight.totalTickets}',
-                  Colors.blue,
+                  BuTokens.dark.orangeSoft,
                 ),
               ),
               Expanded(
                 child: _buildPerformanceMetric(
                   'RSVP',
                   insight.rsvpCount.toString(),
-                  Colors.purple,
+                  BuTokens.dark.soft,
                 ),
               ),
               Expanded(
                 child: _buildPerformanceMetric(
                   'Checked In',
                   insight.checkedInCount.toString(),
-                  Colors.green,
+                  BuTokens.dark.green,
                 ),
               ),
             ],
@@ -591,13 +592,13 @@ class _AnalyticsDashboardScreenState
           _buildProgressBar(
             'Conversion Rate',
             insight.conversionRate,
-            Colors.blue,
+            BuTokens.dark.orangeSoft,
           ),
           const SizedBox(height: 8),
           _buildProgressBar(
             'Attendance Rate',
             insight.attendanceRate,
-            Colors.green,
+            BuTokens.dark.green,
           ),
         ],
       ),
@@ -618,9 +619,9 @@ class _AnalyticsDashboardScreenState
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: BuTokens.dark.muted,
           ),
         ),
       ],
@@ -634,7 +635,7 @@ class _AnalyticsDashboardScreenState
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(label, style: TextStyle(fontSize: 12, color: BuTokens.dark.muted)),
             Text(
               '${percentage.toStringAsFixed(1)}%',
               style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
@@ -644,7 +645,7 @@ class _AnalyticsDashboardScreenState
         const SizedBox(height: 4),
         LinearProgressIndicator(
           value: percentage / 100,
-          backgroundColor: Colors.grey.withOpacity(0.2),
+          backgroundColor: BuTokens.dark.muted.withOpacity(0.2),
           color: color,
           minHeight: 6,
           borderRadius: BorderRadius.circular(3),
@@ -675,12 +676,12 @@ class _AnalyticsDashboardScreenState
               ),
               const SizedBox(height: 16),
               if (data.recentInquiries.isEmpty)
-                const Center(
+                Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
                     child: Text(
                       'No inquiries yet',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: BuTokens.dark.muted),
                     ),
                   ),
                 )
@@ -699,13 +700,13 @@ class _AnalyticsDashboardScreenState
     Color statusColor;
     switch (inquiry.status) {
       case 'accepted':
-        statusColor = Colors.green;
+        statusColor = BuTokens.dark.green;
         break;
       case 'rejected':
-        statusColor = Colors.red;
+        statusColor = BuTokens.dark.red;
         break;
       default:
-        statusColor = Colors.orange;
+        statusColor = BuTokens.dark.amber;
     }
 
     return Container(
@@ -751,7 +752,7 @@ class _AnalyticsDashboardScreenState
           const SizedBox(height: 8),
           Text(
             inquiry.eventName,
-            style: const TextStyle(
+            style: TextStyle(
               color: _primaryColor,
               fontSize: 14,
             ),
@@ -759,14 +760,14 @@ class _AnalyticsDashboardScreenState
           const SizedBox(height: 8),
           Text(
             inquiry.message,
-            style: const TextStyle(color: Colors.grey, fontSize: 13),
+            style: TextStyle(color: BuTokens.dark.muted, fontSize: 13),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 8),
           Text(
             DateFormat('MMM dd, yyyy').format(inquiry.createdAt),
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: TextStyle(color: BuTokens.dark.muted, fontSize: 12),
           ),
         ],
       ),

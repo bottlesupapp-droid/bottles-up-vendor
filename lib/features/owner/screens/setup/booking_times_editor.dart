@@ -224,7 +224,6 @@ class _BookingTimesEditorState extends ConsumerState<BookingTimesEditor> {
                   decoration: const InputDecoration(
                     labelText: 'Note (optional)',
                     hintText: 'Early seating',
-                    border: OutlineInputBorder(),
                     counterText: '',
                   ),
                 ),

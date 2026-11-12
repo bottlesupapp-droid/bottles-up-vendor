@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../server_desk/widgets/desk_chip.dart';
 import '../logic/sign_rules.dart';
@@ -9,9 +11,9 @@ import 'decline_sign_dialog.dart';
 import 'sign_sheet.dart';
 
 Color signStatusColor(SignStatus s) => switch (s) {
-      SignStatus.pendingReview => const Color(0xFFFFB300),
-      SignStatus.approved => const Color(0xFF66BB6A),
-      SignStatus.rejected => const Color(0xFFEF5350),
+      SignStatus.pendingReview => BuTokens.dark.amber,
+      SignStatus.approved => BuTokens.dark.green,
+      SignStatus.rejected => BuTokens.dark.red,
     };
 
 /// The sign on an order card: the words, where it stands, a way to add or change it, and (for a manager) approving or declining a waiting one. It does the calls itself and
@@ -90,7 +92,7 @@ class _LineSignBarState extends ConsumerState<LineSignBar> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(padding: EdgeInsets.only(top: 2, right: 6), child: Icon(Icons.edit_note, size: 18)),
+                const Padding(padding: EdgeInsets.only(top: 2, right: 6), child: Icon(Ionicons.create_outline, size: 18)),
                 Expanded(child: Text('Sign: “${s.text}”', key: Key('sign-text-$id'), style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700))),
                 if (showStatus) ...[const SizedBox(width: 6), DeskChip(key: Key('sign-status-$id'), text: status.label, color: signStatusColor(status))],
               ],
@@ -99,7 +101,7 @@ class _LineSignBarState extends ConsumerState<LineSignBar> {
           if (s.blockMessage != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(s.blockMessage!, key: Key('sign-blocked-$id'), style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFFFFB300))),
+              child: Text(s.blockMessage!, key: Key('sign-blocked-$id'), style: theme.textTheme.bodySmall?.copyWith(color: BuTokens.dark.amber)),
             ),
           Wrap(
             spacing: 8,

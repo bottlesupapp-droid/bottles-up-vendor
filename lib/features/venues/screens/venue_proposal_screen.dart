@@ -1,8 +1,10 @@
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:ionicons/ionicons.dart';
 import '../../../shared/models/venue_model.dart';
 import '../../../shared/models/venue_request_model.dart';
 import '../../../shared/models/user_model.dart';
@@ -65,7 +67,7 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
                     Text(
                       'Proposing to:',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color: BuTokens.dark.muted,
                           ),
                     ),
                     const SizedBox(height: 4),
@@ -79,12 +81,12 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 14, color: Colors.grey[600]),
+                          Icon(Ionicons.location, size: 14, color: BuTokens.dark.muted),
                           const SizedBox(width: 4),
                           Text(
                             widget.venue.city!,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: BuTokens.dark.muted,
                                 ),
                           ),
                         ],
@@ -103,7 +105,6 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
               decoration: const InputDecoration(
                 labelText: 'Event Title *',
                 hintText: 'e.g., Summer Beach Party',
-                border: OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -121,7 +122,6 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
               decoration: const InputDecoration(
                 labelText: 'Event Description *',
                 hintText: 'Describe your event...',
-                border: OutlineInputBorder(),
               ),
               maxLines: 4,
               validator: (value) {
@@ -140,15 +140,14 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
               child: InputDecorator(
                 decoration: const InputDecoration(
                   labelText: 'Event Date *',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today),
+                  suffixIcon: Icon(Ionicons.calendar_outline),
                 ),
                 child: Text(
                   _selectedDate != null
                       ? DateFormat('EEEE, MMMM d, y').format(_selectedDate!)
                       : 'Select event date',
                   style: TextStyle(
-                    color: _selectedDate != null ? null : Colors.grey[600],
+                    color: _selectedDate != null ? null : BuTokens.dark.muted,
                   ),
                 ),
               ),
@@ -165,15 +164,14 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
                     child: InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'Start Time',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.access_time),
+                        suffixIcon: Icon(Ionicons.time_outline),
                       ),
                       child: Text(
                         _startTime != null
                             ? _startTime!.format(context)
                             : 'Select time',
                         style: TextStyle(
-                          color: _startTime != null ? null : Colors.grey[600],
+                          color: _startTime != null ? null : BuTokens.dark.muted,
                         ),
                       ),
                     ),
@@ -186,15 +184,14 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
                     child: InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'End Time',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.access_time),
+                        suffixIcon: Icon(Ionicons.time_outline),
                       ),
                       child: Text(
                         _endTime != null
                             ? _endTime!.format(context)
                             : 'Select time',
                         style: TextStyle(
-                          color: _endTime != null ? null : Colors.grey[600],
+                          color: _endTime != null ? null : BuTokens.dark.muted,
                         ),
                       ),
                     ),
@@ -211,8 +208,7 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
               decoration: InputDecoration(
                 labelText: 'Expected Attendance *',
                 hintText: 'Number of guests',
-                border: const OutlineInputBorder(),
-                suffixIcon: const Icon(Icons.people),
+                suffixIcon: const Icon(Ionicons.people_outline),
                 helperText: widget.venue.capacity != null
                     ? 'Venue capacity: ${widget.venue.capacity}'
                     : null,
@@ -258,18 +254,18 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
                         Container(
                           height: 120,
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: BuTokens.dark.muted,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.image, size: 48, color: Colors.grey[400]),
+                                Icon(Ionicons.image, size: 48, color: BuTokens.dark.muted),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Upload Event Flyer',
-                                  style: TextStyle(color: Colors.grey[600]),
+                                  style: TextStyle(color: BuTokens.dark.muted),
                                 ),
                               ],
                             ),
@@ -280,7 +276,7 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                            Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green, size: 20),
                             const SizedBox(width: 8),
                             const Text('Flyer uploaded'),
                             const SizedBox(width: 16),
@@ -307,7 +303,6 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
               decoration: const InputDecoration(
                 labelText: 'Additional Notes (Optional)',
                 hintText: 'Any special requests or information...',
-                border: OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
@@ -388,9 +383,9 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Flyer uploaded successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
       }
@@ -404,9 +399,9 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
 
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please select an event date'),
-          backgroundColor: Colors.red,
+          backgroundColor: BuTokens.dark.red,
         ),
       );
       return;
@@ -438,9 +433,9 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
       if (mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Proposal sent successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: BuTokens.dark.green,
           ),
         );
 
@@ -453,7 +448,7 @@ class _VenueProposalScreenState extends ConsumerState<VenueProposalScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(couldNot('send proposal', e)),
-            backgroundColor: Colors.red,
+            backgroundColor: BuTokens.dark.red,
           ),
         );
       }

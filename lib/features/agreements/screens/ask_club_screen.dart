@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../organizer_events/logic/organizer_events_rules.dart';
@@ -113,7 +114,7 @@ class _AskClubScreenState extends ConsumerState<AskClubScreen> {
             TextField(
               key: const Key('ask-search'),
               controller: _search,
-              decoration: InputDecoration(labelText: 'Find the club by name', suffixIcon: IconButton(key: const Key('ask-search-go'), icon: const Icon(Icons.search), onPressed: _busy ? null : _find)),
+              decoration: InputDecoration(labelText: 'Find the club by name', suffixIcon: IconButton(key: const Key('ask-search-go'), icon: const Icon(Ionicons.search_outline), onPressed: _busy ? null : _find)),
               onSubmitted: (_) => _find(),
             ),
             if (_results != null && _results!.isEmpty) const Padding(padding: EdgeInsets.all(8), child: Text('No club on BottlesUp matches that.', key: Key('ask-none'))),
@@ -123,7 +124,7 @@ class _AskClubScreenState extends ConsumerState<AskClubScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(c.name),
                 subtitle: c.address == null ? null : Text(c.address!),
-                trailing: _club?.venueId == c.venueId ? const Icon(Icons.check_circle) : null,
+                trailing: _club?.venueId == c.venueId ? const Icon(Ionicons.checkmark_circle) : null,
                 onTap: () => setState(() {
                   _club = c;
                   _problem = null;

@@ -119,14 +119,14 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
-            decoration: const InputDecoration(labelText: 'Email', helperText: 'They must sign in with this address to accept.', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Email', helperText: 'They must sign in with this address to accept.'),
           ),
           const SizedBox(height: 16),
           if (widget.venues.length > 1)
             DropdownButtonFormField<String>(
               key: const Key('invite-venue'),
               initialValue: _venueId,
-              decoration: const InputDecoration(labelText: 'Club', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Club'),
               items: [for (final v in widget.venues) DropdownMenuItem(value: v.id, child: Text(v.name))],
               onChanged: (v) => setState(() {
                 _venueId = v ?? _venueId;
@@ -163,7 +163,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
               child: DropdownButtonFormField<String>(
                 key: const Key('invite-shift'),
                 initialValue: shifts.any((s) => s.shiftId == _shiftId) ? _shiftId : '',
-                decoration: const InputDecoration(labelText: 'Shift (optional)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Shift (optional)'),
                 items: [
                   const DropdownMenuItem(value: '', child: Text('No shift')),
                   for (final s in shifts) DropdownMenuItem(value: s.shiftId, child: Text('${s.name} · ${_when(s.startsAt, '')}', overflow: TextOverflow.ellipsis)),
@@ -194,7 +194,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
             DropdownButtonFormField<int>(
               key: const Key('invite-valid-hours'),
               initialValue: _validHours,
-              decoration: const InputDecoration(labelText: 'The link works for', helperText: 'After that they have to ask for a new one.', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'The link works for', helperText: 'After that they have to ask for a new one.'),
               items: [for (final h in temporaryLinkHourChoices) DropdownMenuItem(value: h, child: Text(linkValidityLabel(h)))],
               onChanged: (v) => setState(() => _validHours = v ?? _validHours),
             ),

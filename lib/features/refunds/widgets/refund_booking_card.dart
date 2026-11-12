@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
@@ -89,9 +90,9 @@ class RefundBookingCard extends ConsumerWidget {
                     runSpacing: 4,
                     children: [
                       if (canCancel && o.status == 'paid')
-                        OutlinedButton.icon(key: const Key('cancel-booking'), onPressed: () => _cancel(context, ref), icon: const Icon(Icons.cancel_outlined, size: 18), label: const Text('Cancel booking')),
+                        OutlinedButton.icon(key: const Key('cancel-booking'), onPressed: () => _cancel(context, ref), icon: const Icon(Ionicons.close_circle_outline, size: 18), label: const Text('Cancel booking')),
                       if (o.canAsk)
-                        OutlinedButton.icon(key: const Key('ask-refund'), onPressed: () => _ask(context, ref, o), icon: const Icon(Icons.undo, size: 18), label: const Text('Ask for a refund')),
+                        OutlinedButton.icon(key: const Key('ask-refund'), onPressed: () => _ask(context, ref, o), icon: const Icon(Ionicons.arrow_undo_outline, size: 18), label: const Text('Ask for a refund')),
                     ],
                   ),
                   if (o.availableCents <= 0 && !o.hasOpenRequest && o.status != 'cancelled')
@@ -173,7 +174,7 @@ class _AskRefundSheetState extends ConsumerState<AskRefundSheet> {
               enabled: !_busy,
               maxLines: 2,
               maxLength: 500,
-              decoration: const InputDecoration(labelText: 'Why is a refund wanted?', border: OutlineInputBorder(), counterText: ''),
+              decoration: const InputDecoration(labelText: 'Why is a refund wanted?', counterText: ''),
             ),
             if (_problems.isNotEmpty) ...[const SizedBox(height: 8), ProblemsBox(problems: _problems)],
             const SizedBox(height: 12),
@@ -240,7 +241,7 @@ class _CancelBookingDialogState extends ConsumerState<CancelBookingDialog> {
             controller: _reason,
             enabled: !_busy,
             maxLength: 500,
-            decoration: InputDecoration(labelText: 'Why is it cancelled?', errorText: _problem, errorMaxLines: 4, border: const OutlineInputBorder(), counterText: ''),
+            decoration: InputDecoration(labelText: 'Why is it cancelled?', errorText: _problem, errorMaxLines: 4, counterText: ''),
           ),
         ],
       ),

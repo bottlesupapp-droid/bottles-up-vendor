@@ -198,7 +198,7 @@ class _DecideConcessionDialogState extends ConsumerState<DecideConcessionDialog>
             controller: _note,
             enabled: !_busy,
             maxLength: 300,
-            decoration: InputDecoration(labelText: widget.approve ? 'Note (optional)' : 'Why is it declined? (they are told)', errorText: _problem, errorMaxLines: 4, border: const OutlineInputBorder(), counterText: ''),
+            decoration: InputDecoration(labelText: widget.approve ? 'Note (optional)' : 'Why is it declined? (they are told)', errorText: _problem, errorMaxLines: 4, counterText: ''),
           ),
         ],
       ),
@@ -289,7 +289,7 @@ class _LimitsTabState extends ConsumerState<_LimitsTab> {
           enabled: !_busy,
           keyboardType: TextInputType.number,
           onChanged: (_) => setState(() => _problems = const []),
-          decoration: InputDecoration(labelText: label, helperText: helper, helperMaxLines: 2, border: const OutlineInputBorder()),
+          decoration: InputDecoration(labelText: label, helperText: helper, helperMaxLines: 2),
         ),
       );
 

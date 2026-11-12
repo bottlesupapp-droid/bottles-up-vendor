@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../owner/logic/owner_rules.dart' show OrgVenue;
 import '../../owner/providers/owner_providers.dart';
@@ -41,7 +43,7 @@ class ReportRecipientsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final children = <Widget>[
-      Text('Report e-mails', style: theme.textTheme.headlineSmall),
+      const BuPageHeader(eyebrow: 'Reports', title: 'Report e-mails'),
       const SizedBox(height: 4),
       Text(reportEmailNote, key: const Key('report-emails-note'), style: theme.textTheme.bodyMedium),
       const SizedBox(height: 12),

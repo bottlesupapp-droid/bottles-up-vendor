@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../ops/services/ops_rpc.dart';
 import '../logic/report_email_rules.dart';
@@ -21,7 +22,7 @@ class EmailReportButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       key: Key(keyPrefix),
-      icon: const Icon(Icons.mail_outline, size: 18),
+      icon: const Icon(Ionicons.mail_outline, size: 18),
       label: const Text('E-mail this report'),
       onPressed:
           () => showModalBottomSheet<void>(
@@ -99,7 +100,7 @@ class _EmailReportSheetState extends ConsumerState<EmailReportSheet> {
             const SizedBox(height: 12),
             FilledButton.icon(
               key: Key('$k-send'),
-              icon: const Icon(Icons.send_outlined, size: 18),
+              icon: const Icon(Ionicons.send_outline, size: 18),
               label: Text(_sending ? 'Sending…' : (people.isEmpty ? 'E-mail this report' : 'E-mail to ${people.length == 1 ? '1 person' : '${people.length} people'}')),
               onPressed: _sending || people.isEmpty ? null : () => _send(again: false),
             ),

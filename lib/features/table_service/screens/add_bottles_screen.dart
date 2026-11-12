@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
 import '../../owner/logic/setup_forms.dart' show formatDollars;
 import '../../owner/widgets/setup_common.dart' show ProblemsBox;
@@ -88,13 +89,13 @@ class _AddBottlesScreenState extends ConsumerState<AddBottlesScreen> {
             IconButton(
               key: Key('bottle-less-${m.id}'),
               onPressed: _busy || _unsure || n < 1 ? null : () => setState(() => _basket = withQuantity(_menuCache, pruneBasket(_menuCache, _basket), m.id, n - 1)),
-              icon: const Icon(Icons.remove_circle_outline),
+              icon: const Icon(Ionicons.remove_circle_outline),
             ),
             SizedBox(width: 28, child: Text('$n', key: Key('bottle-qty-${m.id}'), textAlign: TextAlign.center)),
             IconButton(
               key: Key('bottle-more-${m.id}'),
               onPressed: _busy || _unsure || n >= m.most ? null : () => setState(() => _basket = withQuantity(_menuCache, pruneBasket(_menuCache, _basket), m.id, n + 1)),
-              icon: const Icon(Icons.add_circle_outline),
+              icon: const Icon(Ionicons.add_circle_outline),
             ),
           ],
         ),

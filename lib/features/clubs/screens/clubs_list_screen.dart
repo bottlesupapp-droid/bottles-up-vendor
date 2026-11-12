@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/venues/providers/venues_provider.dart';
 import '../../../shared/models/venue_model.dart';
@@ -24,7 +25,7 @@ class ClubsListScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/clubs/create'),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Ionicons.add),
         label: const Text('Add Venue'),
       ),
       body: venuesAsync.when(
@@ -33,7 +34,7 @@ class ClubsListScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Ionicons.alert_circle_outline, size: 48, color: BuTokens.dark.red),
               const SizedBox(height: 12),
               Text('Failed to load venues', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -93,7 +94,7 @@ class ClubsListScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => GoRouter.of(context).push('/clubs/create'),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Ionicons.add),
               label: const Text('Add Venue'),
             ),
           ],
@@ -117,13 +118,13 @@ class _VenueCard extends StatelessWidget {
     Color statusColor;
     switch (venue.status) {
       case VenueStatus.active:
-        statusColor = Colors.green;
+        statusColor = BuTokens.dark.green;
       case VenueStatus.approved:
-        statusColor = Colors.blue;
+        statusColor = BuTokens.dark.orangeSoft;
       case VenueStatus.suspended:
-        statusColor = Colors.red;
+        statusColor = BuTokens.dark.red;
       case VenueStatus.pending:
-        statusColor = Colors.orange;
+        statusColor = BuTokens.dark.amber;
     }
 
     return InkWell(
@@ -179,7 +180,7 @@ class _VenueCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        icon: const Icon(Ionicons.create_outline, size: 20),
                         onPressed: onEdit,
                         tooltip: 'Edit venue',
                         padding: EdgeInsets.zero,
@@ -191,7 +192,7 @@ class _VenueCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.location_on_outlined,
+                        Icon(Ionicons.location_outline,
                             size: 14, color: theme.colorScheme.onSurfaceVariant),
                         const SizedBox(width: 4),
                         Expanded(
@@ -212,15 +213,15 @@ class _VenueCard extends StatelessWidget {
                     children: [
                       if (venue.capacity != null)
                         _InfoChip(
-                            icon: Icons.people_outline,
+                            icon: Ionicons.people_outline,
                             label: '${venue.capacity} guests'),
                       if (venue.socialLinks?['venue_type'] != null)
                         _InfoChip(
-                            icon: Icons.nightlife,
+                            icon: Ionicons.musical_notes_outline,
                             label: venue.socialLinks!['venue_type']),
                       if (venue.socialLinks?['min_age'] != null)
                         _InfoChip(
-                            icon: Icons.verified_user_outlined,
+                            icon: Ionicons.shield_checkmark_outline,
                             label: '${venue.socialLinks!['min_age']}+'),
                     ],
                   ),
