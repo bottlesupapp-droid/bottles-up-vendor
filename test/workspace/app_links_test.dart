@@ -40,7 +40,10 @@ void main() {
 
   test('the launcher entry is still there, and the filter did not open the app to any other address', () {
     expect(filterWith('android.intent.category.LAUNCHER'), contains('android.intent.action.MAIN'));
-    expect('android:scheme='.allMatches(manifest).length, 1, reason: 'the only web address the app answers to is the invitation page');
+    final schemes = RegExp(r'android:scheme="([^"]*)"').allMatches(manifest).map((m) => m.group(1)).toList();
+    expect(schemes.where((s) => s == 'http' || s == 'https'), ['https'], reason: 'the only web address the app answers to is the invitation page');
+    // The other entry is the app's own scheme, which the website's password-reset page opens (test/auth/recovery_platform_test.dart); it is not a web address.
+    expect(schemes, ['https', 'bottlesupbusiness']);
     expect(manifest, isNot(contains('flutter_deeplinking_enabled')), reason: 'Flutter hands links to the router by default; nothing turns that off');
   });
 }

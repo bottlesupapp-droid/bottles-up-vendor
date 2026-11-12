@@ -53,12 +53,16 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
   /// a session the check is about to undo.
   bool _holdSessions = false;
 
+  /// True while a password is being reset with a code or a link: that opens a session, but the person has not signed in and must not be carried to
+  /// the dashboard by it before choosing a new password. Ended by [endPasswordRecovery], or by the person signing in for real.
+  bool _recoveryActive = false;
+
   SupabaseAuthNotifier(this._authService, {SocialSignInService? social})
       : _social = social ?? SocialSignInService(),
         super(const SupabaseAuthState()) {
     // Listen to auth state changes
     _authService.authStateChanges.listen((AuthState authState) {
-      if (_holdSessions) return;
+      if (_holdSessions || _recoveryActive) return;
       if (authState.session?.user != null) {
         _loadVendorUser(authState.session!.user);
       } else {
@@ -73,11 +77,28 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
     }
   }
 
+  /// Called before a reset code or link is checked: see [_recoveryActive].
+  void beginPasswordRecovery() => _recoveryActive = true;
+
+  /// The reset is over (finished, abandoned or refused). The app state is brought back in line with whoever Supabase says is signed in: nobody
+  /// after a normal finish, or the person who was already signed in when a reset link failed.
+  Future<void> endPasswordRecovery() async {
+    _recoveryActive = false;
+    final user = _authService.currentUser;
+    if (user == null) {
+      state = const SupabaseAuthState();
+    } else {
+      await _loadVendorUser(user);
+    }
+  }
+
   // Sign in
   Future<void> signIn({
     required String email,
     required String password,
   }) async {
+    // Signing in for real replaces any reset that was left open.
+    _recoveryActive = false;
     state = state.copyWith(isLoading: true, error: null);
     
     try {
@@ -96,6 +117,7 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
 
   /// Sign in with Google or Apple. Only into an account that already exists: see [SocialSignInService]. [allowNewAccount] is for a person who came to accept an invitation.
   Future<void> signInWithSocial(SocialProvider provider, {bool allowNewAccount = false}) async {
+    _recoveryActive = false;
     state = state.copyWith(isLoading: true, error: null);
     _holdSessions = true;
     try {
@@ -137,18 +159,20 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
     }
   }
 
-  // Reset password
-  Future<void> resetPassword(String email) async {
+  /// Asks for the reset email. True when it was requested; on false the reason is in [SupabaseAuthState.error], and the caller must not say "email sent".
+  Future<bool> resetPassword(String email) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       await _authService.resetPassword(email);
       state = state.copyWith(isLoading: false);
+      return true;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
+      return false;
     }
   }
 
@@ -172,6 +196,7 @@ class SupabaseAuthNotifier extends StateNotifier<SupabaseAuthState> {
     required String phoneNumber,
     required String token,
   }) async {
+    _recoveryActive = false;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
