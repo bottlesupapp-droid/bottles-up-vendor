@@ -40,6 +40,7 @@ import '../services/table_service_service.dart';
 import '../widgets/night_bar.dart';
 import 'orders_screen.dart';
 import 'payment_review_screen.dart';
+import '../../../core/live/live_refresh.dart';
 
 /// Tonight (manager and owner): what needs a person first, then the night at a glance. Each number that has a list opens it; the ones
 /// that do not yet (closings, tables without a server) say what to do instead. Not built yet, and said so on the screen: the
@@ -257,7 +258,17 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     // Guests who paid after their table had gone to someone else are a bonus too: where the server does not have them yet the tile is simply not there.
     final doubleBooked = ref.watch(bookingConflictsProvider(ConflictsQuery(venueId))).asData?.value;
 
-    return RefreshIndicator(
+    return LiveRefresh(
+      refresh: (r) {
+        r.invalidate(tonightProvider(_query));
+        r.invalidate(verifierSummaryProvider(_query));
+        r.invalidate(securitySummaryProvider(_query));
+        r.invalidate(stockProvider(venueId));
+        r.invalidate(pendingConcessionsProvider(venueId));
+        r.invalidate(bookingConflictsProvider(ConflictsQuery(venueId)));
+      },
+      watching: [tonightProvider(_query)],
+      child: RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(tonightProvider(_query));
         try {
@@ -513,6 +524,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

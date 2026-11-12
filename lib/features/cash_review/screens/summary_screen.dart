@@ -12,6 +12,7 @@ import '../../table_service/widgets/night_bar.dart';
 import '../../workspace/models/workspace.dart';
 import '../logic/cash_rules.dart';
 import '../providers/cash_providers.dart';
+import '../../sales_source/screens/sales_tracking_screen.dart';
 
 /// The payment verifier's Summary tab: the night's payments, checks, flags and cash at a glance. Counts only; the lists are in Review,
 /// Cash and Exceptions.
@@ -71,6 +72,18 @@ class _VerifierSummaryScreenState extends ConsumerState<VerifierSummaryScreen> {
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           const SizedBox(height: BuSpace.s),
           Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, emailOrgId: emailOrgIdFor(widget.workspace), night: _night, clock: widget.clock)),
+          const SizedBox(height: BuSpace.s),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              key: const Key('summary-closing-reports'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Closing reports')), body: SafeArea(child: SalesTrackingScreen(workspace: widget.workspace)))),
+              ),
+              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+              label: const Text('Closing reports'),
+            ),
+          ),
           const SizedBox(height: BuSpace.m),
           OpsAsyncView<VerifierSummary>(
             value: summary,

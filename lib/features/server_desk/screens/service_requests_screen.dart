@@ -12,6 +12,7 @@ import '../services/server_desk_service.dart';
 import '../widgets/assign_server_row.dart';
 import '../widgets/reason_dialog.dart';
 import '../widgets/request_card.dart';
+import '../../../core/live/live_refresh.dart';
 
 /// Asks why a request is being escalated or cancelled. Replaced in tests.
 typedef ReasonPicker = Future<String?> Function(BuildContext context, RequestAction action);
@@ -116,7 +117,12 @@ class _ServiceRequestsScreenState extends ConsumerState<ServiceRequestsScreen> {
     final members = _manager ? ref.watch(teamMembersProvider(widget.workspace.orgId)).asData?.value : null;
     final options = members == null ? const <ServerOption>[] : serverOptions(members, venueId);
 
-    return RefreshIndicator(
+    return LiveRefresh(
+      refresh: (r) {
+        r.invalidate(serviceRequestsProvider(_query));
+      },
+      watching: [serviceRequestsProvider(_query)],
+      child: RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(serviceRequestsProvider(_query));
         try {
@@ -189,6 +195,7 @@ class _ServiceRequestsScreenState extends ConsumerState<ServiceRequestsScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

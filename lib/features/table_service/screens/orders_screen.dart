@@ -14,6 +14,7 @@ import '../services/table_service_service.dart';
 import '../widgets/night_bar.dart';
 import '../widgets/order_card.dart';
 import 'table_detail_screen.dart';
+import '../../../core/live/live_refresh.dart';
 
 /// Orders (server and manager): the bottle lines of one night, longest wait first, with the move to make next. A manager or owner sees
 /// the whole club; a server only the tables they were given. The database decides which lines those are and which moves are allowed;
@@ -270,7 +271,12 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       },
     );
 
-    return RefreshIndicator(
+    return LiveRefresh(
+      refresh: (r) {
+        r.invalidate(ordersProvider(_query));
+      },
+      watching: [ordersProvider(_query)],
+      child: RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(ordersProvider(_query));
         try {
@@ -285,6 +291,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
         itemCount: items.length,
         itemBuilder: (_, i) => items[i](),
       ),
+    ),
     );
   }
 }

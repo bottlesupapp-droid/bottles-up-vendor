@@ -5,6 +5,8 @@ import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/widgets/ops_async_view.dart';
 import '../../report_emails/logic/report_email_rules.dart';
 import '../../report_emails/widgets/email_report_button.dart';
+import '../../sales_source/logic/sales_source_rules.dart';
+import '../../sales_source/providers/sales_source_providers.dart';
 import '../../table_service/providers/table_service_providers.dart' show NightQuery;
 import '../../table_service/widgets/night_bar.dart';
 import '../logic/night_rules.dart';
@@ -35,11 +37,14 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   String get _tonight => currentNight(widget.clock());
   NightQuery get _query => NightQuery(widget.venueId, _night);
 
+  /// The report with the night's sales by source added, when the server can say (the owner, a manager and a verifier may read them; anyone else just gets the report).
+  ReportDocument _documentFor(NightReport r) => documentWithSales(buildReportDocument(r), ref.read(nightSalesProvider((venueId: widget.venueId, night: _night))).valueOrNull);
+
   Future<void> _share(NightReport report) async {
     setState(() => _sharing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final doc = buildReportDocument(report);
+      final doc = _documentFor(report);
       final bytes = await buildReportPdf(doc);
       await ref.read(shareReportProvider)(bytes, doc.fileName);
     } catch (_) {
@@ -53,8 +58,12 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final report = ref.watch(nightReportProvider(_query));
+    final sales = ref.watch(nightSalesProvider((venueId: widget.venueId, night: _night))).valueOrNull;
     return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(nightReportProvider(_query)),
+      onRefresh: () async {
+        ref.invalidate(nightReportProvider(_query));
+        ref.invalidate(nightSalesProvider((venueId: widget.venueId, night: _night)));
+      },
       child: ListView(
         key: const Key('report-list'),
         physics: const AlwaysScrollableScrollPhysics(),
@@ -68,7 +77,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             errorKey: const Key('report-error'),
             onRetry: () => ref.invalidate(nightReportProvider(_query)),
             builder: (r) {
-              final doc = buildReportDocument(r);
+              final doc = documentWithSales(buildReportDocument(r), sales);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

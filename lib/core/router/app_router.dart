@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Import screens (we'll create these next)
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/auth/logic/password_recovery_logic.dart' show recoveryTokenFrom;
 import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/reset_code_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/auth/screens/phone_login_screen.dart';
 import '../../features/auth/screens/otp_verification_screen.dart';
 import '../../features/auth/screens/onboarding/venue_onboarding_screen.dart';
@@ -60,6 +63,8 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
+  static const String resetCode = '/reset-code';
+  static const String resetPassword = '/reset-password';
   static const String phoneLogin = '/phone-login';
   static const String verifyOtp = '/verify-otp';
   static const String databaseSetup = '/database-setup';
@@ -136,6 +141,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isLoggedIn = isAuthenticated;
       final currentPath = state.uri.path;
+
+      // The reset screens work whether or not someone is signed in, and the session a reset opens must never move the person somewhere else.
+      if (currentPath == AppRoutes.resetCode || currentPath == AppRoutes.resetPassword) return null;
 
       // Define auth-related routes (no redirect needed)
       final isAuthRoute = currentPath == AppRoutes.login ||
@@ -224,6 +232,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           name: 'forgotPassword',
           child: const ForgotPasswordScreen(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.resetCode,
+        name: 'resetCode',
+        pageBuilder: (context, state) => CupertinoTransitionPage(
+          name: 'resetCode',
+          child: ResetCodeScreen(email: state.uri.queryParameters['email'] ?? ''),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        name: 'resetPassword',
+        pageBuilder: (context, state) {
+          final params = state.uri.queryParameters;
+          return CupertinoTransitionPage(
+            name: 'resetPassword',
+            // A token only counts when it is a recovery token of the shape ours are; ?expired=1 is a link that was refused before it got here.
+            child: ResetPasswordScreen(tokenHash: recoveryTokenFrom(params), expired: params['expired'] == '1'),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.phoneLogin,

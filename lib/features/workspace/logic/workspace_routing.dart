@@ -107,6 +107,8 @@ const Set<String> _signedOutPaths = {
   '/login',
   '/register',
   '/forgot-password',
+  '/reset-code',
+  '/reset-password',
   '/phone-login',
   '/verify-otp',
   '/role-selection',

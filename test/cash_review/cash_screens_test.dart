@@ -317,6 +317,15 @@ void main() {
       expect(find.text('1 by you'), findsOneWidget);
     });
 
+    testWidgets('the verifier reaches the club\'s closing reports from the Summary (they are the ones who check them)', (tester) async {
+      await open(tester, VerifierSummaryScreen(workspace: ws(WorkspaceRole.verifier), clock: fridayNight));
+      await tester.ensureVisible(find.byKey(const Key('summary-closing-reports')));
+      await tester.tap(find.byKey(const Key('summary-closing-reports')));
+      await tester.pumpAndSettle();
+      expect(find.text('Closing reports'), findsWidgets);
+      expect(find.byKey(const Key('sales-tracking')), findsOneWidget);
+    });
+
     testWidgets('no difference reads "None"', (tester) async {
       await open(tester, VerifierSummaryScreen(workspace: ws(WorkspaceRole.verifier), clock: fridayNight));
       expect((tester.widget<ListTile>(find.descendant(of: find.byKey(const Key('summary-difference')), matching: find.byType(ListTile))).trailing as Text).data, 'None');

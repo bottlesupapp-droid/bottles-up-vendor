@@ -18,6 +18,7 @@ import '../widgets/table_card.dart';
 import '../../cash_review/widgets/cash_held_card.dart';
 import '../../security/widgets/raise_alert.dart';
 import '../../vip/screens/vip_lookup_screen.dart';
+import '../../../core/live/live_refresh.dart';
 
 /// Shows the sheet that asks what a table needs. Replaced in tests.
 typedef AskPicker = Future<AskChoice?> Function(BuildContext context, String tableLabel);
@@ -100,7 +101,14 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
     final statusOf = {for (final s in statuses) s.bookingId: s};
     final now = widget.clock();
 
-    return RefreshIndicator(
+    return LiveRefresh(
+      refresh: (r) {
+        r.invalidate(myTablesProvider(_night));
+        r.invalidate(serviceRequestsProvider(RequestsQuery(venueId)));
+        r.invalidate(tableStatusesProvider(NightQuery(venueId, _night)));
+      },
+      watching: [myTablesProvider(_night)],
+      child: RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(myTablesProvider(_night));
         ref.invalidate(serviceRequestsProvider(RequestsQuery(venueId)));
@@ -203,6 +211,7 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

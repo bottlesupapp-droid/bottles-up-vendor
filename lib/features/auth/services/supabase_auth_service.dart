@@ -1,6 +1,7 @@
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/config/password_reset_config.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../ops/services/ops_rpc.dart' show EdgeInvoker, OpsRpc;
 import '../../../shared/models/user_model.dart';
@@ -100,7 +101,7 @@ class SupabaseAuthService {
   // Reset password
   Future<void> resetPassword(String email) async {
     try {
-      await _auth.resetPasswordForEmail(email);
+      await _auth.resetPasswordForEmail(email, redirectTo: passwordResetRedirect);
     } on AuthException catch (e) {
       throw _handleAuthException(e);
     }

@@ -27,12 +27,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Future<void> _resetPassword() async {
     if (_formKey.currentState?.validate() ?? false) {
-      await ref
+      final requested = await ref
           .read(supabaseAuthProvider.notifier)
           .resetPassword(_emailController.text.trim());
 
-      // Show success message
-      if (mounted) {
+      // Only say "sent" when it was: a failure is already shown as a message, and a person told the email is on its way waits for one that never comes.
+      if (mounted && requested) {
         setState(() {
           _emailSent = true;
         });
@@ -106,9 +106,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your email';
                           }
-                          if (!RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                          ).hasMatch(value)) {
+                          // Deliberately loose: the server decides. The old pattern refused "sam+work@example.com" and any address ending in
+                          // more than 4 letters (".london"), so those people could never reset their password.
+                          if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value.trim())) {
                             return 'Please enter a valid email';
                           }
                           return null;
@@ -130,6 +130,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 // Success Message
                 Text(
                   'Email Sent!',
+                  key: const Key('forgot-sent-title'),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -137,7 +138,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'We\'ve sent a password reset link to ${_emailController.text.trim()}',
+                  'We\'ve sent a reset link and a 6-digit code to ${_emailController.text.trim()}',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -147,7 +148,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 const SizedBox(height: 16),
 
                 Text(
-                  'Check your email and follow the instructions to reset your password.',
+                  'Tap the button in the email, or enter the 6-digit code here.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -155,6 +156,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
 
                 const SizedBox(height: 32),
+
+                // The email also carries a 6-digit code, for when its button does not open the app (or it was read on another device).
+                AuthButton(
+                  key: const Key('forgot-enter-code'),
+                  text: 'Enter the 6-digit code',
+                  onPressed: () => context.push('/reset-code?email=${Uri.encodeQueryComponent(_emailController.text.trim())}'),
+                ),
+
+                const SizedBox(height: 12),
 
                 // Back to Login Button
                 AuthButton(
