@@ -78,7 +78,7 @@ class ChatScreen extends ConsumerWidget {
       child: ListView(
         key: const Key('chat-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
           Row(
             children: [

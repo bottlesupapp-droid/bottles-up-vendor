@@ -346,7 +346,7 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
               onRefresh: _loadTeamMembers,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom + 80),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88), // room for the Add button
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

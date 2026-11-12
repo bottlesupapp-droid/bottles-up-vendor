@@ -48,7 +48,7 @@ class _OrganizerSalesScreenState extends ConsumerState<OrganizerSalesScreen> {
     final events = ref.watch(organizerEventsProvider(widget.workspace.orgId));
     return ListView(
       key: const Key('organizer-sales'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
         Text('Sales', style: theme.textTheme.headlineSmall),
         const SizedBox(height: 8),

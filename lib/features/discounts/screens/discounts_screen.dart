@@ -90,7 +90,7 @@ class _WaitingTabState extends ConsumerState<_WaitingTab> {
       child: ListView(
         key: const Key('discounts-waiting'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           OpsAsyncView<List<PendingConcession>>(
             value: pending,
@@ -299,7 +299,7 @@ class _LimitsTabState extends ConsumerState<_LimitsTab> {
     final limits = ref.watch(discountLimitsProvider(widget.venueId));
     return ListView(
       key: const Key('discounts-limits-tab'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
         OpsAsyncView<DiscountLimits>(
           value: limits,

@@ -167,7 +167,7 @@ class _DepositTermsScreenState extends ConsumerState<DepositTermsScreen> {
           final purposes = purposesFor(depositIsCredit: s.depositIsCredit);
           return ListView(
             key: const Key('deposit-terms'),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               Text(
                 s.terms == null

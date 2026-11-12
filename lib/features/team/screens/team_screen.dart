@@ -211,7 +211,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final noVenues = venues != null && venues.isEmpty;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         Text('Appoint managers and staff, give temporary access for a night or a shift, and remove access at any time.', style: theme.textTheme.bodyMedium),
         const SizedBox(height: 12),

@@ -26,7 +26,7 @@ class VenueAccessScreen extends ConsumerWidget {
       child: ListView(
         key: const Key('venue-access'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           Text('Your venue access', style: theme.textTheme.headlineSmall),
           const SizedBox(height: 4),

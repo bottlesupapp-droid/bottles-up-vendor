@@ -157,7 +157,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom + 80),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Form(
           key: _formKey,
           child: Column(

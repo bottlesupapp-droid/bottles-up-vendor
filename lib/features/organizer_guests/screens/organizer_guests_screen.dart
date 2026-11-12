@@ -46,7 +46,7 @@ class _OrganizerGuestsScreenState extends ConsumerState<OrganizerGuestsScreen> {
     final events = ref.watch(organizerEventsProvider(widget.workspace.orgId));
     return ListView(
       key: const Key('guests-list'),
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
         Text('Guests', style: theme.textTheme.headlineSmall),
         const SizedBox(height: 8),

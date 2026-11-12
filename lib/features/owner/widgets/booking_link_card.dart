@@ -37,7 +37,7 @@ class BookingLinkCard extends StatelessWidget {
     final theme = Theme.of(context);
     final live = venue.isLive;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         Text('Booking link', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),

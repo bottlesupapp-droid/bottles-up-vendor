@@ -207,7 +207,7 @@ class _PaymentReviewScreenState extends ConsumerState<PaymentReviewScreen> {
       },
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         itemCount: items.length,
         itemBuilder: (_, i) => items[i](),
       ),

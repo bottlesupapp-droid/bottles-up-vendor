@@ -126,7 +126,7 @@ class _ServerScanScreenState extends ConsumerState<ServerScanScreen> {
     }
     final camera = (widget.cameraBuilder ?? (c, onCode) => QrCameraView(onCode: onCode));
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         Text('Scan', style: theme.textTheme.headlineSmall),
         Text('Scan the QR on the guest\'s booking to seat them.', style: theme.textTheme.bodyMedium),

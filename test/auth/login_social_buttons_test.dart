@@ -42,7 +42,11 @@ Future<void> _as(TargetPlatform platform, Future<void> Function() body) async {
 }
 
 void main() {
-  tearDown(() => pendingInviteToken.value = null);
+  setUp(() => SocialSignInConfig.offered = true);
+  tearDown(() {
+    SocialSignInConfig.offered = false;
+    pendingInviteToken.value = null;
+  });
 
   group('which sign-ins a phone can offer', () {
     test('Android: Google, never Apple', () {

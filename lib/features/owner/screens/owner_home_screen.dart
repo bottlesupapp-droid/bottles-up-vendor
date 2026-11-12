@@ -74,7 +74,7 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           BusinessStatusCard(orgId: workspace.orgId),
           Text('All venues', style: theme.textTheme.headlineSmall),

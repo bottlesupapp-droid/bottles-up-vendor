@@ -164,7 +164,7 @@ class _PlacementScreenState extends ConsumerState<PlacementScreen> {
     return ListView(
       key: const Key('placement'),
       physics: _grabbed ? const NeverScrollableScrollPhysics() : null,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
         Text('Drag a table to where it is on the floor. Pull the round handle to change its size.', style: theme.textTheme.bodySmall),
         const SizedBox(height: 8),

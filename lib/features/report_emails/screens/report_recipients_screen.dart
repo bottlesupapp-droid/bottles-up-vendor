@@ -94,6 +94,6 @@ class ReportRecipientsScreen extends ConsumerWidget {
       default:
         children.add(const Text('There is nothing to set up for your role.', key: Key('report-emails-none')));
     }
-    return ListView(key: const Key('report-emails'), padding: const EdgeInsets.fromLTRB(16, 12, 16, 140), children: children);
+    return ListView(key: const Key('report-emails'), padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), children: children);
   }
 }

@@ -187,7 +187,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Text('Tonight', style: theme.textTheme.headlineSmall),
           if (widget.workspace.venueName != null)

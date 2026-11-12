@@ -154,7 +154,7 @@ class _ClubDoorStaffScreenState extends ConsumerState<ClubDoorStaffScreen> {
       child: ListView(
         key: Key('club-door-$venueId'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Text('Organizers\' door staff', style: theme.textTheme.titleLarge),
           const SizedBox(height: 4),

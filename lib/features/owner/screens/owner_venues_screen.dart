@@ -66,7 +66,7 @@ class _OwnerVenuesScreenState extends ConsumerState<OwnerVenuesScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Text('Venues', style: theme.textTheme.headlineSmall),
           Text(widget.workspace.orgName, style: theme.textTheme.bodyMedium),

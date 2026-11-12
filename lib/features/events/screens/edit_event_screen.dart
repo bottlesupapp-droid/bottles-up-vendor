@@ -313,9 +313,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             utils.ResponsiveUtils.getResponsivePadding(context),
             utils.ResponsiveUtils.getResponsivePadding(context),
             utils.ResponsiveUtils.getResponsivePadding(context),
-            utils.ResponsiveUtils.getResponsivePadding(context) +
-                MediaQuery.of(context).padding.bottom +
-                80, // clear floating nav bar
+            utils.ResponsiveUtils.getResponsivePadding(context),
           ),
           child: Form(
             key: _formKey,

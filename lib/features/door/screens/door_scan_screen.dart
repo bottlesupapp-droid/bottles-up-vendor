@@ -184,7 +184,7 @@ class _DoorScanScreenState extends ConsumerState<DoorScanScreen> {
     final theme = Theme.of(context);
     final camera = (widget.cameraBuilder ?? _defaultCamera)(context, (code) => _process(code, event));
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         DoorEventBar(
           events: events,

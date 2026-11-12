@@ -200,7 +200,7 @@ class _DoorSalesScreenState extends ConsumerState<DoorSalesScreen> {
 
   Widget _body(List<DoorEvent> events, DoorEvent event) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         DoorEventBar(
           events: events,

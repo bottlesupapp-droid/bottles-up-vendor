@@ -105,7 +105,7 @@ class VenueSetupList extends ConsumerWidget {
           data: (steps) {
             final s = summarizeSetup(steps);
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               children: [
                 if (s.requiredTotal > 0) ...[
                   Text(

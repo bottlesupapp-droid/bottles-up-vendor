@@ -372,7 +372,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).padding.bottom + 80),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

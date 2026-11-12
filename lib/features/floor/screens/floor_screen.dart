@@ -201,7 +201,7 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           if (widget.showHeading) ...[
             Text('Bookings', style: theme.textTheme.headlineSmall),

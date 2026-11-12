@@ -1,5 +1,11 @@
 import 'package:flutter/foundation.dart';
 
+/// The one switch for "Continue with Google" and "Continue with Apple" anywhere in this app. OFF on the client's instruction (2 Nov 2026): sign-in is by e-mail or phone only. Everything else (the service, the
+/// notifier, the Google and Apple client ids, the buttons) is kept, so turning this on again brings the buttons back on the sign-in and create-account pages. It is a variable, not a constant, so a test can turn it on.
+class SocialSignInConfig {
+  static bool offered = false;
+}
+
 /// The Google Cloud client ids the Google sign-in needs. They are public identifiers, not secrets. Setup steps (and what Supabase's Google provider must list) are in docs/SOCIAL_LOGIN_SETUP.md
 /// of the monorepo.
 class GoogleSignInConfig {
