@@ -57,6 +57,8 @@ import '../../features/workspace/workspace_routes.dart';
 import '../../features/workspace/screens/workspace_selector_screen.dart';
 import '../../features/workspace/screens/no_workspace_screen.dart';
 import '../../features/workspace/screens/workspace_load_failed_screen.dart';
+import '../../features/preview/preview_config.dart';
+import '../../features/preview/screens/preview_gallery_screen.dart';
 
 // Route names
 class AppRoutes {
@@ -329,6 +331,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'acceptInvite',
         builder: (context, state) => AcceptInvitationScreen(token: state.uri.queryParameters['token']),
       ),
+      // Sample screens for parts of the design that are not built yet (debug builds, or BU_PREVIEWS=true). Nothing here is saved or sent.
+      if (kPreviewsEnabled) ...[
+        GoRoute(
+          path: PreviewRoutes.gallery,
+          name: 'previews',
+          builder: (context, state) => const PreviewGalleryScreen(),
+        ),
+        GoRoute(
+          path: '${PreviewRoutes.gallery}/:id',
+          name: 'preview',
+          builder: (context, state) => PreviewScreenHost(id: state.pathParameters['id'] ?? ''),
+        ),
+      ],
       workspaceShellRoute(),
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
