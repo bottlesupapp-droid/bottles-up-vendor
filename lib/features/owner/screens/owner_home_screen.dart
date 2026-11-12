@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../business/widgets/business_status_card.dart';
 import '../../floor/logic/bookings_rules.dart';
 import '../../floor/providers/floor_providers.dart';
@@ -39,6 +41,9 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> {
 
   Workspace get workspace => widget.workspace;
 
+  /// The two date buttons sit under the ready-made ranges: a step smaller than a full-size button, so the page's first card is not pushed off the screen.
+  static final ButtonStyle _dateButton = OutlinedButton.styleFrom(minimumSize: const Size(0, 44));
+
   bool get _isTonight => _presetId == PresetId.tonight;
 
   Future<void> _pick({required bool from}) async {
@@ -59,6 +64,7 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> {
   Widget build(BuildContext context) {
     final ref = this.ref;
     final theme = Theme.of(context);
+    final bu = context.bu;
     final orgId = workspace.orgId;
     final venues = ref.watch(ownerVenuesProvider(orgId));
     final problem = validateRange(_range);
@@ -74,54 +80,109 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          BuSpace.page,
+          BuSpace.l,
+          BuSpace.page,
+          BuSpace.xl,
+        ),
         children: [
           BusinessStatusCard(orgId: workspace.orgId),
-          Text('All venues', style: theme.textTheme.headlineSmall),
-          Text('${workspace.orgName} · ${_nightsLabel()}', key: const Key('home-night'), style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
+          const BuPageHeader(eyebrow: 'Overview', title: 'All venues'),
+          const SizedBox(height: BuSpace.xs),
+          Text(
+            '${workspace.orgName} · ${_nightsLabel()}',
+            key: const Key('home-night'),
+            style: theme.textTheme.bodyMedium?.copyWith(color: bu.muted),
+          ),
+          const SizedBox(height: BuSpace.l),
           Wrap(
             key: const Key('home-presets'),
-            spacing: 8,
-            runSpacing: 4,
+            spacing: BuSpace.s,
+            runSpacing: BuSpace.xs,
             children: [
               for (final p in _presets)
                 ChoiceChip(
                   key: Key('home-preset-${p.id.name}'),
                   label: Text(p.label),
+                  showCheckmark: false,
                   selected: _presetId == p.id,
-                  onSelected: (_) => setState(() {
-                    _presetId = p.id;
-                    _range = p.range;
-                  }),
+                  onSelected:
+                      (_) => setState(() {
+                        _presetId = p.id;
+                        _range = p.range;
+                      }),
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: BuSpace.s),
           Row(
             children: [
-              Expanded(child: OutlinedButton(key: const Key('home-pick-from'), onPressed: () => _pick(from: true), child: Text('From ${formatNightShort(_range.from)}'))),
-              const SizedBox(width: 8),
-              Expanded(child: OutlinedButton(key: const Key('home-pick-to'), onPressed: () => _pick(from: false), child: Text('To ${formatNightShort(_range.to)}'))),
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('home-pick-from'),
+                  style: _dateButton,
+                  onPressed: () => _pick(from: true),
+                  child: Text('From ${formatNightShort(_range.from)}'),
+                ),
+              ),
+              const SizedBox(width: BuSpace.s),
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('home-pick-to'),
+                  style: _dateButton,
+                  onPressed: () => _pick(from: false),
+                  child: Text('To ${formatNightShort(_range.to)}'),
+                ),
+              ),
             ],
           ),
           if (problem != null)
-            Padding(padding: const EdgeInsets.only(top: 8), child: Text(problem, key: const Key('home-range-problem'), style: TextStyle(color: theme.colorScheme.error))),
-          const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(top: BuSpace.s),
+              child: Text(
+                problem,
+                key: const Key('home-range-problem'),
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ),
+          const SizedBox(height: BuSpace.xl),
           if (problem == null)
             venues.when(
-              loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),
+              loading:
+                  () => const Padding(
+                    padding: EdgeInsets.only(top: BuSpace.xl),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
               error: (error, _) {
-                final e = error is OwnerLoadException ? error : const OwnerLoadException(unavailable: false, accessEnded: false);
-                return Column(
-                  children: [
-                    Text(e.message, key: const Key('home-error'), textAlign: TextAlign.center),
-                    if (!e.unavailable)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: OutlinedButton(key: const Key('home-retry'), onPressed: () => ref.invalidate(ownerVenuesProvider(orgId)), child: const Text('Try again')),
+                final e =
+                    error is OwnerLoadException
+                        ? error
+                        : const OwnerLoadException(
+                          unavailable: false,
+                          accessEnded: false,
+                        );
+                return BuCard(
+                  child: Column(
+                    children: [
+                      Text(
+                        e.message,
+                        key: const Key('home-error'),
+                        textAlign: TextAlign.center,
                       ),
-                  ],
+                      if (!e.unavailable)
+                        Padding(
+                          padding: const EdgeInsets.only(top: BuSpace.m),
+                          child: OutlinedButton(
+                            key: const Key('home-retry'),
+                            onPressed:
+                                () =>
+                                    ref.invalidate(ownerVenuesProvider(orgId)),
+                            child: const Text('Try again'),
+                          ),
+                        ),
+                    ],
+                  ),
                 );
               },
               data: (list) => _body(context, ref, list, _range),
@@ -131,19 +192,37 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> {
     );
   }
 
-  Widget _body(BuildContext context, WidgetRef ref, List<OrgVenue> list, NightRange range) {
+  Widget _body(
+    BuildContext context,
+    WidgetRef ref,
+    List<OrgVenue> list,
+    NightRange range,
+  ) {
     final theme = Theme.of(context);
+    final bu = context.bu;
     if (list.isEmpty) {
-      return Container(
+      return BuCard(
         key: const Key('home-no-venues'),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.4)), borderRadius: BorderRadius.circular(14)),
-        child: const Text('No venues yet. Add one in the Venues tab.', textAlign: TextAlign.center),
+        padding: const EdgeInsets.all(BuSpace.xl),
+        child: Text(
+          'No venues yet. Add one in the Venues tab.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium,
+        ),
       );
     }
 
-    final reads = [for (final v in list) ref.watch(floorBookingsProvider(FloorQuery(v.id, range)))];
-    var bookings = 0, guests = 0, arrived = 0, awaiting = 0, failed = 0, loading = 0, cut = 0;
+    final reads = [
+      for (final v in list)
+        ref.watch(floorBookingsProvider(FloorQuery(v.id, range))),
+    ];
+    var bookings = 0,
+        guests = 0,
+        arrived = 0,
+        awaiting = 0,
+        failed = 0,
+        loading = 0,
+        cut = 0;
     // A night in the past has guests booked, not expected.
     final past = range.to.compareTo(currentNight(widget.clock())) < 0;
     for (final r in reads) {
@@ -163,58 +242,106 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> {
       }
     }
 
-    Widget tile(Key key, String label, int value) => Expanded(
-          child: Card(
-            key: key,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [Text('$value', style: theme.textTheme.headlineSmall), Text(label, style: theme.textTheme.bodyMedium)],
-              ),
-            ),
-          ),
-        );
+    // The big card only speaks when every venue has answered in full: a headline built from a short total would look more certain than it is.
+    final complete = cut == 0 && failed == 0 && loading == 0;
+    final share = bookings == 0 ? 0.0 : (arrived / bookings).clamp(0.0, 1.0);
+
+    Widget tile(Key key, String label, int value, {Color? color}) => Expanded(
+      child: BuMetricTile(
+        key: key,
+        value: '$value',
+        label: label,
+        valueColor: color,
+      ),
+    );
+    final warn = theme.textTheme.bodySmall?.copyWith(color: bu.amber);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (complete) ...[
+          BuHeroCard(
+            key: const Key('home-hero'),
+            eyebrow: _isTonight ? 'Tonight' : 'These nights',
+            title:
+                '$guests ${guests == 1 ? 'guest' : 'guests'} ${past ? 'booked' : 'expected'}',
+            subtitle:
+                '$arrived of $bookings ${bookings == 1 ? 'booking has' : 'bookings have'} arrived',
+            trailing: BuRing(
+              value: share,
+              center: '${(share * 100).round()}%',
+              caption: 'arrived',
+            ),
+          ),
+          const SizedBox(height: BuSpace.m),
+        ],
         IntrinsicHeight(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            tile(const Key('home-bookings'), 'Confirmed bookings', bookings),
-            tile(const Key('home-guests'), past ? 'Guests booked' : 'Guests expected', guests),
-          ]),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              tile(const Key('home-bookings'), 'Confirmed bookings', bookings),
+              const SizedBox(width: BuSpace.m),
+              tile(
+                const Key('home-guests'),
+                past ? 'Guests booked' : 'Guests expected',
+                guests,
+              ),
+            ],
+          ),
         ),
+        const SizedBox(height: BuSpace.m),
         IntrinsicHeight(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            tile(const Key('home-arrived'), 'Arrived', arrived),
-            tile(const Key('home-awaiting'), 'Awaiting payment', awaiting),
-          ]),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              tile(
+                const Key('home-arrived'),
+                'Arrived',
+                arrived,
+                color: arrived > 0 ? bu.green : null,
+              ),
+              const SizedBox(width: BuSpace.m),
+              tile(
+                const Key('home-awaiting'),
+                'Awaiting payment',
+                awaiting,
+                color: awaiting > 0 ? bu.amber : null,
+              ),
+            ],
+          ),
         ),
         if (cut > 0)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: BuSpace.m),
             child: Text(
               '${cut == 1 ? 'One venue has' : '$cut venues have'} more than $rowLimit bookings in these nights, so these totals are incomplete. Choose fewer nights.',
               key: const Key('home-cut'),
-              style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFFFFB300)),
+              style: warn,
             ),
           )
         else if (failed > 0)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: BuSpace.m),
             child: Text(
               '${failed == 1 ? 'One venue' : '$failed venues'} could not be loaded, so these totals are incomplete.',
               key: const Key('home-incomplete'),
-              style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFFFFB300)),
+              style: warn,
             ),
           )
         else if (loading > 0)
-          Padding(padding: const EdgeInsets.only(top: 8), child: Text('Still loading ${loading == 1 ? 'one venue' : '$loading venues'}…', style: theme.textTheme.bodySmall)),
-        const SizedBox(height: 16),
-        Text('Venues', style: theme.textTheme.titleSmall),
-        for (var i = 0; i < list.length; i++) _venueCard(context, list[i], reads[i]),
-        const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.only(top: BuSpace.m),
+            child: Text(
+              'Still loading ${loading == 1 ? 'one venue' : '$loading venues'}…',
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        const SizedBox(height: BuSpace.xl),
+        const BuSectionHeader(title: 'Venues'),
+        const SizedBox(height: BuSpace.s),
+        for (var i = 0; i < list.length; i++)
+          _venueCard(context, list[i], reads[i]),
+        const SizedBox(height: BuSpace.xl),
         Text(
           'Sales, collections, balances, event status and unresolved issues are not available here yet.',
           key: const Key('home-footnote'),
@@ -224,42 +351,57 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> {
     );
   }
 
-  Widget _venueCard(BuildContext context, OrgVenue v, AsyncValue<List<BookingRow>> read) {
+  Widget _venueCard(
+    BuildContext context,
+    OrgVenue v,
+    AsyncValue<List<BookingRow>> read,
+  ) {
     final theme = Theme.of(context);
     final String line;
     if (read.hasValue && read.requireValue.length >= rowLimit) {
-      line = 'More than $rowLimit bookings in these nights. Choose fewer nights.';
+      line =
+          'More than $rowLimit bookings in these nights. Choose fewer nights.';
     } else if (read.hasValue) {
       final s = summarize(read.requireValue);
-      line = '${s.bookings} confirmed ${s.bookings == 1 ? 'booking' : 'bookings'} · ${s.guests} ${s.guests == 1 ? 'guest' : 'guests'} expected'
+      line =
+          '${s.bookings} confirmed ${s.bookings == 1 ? 'booking' : 'bookings'} · ${s.guests} ${s.guests == 1 ? 'guest' : 'guests'} expected'
           '${s.checkedIn > 0 ? ' · ${s.checkedIn} arrived' : ''}'
           '${s.awaitingPayment > 0 ? ' · ${s.awaitingPayment} awaiting payment' : ''}';
     } else if (read.hasError) {
-      line = _isTonight ? "Tonight's bookings could not be loaded." : 'Bookings for these nights could not be loaded.';
+      line =
+          _isTonight
+              ? "Tonight's bookings could not be loaded."
+              : 'Bookings for these nights could not be loaded.';
     } else {
       line = 'Loading…';
     }
-    return Card(
+    return BuCard(
       key: Key('home-venue-${v.id}'),
-      margin: const EdgeInsets.only(top: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => widget.onOpenVenue(context, workspace.membershipId, v.id),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: BuSpace.s),
+      onTap: () => widget.onOpenVenue(context, workspace.membershipId, v.id),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(children: [
-                Expanded(child: Text(v.name, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis)),
-                const SizedBox(width: 8),
-                VenueStatusChip(status: v.status),
-              ]),
-              const SizedBox(height: 6),
-              Text(line, key: Key('home-line-${v.id}'), style: theme.textTheme.bodyMedium),
+              Expanded(
+                child: Text(
+                  v.name,
+                  style: theme.textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: BuSpace.s),
+              VenueStatusChip(status: v.status),
             ],
           ),
-        ),
+          const SizedBox(height: BuSpace.xs + 2),
+          Text(
+            line,
+            key: Key('home-line-${v.id}'),
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:bottles_up_vendor/features/table_service/logic/table_service_rul
 import 'package:bottles_up_vendor/features/table_service/providers/table_service_providers.dart';
 import 'package:bottles_up_vendor/features/table_service/screens/orders_screen.dart';
 import 'package:bottles_up_vendor/features/table_service/screens/payment_review_screen.dart';
+import 'package:bottles_up_vendor/core/theme/app_tokens.dart';
 import 'package:bottles_up_vendor/features/table_service/screens/tonight_screen.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
@@ -201,7 +202,8 @@ void main() {
       return texts.last.style?.color;
     }
 
-    const amber = Color(0xFFFFB300);
+    // The design's amber (the same one the rest of the app uses for "needs a person").
+    final amber = BuTokens.dark.amber;
 
     testWidgets('a number that needs a person is amber, when it is not zero', (
       tester,

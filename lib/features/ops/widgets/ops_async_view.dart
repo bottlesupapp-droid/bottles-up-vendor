@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../services/ops_rpc.dart';
 
 /// The four states every list screen has: loading, a failure that says what happened (with Try again unless nothing can be done),
@@ -43,24 +45,29 @@ class OpsAsyncView<T> extends StatelessWidget {
       error: (error, _) {
         final e = opsLoadFailureFor(error, what);
         return Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Column(
-            children: [
-              Text(e.message, key: errorKey, textAlign: TextAlign.center),
-              if (!e.unavailable && onRetry != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: OutlinedButton(key: const Key('ops-retry'), onPressed: onRetry, child: const Text('Try again')),
-                ),
-            ],
+          padding: const EdgeInsets.only(top: BuSpace.l),
+          child: BuCard(
+            child: Column(
+              children: [
+                Text(e.message, key: errorKey, textAlign: TextAlign.center),
+                if (!e.unavailable && onRetry != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: BuSpace.m),
+                    child: OutlinedButton(key: const Key('ops-retry'), onPressed: onRetry, child: const Text('Try again')),
+                  ),
+              ],
+            ),
           ),
         );
       },
       data: (data) {
         if (isEmpty != null && isEmpty!(data)) {
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(emptyText ?? 'Nothing here yet.', key: emptyKey, textAlign: TextAlign.center),
+            padding: const EdgeInsets.symmetric(vertical: BuSpace.l),
+            child: BuCard(
+              padding: const EdgeInsets.all(BuSpace.xl),
+              child: Text(emptyText ?? 'Nothing here yet.', key: emptyKey, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+            ),
           );
         }
         return builder(data);

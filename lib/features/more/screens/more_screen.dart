@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../agreements/screens/agreements_screen.dart';
 import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
 import '../../bottle_signs/screens/bottle_signs_screen.dart';
@@ -98,32 +101,39 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bu = context.bu;
     final entries = [
       for (final e in moreEntriesFor(workspace.role))
         if (showUnbuilt || moreDestinationFor(workspace, e.id) != null) e,
     ];
     return ListView(
       key: const Key('more-list'),
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
-        Text('More', style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 4),
-        Text(workspace.scopeLabel, style: theme.textTheme.bodySmall),
-        const SizedBox(height: 8),
-        for (final e in entries)
-          Builder(builder: (context) {
-            final page = moreDestinationFor(workspace, e.id);
-            return ListTile(
-              key: Key('more-${e.id}'),
-              contentPadding: EdgeInsets.zero,
-              enabled: page != null,
-              leading: Icon(e.icon),
-              title: Text(e.label),
-              subtitle: Text(page == null ? 'Not available yet. ${e.subtitle}' : e.subtitle),
-              trailing: page == null ? null : const Icon(Icons.chevron_right),
-              onTap: page == null ? null : () => _open(context, e, page),
-            );
-          }),
+        const BuPageHeader(eyebrow: 'Workspace', title: 'More'),
+        const SizedBox(height: BuSpace.xs),
+        Text(workspace.scopeLabel, style: theme.textTheme.bodyMedium?.copyWith(color: bu.muted)),
+        const SizedBox(height: BuSpace.xl),
+        if (entries.isNotEmpty)
+          BuListCard(
+            children: [
+              for (final e in entries)
+                Builder(builder: (context) {
+                  final page = moreDestinationFor(workspace, e.id);
+                  final built = page != null;
+                  return ListTile(
+                    key: Key('more-${e.id}'),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: BuSpace.l, vertical: BuSpace.xs),
+                    enabled: built,
+                    leading: BuIconTile(icon: e.icon, color: built ? null : bu.muted, background: built ? null : bu.panel2),
+                    title: Text(e.label, style: theme.textTheme.titleSmall?.copyWith(fontSize: 15, color: built ? null : bu.muted)),
+                    subtitle: Text(built ? e.subtitle : 'Not available yet. ${e.subtitle}', style: theme.textTheme.bodySmall?.copyWith(color: bu.muted)),
+                    trailing: built ? Icon(Ionicons.chevron_forward, size: 16, color: bu.muted) : null,
+                    onTap: built ? () => _open(context, e, page) : null,
+                  );
+                }),
+            ],
+          ),
       ],
     );
   }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../owner/logic/owner_rules.dart' show OrgVenue;
 import '../../owner/providers/owner_providers.dart';
@@ -25,11 +28,12 @@ class OwnerReportsScreen extends ConsumerWidget {
       child: ListView(
         key: const Key('owner-reports'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Text('Reports', style: theme.textTheme.headlineSmall),
-          Text(workspace.orgName, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 8),
+          const BuPageHeader(eyebrow: 'Nightly', title: 'Reports'),
+          const SizedBox(height: BuSpace.xs),
+          Text(workspace.orgName, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          const SizedBox(height: BuSpace.xl),
           OpsAsyncView<List<OrgVenue>>(
             value: venues,
             what: 'your venues',
@@ -39,65 +43,63 @@ class OwnerReportsScreen extends ConsumerWidget {
             errorKey: const Key('owner-reports-error'),
             onRetry: () => ref.invalidate(ownerVenuesProvider(workspace.orgId)),
             builder: (list) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Two or more clubs: the whole business for one night. (With one club its own report is the whole business.)
                 if (list.length > 1)
-                  Card(
+                  BuCard(
                     key: const Key('owner-report-all'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('All venues together', style: theme.textTheme.titleMedium),
-                          const SizedBox(height: 4),
-                          Text('Every club\'s report side by side, with the totals when they can be added.', style: theme.textTheme.bodySmall),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            key: const Key('consolidated-open'),
-                            icon: const Icon(Icons.stacked_bar_chart_outlined, size: 18),
-                            label: const Text('Combined report'),
-                            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                              builder: (_) => Scaffold(
-                                appBar: AppBar(title: const Text('All venues')),
-                                body: SafeArea(child: ConsolidatedReportScreen(orgId: workspace.orgId, orgName: workspace.orgName, clock: clock)),
-                              ),
-                            )),
-                          ),
-                        ],
-                      ),
+                    highlight: true,
+                    margin: const EdgeInsets.only(bottom: BuSpace.m),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('All venues together', style: theme.textTheme.titleMedium),
+                        const SizedBox(height: BuSpace.xs),
+                        Text('Every club\'s report side by side, with the totals when they can be added.', style: theme.textTheme.bodySmall),
+                        const SizedBox(height: BuSpace.m),
+                        FilledButton.icon(
+                          key: const Key('consolidated-open'),
+                          icon: const Icon(Ionicons.stats_chart_outline, size: 18),
+                          label: const Text('Combined report'),
+                          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                            builder: (_) => Scaffold(
+                              appBar: AppBar(title: const Text('All venues')),
+                              body: SafeArea(child: ConsolidatedReportScreen(orgId: workspace.orgId, orgName: workspace.orgName, clock: clock)),
+                            ),
+                          )),
+                        ),
+                      ],
                     ),
                   ),
                 for (final v in list)
-                  Card(
+                  BuCard(
                     key: Key('owner-report-${v.id}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(v.name, style: theme.textTheme.titleMedium),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: [
-                              ReportButton(venueId: v.id, venueName: v.name, emailOrgId: workspace.orgId, clock: clock),
-                              OutlinedButton.icon(
-                                key: Key('owner-night-${v.id}'),
-                                icon: const Icon(Icons.nightlight_outlined, size: 18),
-                                label: const Text('Close the night'),
-                                onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                                  builder: (_) => Scaffold(
-                                    appBar: AppBar(title: Text(v.name)),
-                                    body: SafeArea(child: NightScreen(venueId: v.id, venueName: v.name, emailOrgId: workspace.orgId, canReopen: true, clock: clock)),
-                                  ),
-                                )),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    margin: const EdgeInsets.only(bottom: BuSpace.m),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(v.name, style: theme.textTheme.titleMedium),
+                        const SizedBox(height: BuSpace.m),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ReportButton(venueId: v.id, venueName: v.name, emailOrgId: workspace.orgId, clock: clock),
+                            const SizedBox(height: BuSpace.s),
+                            OutlinedButton.icon(
+                              key: Key('owner-night-${v.id}'),
+                              icon: const Icon(Ionicons.moon_outline, size: 18),
+                              label: const Text('Close the night'),
+                              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                                builder: (_) => Scaffold(
+                                  appBar: AppBar(title: Text(v.name)),
+                                  body: SafeArea(child: NightScreen(venueId: v.id, venueName: v.name, emailOrgId: workspace.orgId, canReopen: true, clock: clock)),
+                                ),
+                              )),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
               ],

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../workspace/models/role_navigation.dart';
 import '../../workspace/models/workspace.dart';
 import '../providers/owner_providers.dart';
@@ -66,70 +69,71 @@ class _OwnerVenuesScreenState extends ConsumerState<OwnerVenuesScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Text('Venues', style: theme.textTheme.headlineSmall),
-          Text(widget.workspace.orgName, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 16),
+          const BuPageHeader(eyebrow: 'Portfolio', title: 'Venues'),
+          const SizedBox(height: BuSpace.xs),
+          Text(widget.workspace.orgName, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          const SizedBox(height: BuSpace.xl),
           venues.when(
-            loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),
+            loading: () => const Padding(padding: EdgeInsets.only(top: BuSpace.xl), child: Center(child: CircularProgressIndicator())),
             error: (error, _) {
               final e = error is OwnerLoadException ? error : const OwnerLoadException(unavailable: false, accessEnded: false);
-              return Column(
-                children: [
-                  Text(e.message, key: const Key('venues-error'), textAlign: TextAlign.center),
-                  if (!e.unavailable)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: OutlinedButton(key: const Key('venues-retry'), onPressed: () => ref.invalidate(ownerVenuesProvider(orgId)), child: const Text('Try again')),
-                    ),
-                ],
+              return BuCard(
+                child: Column(
+                  children: [
+                    Text(e.message, key: const Key('venues-error'), textAlign: TextAlign.center),
+                    if (!e.unavailable)
+                      Padding(
+                        padding: const EdgeInsets.only(top: BuSpace.m),
+                        child: OutlinedButton(key: const Key('venues-retry'), onPressed: () => ref.invalidate(ownerVenuesProvider(orgId)), child: const Text('Try again')),
+                      ),
+                  ],
+                ),
               );
             },
             data: (list) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (list.isEmpty)
-                  Container(
+                  BuCard(
                     key: const Key('no-venues'),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.4)), borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.all(BuSpace.xl),
+                    margin: const EdgeInsets.only(bottom: BuSpace.m),
                     child: Text('No venues yet. Add your first venue to start setting it up.', style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
                   ),
                 for (final v in list)
-                  Card(
+                  BuCard(
                     key: Key('venue-${v.id}'),
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => widget.onOpenVenue(context, widget.workspace.membershipId, v.id),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    margin: const EdgeInsets.only(bottom: BuSpace.m),
+                    onTap: () => widget.onOpenVenue(context, widget.workspace.membershipId, v.id),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(child: Text(v.name, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis)),
-                                const SizedBox(width: 8),
-                                VenueStatusChip(status: v.status),
-                              ],
-                            ),
-                            if (v.address != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(v.address!, style: theme.textTheme.bodySmall)),
-                            const SizedBox(height: 10),
-                            SetupProgress(venueId: v.id),
+                            Expanded(child: Text(v.name, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis)),
+                            const SizedBox(width: BuSpace.s),
+                            VenueStatusChip(status: v.status),
                           ],
                         ),
-                      ),
+                        if (v.address != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(v.address!, style: theme.textTheme.bodySmall)),
+                        const SizedBox(height: BuSpace.m),
+                        SetupProgress(venueId: v.id),
+                      ],
                     ),
                   ),
-                const SizedBox(height: 8),
-                FilledButton(
-                  key: const Key('add-venue'),
-                  onPressed: _adding ? null : _add,
-                  child: Text(_adding ? 'Adding…' : 'Add a venue'),
+                const SizedBox(height: BuSpace.s),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    key: const Key('add-venue'),
+                    onPressed: _adding ? null : _add,
+                    icon: const Icon(Ionicons.add, size: 20),
+                    label: Text(_adding ? 'Adding…' : 'Add a venue'),
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: BuSpace.xl),
                 Text(
                   'Claiming a venue that is already on BottlesUp is done on the website for now.',
                   key: const Key('venues-footnote'),
