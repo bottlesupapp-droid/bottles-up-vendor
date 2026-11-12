@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../workspace/logic/workspace_routing.dart' show pendingInviteToken;
 import '../providers/supabase_auth_provider.dart';
 import '../services/social_sign_in_service.dart';
@@ -222,7 +224,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget build(BuildContext context) {
     final authState = ref.watch(supabaseAuthProvider);
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
+    final bu = context.bu;
 
     // Listen to auth state changes
     ref.listen<String?>(authErrorProvider, (previous, next) {
@@ -246,116 +248,106 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: size.width * 0.08,
-                vertical: 32,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                 
+      body: BuBackdrop(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: BuSpace.xl, vertical: BuSpace.xxl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Align(alignment: Alignment.centerLeft, child: BuWordmark()),
 
+                    const SizedBox(height: 40),
 
-                  // Welcome Text
-                  RichText(
-                    text: TextSpan(
+                    // Welcome
+                    const BuPageHeader(
+                      eyebrow: 'Sign in',
+                      title: 'Welcome back!',
+                      intro: 'Sign in to run your venues, events and nights.',
+                    ),
+
+                    const SizedBox(height: BuSpace.xl),
+
+                    // Tab Bar: how you sign in
+                    Container(
+                      height: 52,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: bu.panel,
+                        borderRadius: BorderRadius.circular(BuRadius.control),
+                        border: Border.all(color: bu.line),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        indicator: BoxDecoration(
+                          color: bu.raised,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                        ),
+                        labelColor: bu.ink,
+                        unselectedLabelColor: bu.muted,
+                        labelStyle: theme.textTheme.labelLarge,
+                        unselectedLabelStyle: theme.textTheme.labelLarge,
+                        dividerColor: Colors.transparent,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        splashBorderRadius: BorderRadius.circular(10),
+                        tabs: const [
+                          Tab(text: 'E-mail'),
+                          Tab(text: 'Phone number'),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: BuSpace.xl),
+
+                    // Tab Views
+                    SizedBox(
+                      height: _showOtpInput && _tabController.index == 1 ? 450 : 300,
+                      child: TabBarView(
+                        controller: _tabController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          // Email Login Form
+                          _buildEmailLoginForm(theme, authState),
+
+                          // Phone Login Form
+                          _buildPhoneLoginForm(theme, authState),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: BuSpace.xl),
+
+                    // Google and Apple
+                    SocialSignInButtons(enabled: !authState.isLoading, onPressed: _socialSignIn),
+
+                    const SizedBox(height: BuSpace.xl),
+
+                    // Sign Up Link (wraps onto a second line on a narrow phone instead of running off the edge)
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        TextSpan(
-                          text: 'Welcome back!',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
+                        Text(
+                          "Don't have an account? ",
+                          style: theme.textTheme.bodyMedium?.copyWith(color: bu.muted),
+                        ),
+                        GestureDetector(
+                          onTap: () => context.push('/register'),
+                          child: Text(
+                            'Create a new one!',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: bu.orangeSoft,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Tab Bar
-                  Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicator: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      labelColor: Colors.black,
-                      unselectedLabelColor:
-                          theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                      labelStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      dividerColor: Colors.transparent,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      tabs: const [
-                        Tab(text: 'E-mail'),
-                        Tab(text: 'Phone number'),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Tab Views
-                  SizedBox(
-                    height: _showOtpInput && _tabController.index == 1 ? 450 : 300,
-                    child: TabBarView(
-                      controller: _tabController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        // Email Login Form
-                        _buildEmailLoginForm(theme, authState),
-
-                        // Phone Login Form
-                        _buildPhoneLoginForm(theme, authState),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Google and Apple
-                  SocialSignInButtons(enabled: !authState.isLoading, onPressed: _socialSignIn),
-
-                  const SizedBox(height: 24),
-
-                  // Sign Up Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => context.push('/register'),
-                        child: Text(
-                          'Create a new one!',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -375,46 +367,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             style: theme.textTheme.bodyLarge,
-            decoration: InputDecoration(
-              hintText: 'you@example.com',
-              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline,
-                  width: 1.5,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline,
-                  width: 1.5,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.error,
-                  width: 1.5,
-                ),
-              ),
-            ),
+            decoration: const InputDecoration(hintText: 'you@example.com'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -436,55 +389,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             style: theme.textTheme.bodyLarge,
             decoration: InputDecoration(
               hintText: 'Enter password',
-              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
-              ),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () {
                   setState(() {
                     _obscurePassword = !_obscurePassword;
                   });
                 },
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline,
-                  width: 1.5,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline,
-                  width: 1.5,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.error,
-                  width: 1.5,
-                ),
               ),
             ),
             validator: (value) {
@@ -510,8 +425,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
               child: Text(
                 'Forgot password?',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: context.bu.orangeSoft,
                 ),
               ),
             ),
@@ -525,7 +440,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.error.withOpacity(0.12),
+                color: theme.colorScheme.error.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -553,21 +468,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               onPressed: (authState.isLoading || _lockoutRemaining != null)
                   ? null
                   : _signInWithEmail,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.onSurface,
-                foregroundColor: theme.colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                elevation: 0,
-              ),
               child: authState.isLoading
                   ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: theme.colorScheme.surface,
+                        color: Colors.white,
                       ),
                     )
                   : Text(
@@ -575,7 +482,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ? 'Locked — ${_fmtDuration(_lockoutRemaining!)}'
                           : 'Login',
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.surface,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -598,53 +505,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             keyboardType: TextInputType.phone,
             enabled: !_showOtpInput,
             style: theme.textTheme.bodyLarge,
-            decoration: InputDecoration(
-              hintText: '18879519345 or +18879519345',
-              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline,
-                  width: 1.5,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline,
-                  width: 1.5,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.error,
-                  width: 1.5,
-                ),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                  width: 1.5,
-                ),
-              ),
-            ),
+            decoration: const InputDecoration(hintText: '18879519345 or +18879519345'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your phone number';
@@ -768,27 +629,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               onPressed: authState.isLoading
                   ? null
                   : (_showOtpInput ? _verifyOTP : _signInWithPhone),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.onSurface,
-                foregroundColor: theme.colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                elevation: 0,
-              ),
               child: authState.isLoading
                   ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: theme.colorScheme.surface,
+                        color: Colors.white,
                       ),
                     )
                   : Text(
                       _showOtpInput ? 'Verify & Login' : 'Send Code',
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.surface,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

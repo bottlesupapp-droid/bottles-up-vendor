@@ -2,11 +2,12 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import '../theme/app_tokens.dart';
 // ── Brand palette ─────────────────────────────────────────────────────────────
-const Color _kOrange = Color(0xFFFF6B35);
-const Color _kOrangeGlow = Color(0x33FF6B35);
+const Color _kOrange = Color(0xFFFF5A2F);
+const Color _kOrangeGlow = Color(0x33FF5A2F);
 const Color _kGlassBorder = Color(0x26FFFFFF);
-const Color _kBg = Color(0xFF0A0A0A);
+const Color _kBg = Color(0xFF090909);
 
 // ── GlassCard ─────────────────────────────────────────────────────────────────
 class GlassCard extends StatelessWidget {
@@ -236,7 +237,9 @@ class GlassMetricCard extends StatelessWidget {
   }
 }
 
-// ── GlassBottomNavBar ─────────────────────────────────────────────────────────
+// ── GlassBottomNavBar ────────────────────────────────────────
+/// The floating bottom bar of every workspace: a glass pill with one tab per section and an orange glow on the current one.
+/// The bar's own box runs to the bottom of the screen (it includes the home-indicator strip), so a page above it can end exactly where the pill begins.
 class GlassBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -251,49 +254,39 @@ class GlassBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bu = context.bu;
     final bottom = MediaQuery.of(context).padding.bottom;
     return Padding(
-      padding: EdgeInsets.only(
-          left: 16, right: 16, bottom: bottom + 12, top: 0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-          child: Container(
-            height: 66,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.09),
-                  _kBg.withValues(alpha: 0.72),
-                ],
+      padding: EdgeInsets.only(left: 14, right: 14, bottom: bottom + 12),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 570),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(BuRadius.bar),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
+                height: 76,
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: const Color(0xE8191817),
+                  borderRadius: BorderRadius.circular(BuRadius.bar),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.42), blurRadius: 40, offset: const Offset(0, 16)),
+                    BoxShadow(color: bu.orange.withValues(alpha: 0.05), blurRadius: 36, spreadRadius: 2),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      Expanded(
+                        child: _GlassNavItem(item: items[i], isSelected: i == currentIndex, onTap: () => onTap(i)),
+                      ),
+                  ],
+                ),
               ),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: _kGlassBorder, width: 0.8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: _kOrange.withValues(alpha: 0.07),
-                  blurRadius: 40,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(items.length, (i) {
-                return _GlassNavItem(
-                  item: items[i],
-                  isSelected: i == currentIndex,
-                  onTap: () => onTap(i),
-                );
-              }),
             ),
           ),
         ),
@@ -306,70 +299,50 @@ class _GlassNavItem extends StatelessWidget {
   final GlassNavItem item;
   final bool isSelected;
   final VoidCallback onTap;
-  const _GlassNavItem(
-      {required this.item,
-      required this.isSelected,
-      required this.onTap});
+  const _GlassNavItem({required this.item, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    final bu = context.bu;
+    final idle = const Color(0xFF777571);
+    final color = isSelected ? bu.orangeSoft : idle;
+    final base = Theme.of(context).textTheme.labelSmall;
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: item.label,
+      onTap: onTap,
+      excludeSemantics: true,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+          duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
-          decoration: isSelected
-              ? BoxDecoration(
-                  gradient: LinearGradient(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17),
+            gradient: isSelected
+                ? LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      _kOrange.withValues(alpha: 0.32),
-                      _kOrange.withValues(alpha: 0.14),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: _kOrange.withValues(alpha: 0.48),
-                    width: 0.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _kOrange.withValues(alpha: 0.22),
-                      blurRadius: 12,
-                    ),
-                  ],
-                )
-              : null,
+                    colors: [bu.orange.withValues(alpha: 0.20), bu.orange.withValues(alpha: 0.07)],
+                  )
+                : null,
+            border: Border.all(color: isSelected ? bu.orange.withValues(alpha: 0.22) : Colors.transparent),
+            boxShadow: isSelected ? [BoxShadow(color: bu.orange.withValues(alpha: 0.08), blurRadius: 18, offset: const Offset(0, 5))] : null,
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  isSelected ? item.activeIcon : item.icon,
-                  key: ValueKey(isSelected),
-                  color: isSelected
-                      ? _kOrange
-                      : Colors.white.withValues(alpha: 0.50),
-                  size: 22,
-                ),
+                duration: const Duration(milliseconds: 180),
+                child: Icon(isSelected ? item.activeIcon : item.icon, key: ValueKey(isSelected), color: color, size: 22),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  color: isSelected
-                      ? _kOrange
-                      : Colors.white.withValues(alpha: 0.45),
-                  fontSize: 10,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.w400,
-                ),
-                child: Text(item.label),
+                duration: const Duration(milliseconds: 180),
+                style: (base ?? const TextStyle()).copyWith(color: color, fontSize: 10.5, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, letterSpacing: 0),
+                child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ],
           ),
