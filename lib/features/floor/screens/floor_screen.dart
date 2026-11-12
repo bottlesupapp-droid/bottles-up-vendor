@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../server_desk/logic/server_desk_rules.dart';
@@ -209,12 +212,15 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
           if (widget.showHeading) ...[
-            Text('Bookings', style: theme.textTheme.headlineSmall),
-            if (widget.venueName != null) Text(widget.venueName!, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 16),
+            const BuPageHeader(eyebrow: 'Floor', title: 'Bookings'),
+            if (widget.venueName != null) ...[
+              const SizedBox(height: BuSpace.xs),
+              Text(widget.venueName!, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+            ],
+            const SizedBox(height: BuSpace.l),
           ],
           Wrap(
             key: const Key('floor-presets'),
@@ -224,6 +230,7 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
               for (final p in _presets)
                 ChoiceChip(
                   key: Key('preset-${p.id.name}'),
+                  showCheckmark: false,
                   label: Text(p.label),
                   selected: _presetId == p.id,
                   onSelected: (_) => setState(() {
@@ -256,7 +263,7 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
           if (problem != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(problem, key: const Key('range-problem'), style: const TextStyle(color: Color(0xFFFFB300))),
+              child: Text(problem, key: const Key('range-problem'), style: TextStyle(color: context.bu.amber)),
             ),
           const SizedBox(height: 8),
           SegmentedButton<BookingFilter>(
@@ -275,19 +282,21 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
               loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),
               error: (error, _) {
                 final e = error is FloorLoadException ? error : const FloorLoadException(unavailable: false, accessEnded: false);
-                return Column(
-                  children: [
-                    Text(e.message, key: const Key('floor-error'), textAlign: TextAlign.center),
-                    if (!e.unavailable)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: OutlinedButton(
-                          key: const Key('floor-retry'),
-                          onPressed: () => ref.invalidate(floorBookingsProvider(query)),
-                          child: const Text('Try again'),
+                return BuCard(
+                  child: Column(
+                    children: [
+                      Text(e.message, key: const Key('floor-error'), textAlign: TextAlign.center),
+                      if (!e.unavailable)
+                        Padding(
+                          padding: const EdgeInsets.only(top: BuSpace.m),
+                          child: OutlinedButton(
+                            key: const Key('floor-retry'),
+                            onPressed: () => ref.invalidate(floorBookingsProvider(query)),
+                            child: const Text('Try again'),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 );
               },
               data: (rows) => _results(rows, query, servers, team),
@@ -306,25 +315,13 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
     final hidden = rows.length - shown.length;
     final nights = nightCount(_range);
 
-    Widget tile(Key key, String label, int value, [String? hint]) => Expanded(
-          child: Card(
-            key: key,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('$value', style: theme.textTheme.headlineSmall),
-                  Text(label, style: theme.textTheme.bodyMedium),
-                  if (hint != null) Text(hint, style: theme.textTheme.bodySmall),
-                ],
-              ),
-            ),
-          ),
-        );
+    Widget tile(Key key, String label, int value, [String? hint]) => Expanded(child: BuMetricTile(key: key, value: '$value', label: label, hint: hint));
 
     // Each pair of tiles is as tall as the taller one, so a tile without a hint does not look shorter.
-    Widget pair(Widget a, Widget b) => IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [a, b]));
+    Widget pair(Widget a, Widget b) => Padding(
+          padding: const EdgeInsets.only(bottom: BuSpace.m),
+          child: IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [a, const SizedBox(width: BuSpace.m), b])),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,18 +337,18 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
         if (rows.length >= rowLimit)
           Container(
             key: const Key('row-limit'),
-            margin: const EdgeInsets.only(top: 12),
-            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: BuSpace.m),
+            padding: const EdgeInsets.all(BuSpace.l),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFB300).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFFFB300).withValues(alpha: 0.4)),
+              color: context.bu.amber.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(BuRadius.control),
+              border: Border.all(color: context.bu.amber.withValues(alpha: 0.4)),
             ),
             child: Text('Only the first $rowLimit bookings are shown. Choose fewer nights to see the rest.'),
           ),
         if (groups.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 24),
+          BuCard(
+            padding: const EdgeInsets.all(BuSpace.xl),
             child: Text(
               _filter == BookingFilter.confirmed && hidden > 0
                   ? 'No confirmed bookings for these nights. $hidden unpaid or cancelled ${hidden == 1 ? 'is' : 'are'} hidden; choose “Everything” to see ${hidden == 1 ? 'it' : 'them'}.'
@@ -361,7 +358,7 @@ class _FloorScreenState extends ConsumerState<FloorScreen> {
             ),
           ),
         for (final g in groups) ...[
-          const SizedBox(height: 20),
+          const SizedBox(height: BuSpace.xl),
           Row(
             key: Key('night-${g.night}'),
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

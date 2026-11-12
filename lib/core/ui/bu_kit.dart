@@ -185,6 +185,7 @@ class BuCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(BuSpace.l),
     this.onTap,
     this.highlight = false,
+    this.accent,
     this.margin,
   });
 
@@ -194,27 +195,32 @@ class BuCard extends StatelessWidget {
 
   /// An orange edge and a faint orange glow: the thing that wants a look (the workspace used last, a featured card).
   final bool highlight;
+
+  /// A colour other than orange for that edge and glow (a red one for an urgent alert). Giving one highlights the card.
+  final Color? accent;
   final EdgeInsetsGeometry? margin;
 
   @override
   Widget build(BuildContext context) {
     final bu = context.bu;
     final radius = BorderRadius.circular(BuRadius.card);
+    final lit = highlight || accent != null;
+    final glow = accent ?? bu.orange;
     return Container(
       margin: margin,
       decoration: BoxDecoration(
         borderRadius: radius,
         gradient:
-            highlight
+            lit
                 ? LinearGradient(
                   begin: Alignment.centerLeft,
                   end: const Alignment(0.6, 0),
-                  colors: [bu.orange.withValues(alpha: 0.10), bu.panel],
+                  colors: [glow.withValues(alpha: 0.10), bu.panel],
                 )
                 : null,
-        color: highlight ? null : bu.panel,
+        color: lit ? null : bu.panel,
         border: Border.all(
-          color: highlight ? bu.orange.withValues(alpha: 0.28) : bu.hairline,
+          color: lit ? glow.withValues(alpha: 0.28) : bu.hairline,
         ),
         boxShadow: const [
           BoxShadow(
@@ -738,11 +744,15 @@ class BuMetricTile extends StatelessWidget {
     required this.value,
     required this.label,
     this.valueColor,
+    this.hint,
   });
 
   final String value;
   final String label;
   final Color? valueColor;
+
+  /// A small line under the label ("Checked in at the venue"). The label stays the second text and the hint is the third.
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -763,6 +773,8 @@ class BuMetricTile extends StatelessWidget {
             ),
             const SizedBox(height: BuSpace.xs),
             Text(label, style: text.bodySmall?.copyWith(color: bu.muted)),
+            if (hint != null)
+              Text(hint!, style: text.bodySmall?.copyWith(color: bu.muted.withValues(alpha: 0.8), fontSize: 11)),
           ],
         ),
       ),

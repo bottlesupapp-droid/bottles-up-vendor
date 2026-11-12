@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../bottle_signs/providers/bottle_sign_providers.dart';
 import '../../bottle_signs/widgets/signs_load_notice.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
@@ -117,18 +119,23 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
 
     // One entry per row, built only when it scrolls into view: a busy night has hundreds of orders.
     final items = <Widget Function()>[
-      () => Text(
-        _manager ? 'Orders' : 'My orders',
-        style: theme.textTheme.headlineSmall,
+      () => BuPageHeader(
+        eyebrow: _manager ? 'Service' : 'Your shift',
+        title: _manager ? 'Orders' : 'My orders',
       ),
       () =>
           widget.workspace.venueName == null
               ? const SizedBox.shrink()
-              : Text(
-                widget.workspace.venueName!,
-                style: theme.textTheme.bodyMedium,
+              : Padding(
+                padding: const EdgeInsets.only(top: BuSpace.xs),
+                child: Text(
+                  widget.workspace.venueName!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: context.bu.muted,
+                  ),
+                ),
               ),
-      () => const SizedBox(height: 12),
+      () => const SizedBox(height: BuSpace.l),
       () => NightBar(
         night: _night,
         tonight: _tonight,
@@ -147,31 +154,33 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       error: (error, _) {
         final e = loadFailureFor(error, 'orders');
         items.add(
-          () => Column(
-            children: [
-              Text(
-                e.message,
-                key: const Key('orders-error'),
-                textAlign: TextAlign.center,
-              ),
-              if (!e.unavailable)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: OutlinedButton(
-                    key: const Key('orders-retry'),
-                    onPressed: () => ref.invalidate(ordersProvider(_query)),
-                    child: const Text('Try again'),
-                  ),
+          () => BuCard(
+            child: Column(
+              children: [
+                Text(
+                  e.message,
+                  key: const Key('orders-error'),
+                  textAlign: TextAlign.center,
                 ),
-            ],
+                if (!e.unavailable)
+                  Padding(
+                    padding: const EdgeInsets.only(top: BuSpace.m),
+                    child: OutlinedButton(
+                      key: const Key('orders-retry'),
+                      onPressed: () => ref.invalidate(ordersProvider(_query)),
+                      child: const Text('Try again'),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
       data: (lines) {
         if (lines.isEmpty) {
           items.add(
-            () => Padding(
-              padding: const EdgeInsets.only(top: 24),
+            () => BuCard(
+              padding: const EdgeInsets.all(BuSpace.xl),
               child: Text(
                 _manager
                     ? 'No bottle orders for this night.'
@@ -206,6 +215,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
                       key: Key('filter-${f.name}'),
+                      showCheckmark: false,
                       label: Text('${f.label} ${counts[f]}'),
                       selected: _filter == f,
                       onSelected: (_) => setState(() => _filter = f),
@@ -219,11 +229,14 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
         if (shown.isEmpty) {
           items.add(
             () => Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: Center(
-                child: Text(
-                  'Nothing is ${_filter.label.toLowerCase()}.',
-                  key: const Key('orders-filter-empty'),
+              padding: const EdgeInsets.only(top: BuSpace.l),
+              child: BuCard(
+                padding: const EdgeInsets.all(BuSpace.xl),
+                child: Center(
+                  child: Text(
+                    'Nothing is ${_filter.label.toLowerCase()}.',
+                    key: const Key('orders-filter-empty'),
+                  ),
                 ),
               ),
             ),
@@ -274,7 +287,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       },
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         itemCount: items.length,
         itemBuilder: (_, i) => items[i](),
       ),

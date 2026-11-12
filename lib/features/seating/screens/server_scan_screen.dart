@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../door/logic/door_rules.dart' show shouldProcessScan;
 import '../../floor/logic/bookings_rules.dart' show currentNight;
+import '../../server_desk/widgets/desk_chip.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/qr_camera_view.dart';
 import '../../workspace/models/workspace.dart';
@@ -126,13 +129,14 @@ class _ServerScanScreenState extends ConsumerState<ServerScanScreen> {
     }
     final camera = (widget.cameraBuilder ?? (c, onCode) => QrCameraView(onCode: onCode));
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
       children: [
-        Text('Scan', style: theme.textTheme.headlineSmall),
-        Text('Scan the QR on the guest\'s booking to seat them.', style: theme.textTheme.bodyMedium),
-        const SizedBox(height: 12),
-        SizedBox(height: 240, child: ClipRRect(borderRadius: BorderRadius.circular(12), child: camera(context, (code) => _lookup(code, scanned: true)))),
-        const SizedBox(height: 16),
+        const BuPageHeader(eyebrow: 'Your shift', title: 'Scan'),
+        const SizedBox(height: BuSpace.xs),
+        Text('Scan the QR on the guest\'s booking to seat them.', style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+        const SizedBox(height: BuSpace.l),
+        SizedBox(height: 240, child: ClipRRect(borderRadius: BorderRadius.circular(BuRadius.card), child: camera(context, (code) => _lookup(code, scanned: true)))),
+        const SizedBox(height: BuSpace.l),
         Row(
           children: [
             Expanded(
@@ -153,15 +157,16 @@ class _ServerScanScreenState extends ConsumerState<ServerScanScreen> {
           Padding(padding: const EdgeInsets.only(top: 12), child: Text(_problem!, key: const Key('scan-problem'), style: TextStyle(color: theme.colorScheme.error))),
         if (_message != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_message!, key: const Key('scan-message'))),
         for (final m in _matches)
-          Card(
+          BuCard(
             key: Key('match-${m.bookingId}'),
-            margin: const EdgeInsets.only(top: 8),
-            child: ListTile(
-              title: Text(m.customerName),
-              subtitle: Text('${m.tableName} · ${m.guestCount} ${m.guestCount == 1 ? 'guest' : 'guests'}'
+            margin: const EdgeInsets.only(top: BuSpace.s),
+            padding: EdgeInsets.zero,
+            child: BuListRow(
+              title: m.customerName,
+              subtitle: '${m.tableName} · ${m.guestCount} ${m.guestCount == 1 ? 'guest' : 'guests'}'
                   '${m.startTime == null ? '' : ' · ${startLabel(m.startTime)}'}'
-                  '${m.serverName == null || m.isMine ? '' : ' · ${m.serverName}\'s table'}'),
-              trailing: m.seated ? const Chip(label: Text('Seated')) : const Icon(Icons.chevron_right),
+                  '${m.serverName == null || m.isMine ? '' : ' · ${m.serverName}\'s table'}',
+              trailing: m.seated ? DeskChip(text: 'Seated', color: context.bu.green) : null,
               onTap: () => _open(m, viaScan: false),
             ),
           ),

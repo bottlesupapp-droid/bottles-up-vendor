@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../logic/door_rules.dart';
 
 /// The answer to a scan. Only "Admit" is green: unpaid, wrong event, expired and unknown tickets are red stops, and
@@ -69,10 +70,11 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
     super.dispose();
   }
 
+  /// Only "Admit" is green, a stop is red, "one more step" is amber (the design's own three; the words and the icon say the same, so colour is never the only signal).
   Color _tone(Tone tone) => switch (tone) {
-        Tone.ok => const Color(0xFF2E7D32),
-        Tone.warn => const Color(0xFFF9A825),
-        Tone.error => const Color(0xFFC62828),
+        Tone.ok => BuTokens.dark.green,
+        Tone.warn => BuTokens.dark.amber,
+        Tone.error => BuTokens.dark.red,
       };
 
   IconData _icon(Tone tone) => switch (tone) {
@@ -93,8 +95,8 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
       key: const Key('scan-result'),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(16),
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(BuRadius.card),
         border: Border.all(color: color, width: 1.5),
       ),
       child: Column(
@@ -132,9 +134,9 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
             Text('How many are coming in now?', style: theme.textTheme.bodyMedium),
             Row(
               children: [
-                IconButton(key: const Key('group-less'), onPressed: widget.admitting || _count <= 1 ? null : () => setState(() => _count--), icon: const Icon(Icons.remove_circle_outline)),
+                IconButton(key: const Key('group-less'), onPressed: widget.admitting || _count <= 1 ? null : () => setState(() => _count--), icon: const Icon(Ionicons.remove_circle_outline)),
                 SizedBox(width: 40, child: Text('$_count', key: const Key('group-count'), textAlign: TextAlign.center, style: theme.textTheme.titleLarge)),
-                IconButton(key: const Key('group-more'), onPressed: widget.admitting || _count >= _most ? null : () => setState(() => _count++), icon: const Icon(Icons.add_circle_outline)),
+                IconButton(key: const Key('group-more'), onPressed: widget.admitting || _count >= _most ? null : () => setState(() => _count++), icon: const Icon(Ionicons.add_circle_outline)),
               ],
             ),
             FilledButton(
@@ -155,7 +157,7 @@ class _ScanResultPanelState extends State<ScanResultPanel> {
               keyboardType: TextInputType.number,
               maxLength: 12,
               autofocus: true,
-              decoration: const InputDecoration(labelText: 'Entry code', counterText: '', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Entry code', counterText: ''),
               onSubmitted: (v) => _submit(),
             ),
             if (o.attemptsRemaining != null)

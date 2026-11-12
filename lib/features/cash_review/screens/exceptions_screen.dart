@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
@@ -64,12 +66,13 @@ class _ExceptionsScreenState extends ConsumerState<ExceptionsScreen> {
       onRefresh: () async => _refresh(),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Text('Exceptions', style: theme.textTheme.headlineSmall),
-          Text('Payments flagged because something looked wrong.', style: theme.textTheme.bodyMedium),
+          const BuPageHeader(eyebrow: 'Payments', title: 'Exceptions'),
+          const SizedBox(height: BuSpace.xs),
+          Text('Payments flagged because something looked wrong.', style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
           if (!_canResolve) Text('A manager resolves them.', key: const Key('exceptions-manager-note'), style: theme.textTheme.bodySmall),
-          const SizedBox(height: 12),
+          const SizedBox(height: BuSpace.l),
           SegmentedButton<bool>(
             key: const Key('exceptions-toggle'),
             segments: const [
@@ -79,7 +82,7 @@ class _ExceptionsScreenState extends ConsumerState<ExceptionsScreen> {
             selected: {_resolved},
             onSelectionChanged: (s) => setState(() => _resolved = s.first),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: BuSpace.m),
           OpsAsyncView<List<PaymentFlag>>(
             value: flags,
             what: 'flagged payments',
@@ -91,34 +94,32 @@ class _ExceptionsScreenState extends ConsumerState<ExceptionsScreen> {
             builder: (list) => Column(
               children: [
                 for (final f in list)
-                  Card(
+                  BuCard(
                     key: Key('flag-${f.id}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${f.customerName} · ${f.tableName}', style: theme.textTheme.titleSmall),
-                          Text('${formatDollars(f.amountPaidCents)} by ${f.paymentMethod}${f.confirmationCode == null ? '' : ' · ${f.confirmationCode}'}'),
+                    margin: const EdgeInsets.only(bottom: BuSpace.s),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${f.customerName} · ${f.tableName}', style: theme.textTheme.titleSmall),
+                        Text('${formatDollars(f.amountPaidCents)} by ${f.paymentMethod}${f.confirmationCode == null ? '' : ' · ${f.confirmationCode}'}'),
+                        const SizedBox(height: 4),
+                        Text('Flagged by ${f.raisedByName}${f.raisedAt == null ? '' : ' at ${DateFormat('MMM d, HH:mm').format(f.raisedAt!.toLocal())}'}', style: theme.textTheme.bodySmall),
+                        Text('“${f.reason}”'),
+                        if (!f.open) ...[
                           const SizedBox(height: 4),
-                          Text('Flagged by ${f.raisedByName}${f.raisedAt == null ? '' : ' at ${DateFormat('MMM d, HH:mm').format(f.raisedAt!.toLocal())}'}', style: theme.textTheme.bodySmall),
-                          Text('“${f.reason}”'),
-                          if (!f.open) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              '${resolutionLabel(f.resolution)}${f.resolvedByName == null ? '' : ' · ${f.resolvedByName}'}',
-                              key: Key('flag-outcome-${f.id}'),
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            if (f.resolutionNote != null) Text(f.resolutionNote!),
-                          ],
-                          if (f.open && _canResolve)
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: FilledButton(key: Key('resolve-${f.id}'), onPressed: () => _resolve(f), child: const Text('Resolve')),
-                            ),
+                          Text(
+                            '${resolutionLabel(f.resolution)}${f.resolvedByName == null ? '' : ' · ${f.resolvedByName}'}',
+                            key: Key('flag-outcome-${f.id}'),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          if (f.resolutionNote != null) Text(f.resolutionNote!),
                         ],
-                      ),
+                        if (f.open && _canResolve)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: FilledButton(key: Key('resolve-${f.id}'), onPressed: () => _resolve(f), child: const Text('Resolve')),
+                          ),
+                      ],
                     ),
                   ),
               ],

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../chat/logic/chat_rules.dart' show ChatPerson;
 import '../../chat/providers/chat_providers.dart' show chatPeopleProvider;
 import '../../floor/logic/bookings_rules.dart' show currentNight;
@@ -98,16 +101,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       child: ListView(
         key: const Key('tasks-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Row(
-            children: [
-              Expanded(child: Text('Tasks', style: theme.textTheme.headlineSmall)),
-              if (_isManager) FilledButton.icon(key: const Key('task-new'), onPressed: _newTask, icon: const Icon(Icons.add, size: 18), label: const Text('New task')),
-            ],
-          ),
-          if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
+          const BuPageHeader(eyebrow: 'Security', title: 'Tasks'),
+          if (widget.workspace.venueName != null) ...[
+            const SizedBox(height: BuSpace.xs),
+            Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          ],
+          if (_isManager) ...[
+            const SizedBox(height: BuSpace.m),
+            FilledButton.icon(key: const Key('task-new'), onPressed: _newTask, icon: const Icon(Ionicons.add, size: 18), label: const Text('New task')),
+          ],
+          const SizedBox(height: BuSpace.m),
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           OpsAsyncView<List<SecurityTask>>(
             value: tasks,
@@ -120,40 +125,38 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             builder: (list) => Column(
               children: [
                 for (final t in list)
-                  Card(
+                  BuCard(
                     key: Key('task-${t.id}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(t.title, style: theme.textTheme.titleMedium?.copyWith(decoration: t.open ? null : TextDecoration.lineThrough)),
-                          if (t.details != null) Text(t.details!),
-                          const SizedBox(height: 4),
-                          Text(
-                            switch (t.status) {
-                              'done' => 'Done${t.closedByName == null ? '' : ' by ${t.closedByName}'}${t.closingNote == null ? '' : ': ${t.closingNote}'}',
-                              'cancelled' => 'Cancelled${t.closingNote == null ? '' : ': ${t.closingNote}'}',
-                              _ => 'For: ${t.assigneeLabel}',
-                            },
-                            key: Key('task-status-${t.id}'),
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          if (taskSteps(t).isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Wrap(
-                                spacing: 8,
-                                children: [
-                                  for (final s in taskSteps(t))
-                                    s == TaskStep.cancel
-                                        ? OutlinedButton(key: Key('task-${s.id}-${t.id}'), onPressed: _busy.contains(t.id) ? null : () => _step(t, s), child: Text(s.label))
-                                        : FilledButton(key: Key('task-${s.id}-${t.id}'), onPressed: _busy.contains(t.id) ? null : () => _step(t, s), child: Text(s.label)),
-                                ],
-                              ),
+                    margin: const EdgeInsets.only(top: BuSpace.s),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(t.title, style: theme.textTheme.titleMedium?.copyWith(decoration: t.open ? null : TextDecoration.lineThrough)),
+                        if (t.details != null) Text(t.details!),
+                        const SizedBox(height: 4),
+                        Text(
+                          switch (t.status) {
+                            'done' => 'Done${t.closedByName == null ? '' : ' by ${t.closedByName}'}${t.closingNote == null ? '' : ': ${t.closingNote}'}',
+                            'cancelled' => 'Cancelled${t.closingNote == null ? '' : ': ${t.closingNote}'}',
+                            _ => 'For: ${t.assigneeLabel}',
+                          },
+                          key: Key('task-status-${t.id}'),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        if (taskSteps(t).isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Wrap(
+                              spacing: 8,
+                              children: [
+                                for (final s in taskSteps(t))
+                                  s == TaskStep.cancel
+                                      ? OutlinedButton(key: Key('task-${s.id}-${t.id}'), onPressed: _busy.contains(t.id) ? null : () => _step(t, s), child: Text(s.label))
+                                      : FilledButton(key: Key('task-${s.id}-${t.id}'), onPressed: _busy.contains(t.id) ? null : () => _step(t, s), child: Text(s.label)),
+                              ],
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
               ],

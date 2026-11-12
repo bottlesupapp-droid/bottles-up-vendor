@@ -2,8 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
+import '../../server_desk/widgets/desk_chip.dart';
 import '../../night/widgets/report_button.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
@@ -102,21 +106,21 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
       child: ListView(
         key: const Key('alerts-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Row(
-            children: [
-              Expanded(child: Text('Alerts', style: theme.textTheme.headlineSmall)),
-              FilledButton.icon(
-                key: const Key('alert-raise'),
-                onPressed: () => raiseAlertFlow(context, ref, venueId: venueId, night: _night, onSent: _refresh),
-                icon: const Icon(Icons.add_alert_outlined, size: 18),
-                label: const Text('Raise an alert'),
-              ),
-            ],
+          const BuPageHeader(eyebrow: 'Security', title: 'Alerts'),
+          if (widget.workspace.venueName != null) ...[
+            const SizedBox(height: BuSpace.xs),
+            Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          ],
+          const SizedBox(height: BuSpace.m),
+          FilledButton.icon(
+            key: const Key('alert-raise'),
+            onPressed: () => raiseAlertFlow(context, ref, venueId: venueId, night: _night, onSent: _refresh),
+            icon: const Icon(Ionicons.notifications_outline, size: 18),
+            label: const Text('Raise an alert'),
           ),
-          if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
+          const SizedBox(height: BuSpace.m),
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           Align(alignment: Alignment.centerLeft, child: ReportButton(venueId: venueId, venueName: widget.workspace.venueName, emailOrgId: emailOrgIdFor(widget.workspace), night: _night, clock: widget.clock, label: 'Night report')),
           summary.maybeWhen(
@@ -160,44 +164,43 @@ class _AlertCard extends StatelessWidget {
     final a = alert;
     final theme = Theme.of(context);
     final steps = alertSteps(a, isManager: isManager);
-    return Card(
+    final bu = context.bu;
+    return BuCard(
       key: Key('alert-${a.id}'),
-      color: a.urgent && !a.resolved ? theme.colorScheme.errorContainer.withValues(alpha: 0.35) : null,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(a.urgent ? Icons.warning_amber_rounded : Icons.notifications_none, size: 20, color: a.urgent && !a.resolved ? theme.colorScheme.error : null),
-                const SizedBox(width: 8),
-                Expanded(child: Text(kindLabel(a.kind), style: theme.textTheme.titleMedium)),
-                if (a.urgent) Text('URGENT', key: Key('alert-urgent-${a.id}'), style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.error, fontWeight: FontWeight.w700)),
-              ],
-            ),
-            Text('${a.location} · ${a.raisedByMe ? 'you' : a.raisedByName}${a.raisedAt == null ? '' : ' · ${securityTime(a.raisedAt)}'}', style: theme.textTheme.bodySmall),
-            if (a.details != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(a.details!)),
-            const SizedBox(height: 6),
-            Text(a.statusLabel, key: Key('alert-status-${a.id}'), style: theme.textTheme.labelLarge),
-            if (a.escalationNote != null) Text('Why: ${a.escalationNote}', style: theme.textTheme.bodySmall),
-            if (a.resolutionNote != null) Text('Done: ${a.resolutionNote}', style: theme.textTheme.bodySmall),
-            if (steps.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    for (final s in steps)
-                      (s == AlertStep.acknowledge || s == AlertStep.resolve)
-                          ? FilledButton(key: Key('alert-${s.id}-${a.id}'), onPressed: busy ? null : () => onStep(s), child: Text(s.label))
-                          : OutlinedButton(key: Key('alert-${s.id}-${a.id}'), onPressed: busy ? null : () => onStep(s), child: Text(s.label)),
-                  ],
-                ),
+      margin: const EdgeInsets.only(top: BuSpace.s),
+      accent: a.urgent && !a.resolved ? bu.red : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(a.urgent ? Ionicons.warning_outline : Ionicons.notifications_outline, size: 20, color: a.urgent && !a.resolved ? bu.red : bu.muted),
+              const SizedBox(width: 8),
+              Expanded(child: Text(kindLabel(a.kind), style: theme.textTheme.titleMedium)),
+              if (a.urgent) DeskChip(key: Key('alert-urgent-${a.id}'), text: 'URGENT', color: bu.red),
+            ],
+          ),
+          Text('${a.location} · ${a.raisedByMe ? 'you' : a.raisedByName}${a.raisedAt == null ? '' : ' · ${securityTime(a.raisedAt)}'}', style: theme.textTheme.bodySmall),
+          if (a.details != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(a.details!)),
+          const SizedBox(height: 6),
+          Text(a.statusLabel, key: Key('alert-status-${a.id}'), style: theme.textTheme.labelLarge),
+          if (a.escalationNote != null) Text('Why: ${a.escalationNote}', style: theme.textTheme.bodySmall),
+          if (a.resolutionNote != null) Text('Done: ${a.resolutionNote}', style: theme.textTheme.bodySmall),
+          if (steps.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  for (final s in steps)
+                    (s == AlertStep.acknowledge || s == AlertStep.resolve)
+                        ? FilledButton(key: Key('alert-${s.id}-${a.id}'), onPressed: busy ? null : () => onStep(s), child: Text(s.label))
+                        : OutlinedButton(key: Key('alert-${s.id}-${a.id}'), onPressed: busy ? null : () => onStep(s), child: Text(s.label)),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

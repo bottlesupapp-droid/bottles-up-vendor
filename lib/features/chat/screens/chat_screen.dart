@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
 import '../../workspace/models/workspace.dart';
@@ -78,28 +81,26 @@ class ChatScreen extends ConsumerWidget {
       child: ListView(
         key: const Key('chat-list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Row(
-            children: [
-              Expanded(child: Text('Chat', style: theme.textTheme.headlineSmall)),
-              if (canStartDirect && list.error == null)
-                OutlinedButton.icon(
-                  key: const Key('chat-new'),
-                  onPressed: () => _newMessage(context, ref, list.conversations),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('New message'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(workspace.scopeLabel, style: theme.textTheme.bodySmall),
+          const BuPageHeader(eyebrow: 'Messages', title: 'Chat'),
+          const SizedBox(height: BuSpace.xs),
+          Text(workspace.scopeLabel, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          if (canStartDirect && list.error == null) ...[
+            const SizedBox(height: BuSpace.m),
+            OutlinedButton.icon(
+              key: const Key('chat-new'),
+              onPressed: () => _newMessage(context, ref, list.conversations),
+              icon: const Icon(Ionicons.create_outline, size: 18),
+              label: const Text('New message'),
+            ),
+          ],
           if (list.stale)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text('Could not refresh. Trying again…', key: const Key('chat-stale'), style: theme.textTheme.bodySmall),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: BuSpace.l),
           OpsAsyncView<List<ChatConversation>>(
             value: list.error != null || (list.loading && list.conversations.isEmpty)
                 ? list.asAsync
@@ -110,7 +111,7 @@ class ChatScreen extends ConsumerWidget {
             onRetry: () => ref.read(chatListProvider.notifier).load(),
             errorKey: const Key('chat-error'),
             emptyKey: const Key('chat-empty'),
-            builder: (items) => Column(
+            builder: (items) => BuListCard(
               children: [
                 for (final c in items)
                   _ConversationRow(
@@ -145,9 +146,9 @@ class _ConversationRow extends StatelessWidget {
     final note = c.isEvent ? chatDeletionNote(c.deleteAfter, now) : null;
     return ListTile(
       key: Key('chat-row-${c.id}'),
-      contentPadding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.symmetric(horizontal: BuSpace.l, vertical: BuSpace.xs),
       onTap: onTap,
-      leading: Icon(switch (c.kind) { 'venue' => Icons.groups_outlined, 'event' => Icons.event_outlined, _ => Icons.person_outline }),
+      leading: BuIconTile(icon: switch (c.kind) { 'venue' => Ionicons.people_outline, 'event' => Ionicons.calendar_outline, _ => Ionicons.person_outline }),
       title: Text(c.title, style: unread ? const TextStyle(fontWeight: FontWeight.w700) : null, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,8 +168,8 @@ class _ConversationRow extends StatelessWidget {
               key: Key('chat-unread-${c.id}'),
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(10)),
-              child: Text(c.unread > 99 ? '99+' : '${c.unread}', style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(color: context.bu.orange, borderRadius: BorderRadius.circular(BuRadius.pill)),
+              child: Text(c.unread > 99 ? '99+' : '${c.unread}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
             ),
         ],
       ),

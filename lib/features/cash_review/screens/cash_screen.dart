@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../floor/logic/bookings_rules.dart' show currentNight;
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_async_view.dart';
@@ -86,14 +88,18 @@ class _CashScreenState extends ConsumerState<CashScreen> {
       onRefresh: () async => _refresh(),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Text('Cash', style: theme.textTheme.headlineSmall),
-          if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
+          const BuPageHeader(eyebrow: 'Payments', title: 'Cash'),
+          if (widget.workspace.venueName != null) ...[
+            const SizedBox(height: BuSpace.xs),
+            Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          ],
+          const SizedBox(height: BuSpace.l),
           NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
-          const SizedBox(height: 8),
-          Text('Cash held', style: theme.textTheme.titleMedium),
+          const SizedBox(height: BuSpace.xl),
+          const BuSectionHeader(title: 'Cash held'),
+          const SizedBox(height: BuSpace.s),
           OpsAsyncView<List<CashLine>>(
             value: position,
             what: 'cash figures',
@@ -105,8 +111,10 @@ class _CashScreenState extends ConsumerState<CashScreen> {
             builder: (lines) => Column(
               children: [
                 for (final (i, l) in lines.indexed)
-                  Card(
+                  BuCard(
                     key: Key('cash-line-$i'),
+                    margin: const EdgeInsets.only(bottom: BuSpace.s),
+                    padding: EdgeInsets.zero,
                     child: ListTile(
                       title: Text(l.isMe ? '${l.collectorName} (you)' : l.collectorName),
                       subtitle: Text('Collected ${formatDollars(l.collectedCents)} · handed in ${formatDollars(l.handedInCents)}'),
@@ -116,8 +124,9 @@ class _CashScreenState extends ConsumerState<CashScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text('Handovers', style: theme.textTheme.titleMedium),
+          const SizedBox(height: BuSpace.xl),
+          const BuSectionHeader(title: 'Handovers'),
+          const SizedBox(height: BuSpace.s),
           OpsAsyncView<List<Handover>>(
             value: handovers,
             what: 'handovers',
@@ -129,8 +138,10 @@ class _CashScreenState extends ConsumerState<CashScreen> {
             builder: (list) => Column(
               children: [
                 for (final h in list)
-                  Card(
+                  BuCard(
                     key: Key('handover-${h.id}'),
+                    margin: const EdgeInsets.only(bottom: BuSpace.s),
+                    padding: EdgeInsets.zero,
                     child: ListTile(
                       title: Text('${h.collectorName} · ${formatDollars(h.claimedCents)}'),
                       subtitle: Text(_handoverSubtitle(h)),
@@ -159,7 +170,8 @@ class _CashScreenState extends ConsumerState<CashScreen> {
 
   Widget? _trailing(Handover h) {
     if (h.acknowledged) {
-      return Text(differenceLabel(h.differenceCents ?? 0), key: Key('difference-${h.id}'));
+      final diff = h.differenceCents ?? 0;
+      return Text(differenceLabel(diff), key: Key('difference-${h.id}'), style: Theme.of(context).textTheme.titleSmall?.copyWith(color: diff == 0 ? context.bu.green : context.bu.amber));
     }
     if (h.isMine) return const SizedBox(width: 110, child: Text('Someone else must count it', textAlign: TextAlign.end));
     return FilledButton(key: Key('count-${h.id}'), onPressed: () => _count(h), child: const Text('Count'));

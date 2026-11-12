@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
 
-import '../../floor/logic/bookings_rules.dart' show addDays, currentNight, formatNight;
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
+import '../../floor/logic/bookings_rules.dart' show currentNight;
+import '../../table_service/widgets/night_bar.dart';
 import '../../table_service/logic/table_service_rules.dart' show TableStatus;
 import '../../table_service/providers/table_service_providers.dart';
 import '../../table_service/screens/table_detail_screen.dart';
@@ -117,33 +121,15 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          Text('My tables', style: theme.textTheme.headlineSmall),
-          if (widget.workspace.venueName != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              IconButton(
-                key: const Key('night-prev'),
-                tooltip: 'The night before',
-                icon: const Icon(Icons.chevron_left),
-                onPressed: () => setState(() => _night = addDays(_night, -1)),
-              ),
-              Expanded(child: Text(formatNight(_night), key: const Key('night-label'), textAlign: TextAlign.center, style: theme.textTheme.titleMedium)),
-              IconButton(
-                key: const Key('night-next'),
-                tooltip: 'The next night',
-                icon: const Icon(Icons.chevron_right),
-                onPressed: () => setState(() => _night = addDays(_night, 1)),
-              ),
-            ],
-          ),
-          if (_night != _tonight)
-            Align(
-              alignment: Alignment.center,
-              child: TextButton(key: const Key('night-tonight'), onPressed: () => setState(() => _night = _tonight), child: const Text('Back to tonight')),
-            ),
+          const BuPageHeader(eyebrow: 'Your shift', title: 'My tables'),
+          if (widget.workspace.venueName != null) ...[
+            const SizedBox(height: BuSpace.xs),
+            Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+          ],
+          const SizedBox(height: BuSpace.l),
+          NightBar(night: _night, tonight: _tonight, onChanged: (n) => setState(() => _night = n)),
           CashHeldCard(workspace: widget.workspace, night: _night),
           if ((widget.workspace.venueId ?? '').isNotEmpty)
             Wrap(
@@ -152,13 +138,13 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
                 TextButton.icon(
                   key: const Key('call-security'),
                   onPressed: () => raiseAlertFlow(context, ref, venueId: widget.workspace.venueId!, night: _tonight),
-                  icon: const Icon(Icons.add_alert_outlined, size: 18),
+                  icon: const Icon(Ionicons.notifications_outline, size: 18),
                   label: const Text('Call security'),
                 ),
                 TextButton.icon(
                   key: const Key('vip-lookup-open'),
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => VipLookupScreen(venueId: widget.workspace.venueId!, clock: widget.clock))),
-                  icon: const Icon(Icons.star_outline, size: 18),
+                  icon: const Icon(Ionicons.star_outline, size: 18),
                   label: const Text('VIP lookup'),
                 ),
               ],
@@ -168,27 +154,29 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
             loading: () => const Padding(padding: EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator())),
             error: (error, _) {
               final e = error is ServerDeskLoadException ? error : const ServerDeskLoadException(unavailable: false, accessEnded: false, what: 'tables');
-              return Column(
-                children: [
-                  Text(e.message, key: const Key('tables-error'), textAlign: TextAlign.center),
-                  if (!e.unavailable)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: OutlinedButton(
-                        key: const Key('tables-retry'),
-                        onPressed: () => ref.invalidate(myTablesProvider(_night)),
-                        child: const Text('Try again'),
+              return BuCard(
+                child: Column(
+                  children: [
+                    Text(e.message, key: const Key('tables-error'), textAlign: TextAlign.center),
+                    if (!e.unavailable)
+                      Padding(
+                        padding: const EdgeInsets.only(top: BuSpace.m),
+                        child: OutlinedButton(
+                          key: const Key('tables-retry'),
+                          onPressed: () => ref.invalidate(myTablesProvider(_night)),
+                          child: const Text('Try again'),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               );
             },
             data: (all) {
               // A person with server roles at several clubs sees each club's tables in its own workspace.
               final tables = [for (final t in all) if (t.venueId == venueId) t];
               if (tables.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.only(top: 24),
+                return const BuCard(
+                  padding: EdgeInsets.all(BuSpace.xl),
                   child: Text('Awaiting assignment: your manager has not given you any tables for this night yet. They will appear here as soon as they do.', key: Key('tables-empty'), textAlign: TextAlign.center),
                 );
               }
@@ -199,7 +187,7 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
                     '${tables.length} ${tables.length == 1 ? 'table' : 'tables'} · '
                     '${guests(tables)} ${guests(tables) == 1 ? 'guest' : 'guests'} expected',
                     key: const Key('tables-summary'),
-                    style: theme.textTheme.bodyMedium,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted),
                   ),
                   for (final t in tables)
                     TableCard(
@@ -215,7 +203,7 @@ class _MyTablesScreenState extends ConsumerState<MyTablesScreen> {
               );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: BuSpace.xl),
           Text(
             'Open a table for its bottle orders and payments.',
             key: const Key('tables-footnote'),

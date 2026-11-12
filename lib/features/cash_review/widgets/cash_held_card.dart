@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../ops/services/ops_rpc.dart';
 import '../../ops/widgets/ops_dialogs.dart';
 import '../../owner/logic/setup_forms.dart' show formatDollars;
@@ -62,27 +64,25 @@ class CashHeldCard extends ConsumerWidget {
         final mine = lines.where((l) => l.isMe).firstOrNull;
         if (mine == null || (mine.collectedCents == 0 && mine.handedInCents == 0)) return const SizedBox.shrink();
         final theme = Theme.of(context);
-        return Card(
+        return BuCard(
           key: const Key('cash-held-card'),
-          margin: const EdgeInsets.only(top: 8, bottom: 8),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  mine.heldCents > 0 ? 'You are holding ${formatDollars(mine.heldCents)} in cash' : 'All your cash is handed in',
-                  key: const Key('cash-held-title'),
-                  style: theme.textTheme.titleMedium,
+          highlight: mine.heldCents > 0,
+          margin: const EdgeInsets.only(top: BuSpace.s, bottom: BuSpace.s),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                mine.heldCents > 0 ? 'You are holding ${formatDollars(mine.heldCents)} in cash' : 'All your cash is handed in',
+                key: const Key('cash-held-title'),
+                style: theme.textTheme.titleMedium,
+              ),
+              Text('Collected ${formatDollars(mine.collectedCents)} · handed in ${formatDollars(mine.handedInCents)}', style: theme.textTheme.bodySmall),
+              if (mine.heldCents > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: FilledButton(key: const Key('hand-over-cash'), onPressed: () => _handOver(context, ref, mine), child: const Text('Hand over cash')),
                 ),
-                Text('Collected ${formatDollars(mine.collectedCents)} · handed in ${formatDollars(mine.handedInCents)}', style: theme.textTheme.bodySmall),
-                if (mine.heldCents > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: FilledButton(key: const Key('hand-over-cash'), onPressed: () => _handOver(context, ref, mine), child: const Text('Hand over cash')),
-                  ),
-              ],
-            ),
+            ],
           ),
         );
       },
