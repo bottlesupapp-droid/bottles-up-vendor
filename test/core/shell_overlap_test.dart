@@ -1,5 +1,6 @@
 
 import 'package:bottles_up_vendor/core/ui/glass_kit.dart';
+import 'package:bottles_up_vendor/features/auth/providers/supabase_auth_provider.dart';
 import 'package:bottles_up_vendor/features/workspace/logic/workspace_routing.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
@@ -50,7 +51,11 @@ Future<void> _mainShell(WidgetTester tester, Widget page) async {
       routes: [GoRoute(path: '/clubs', builder: (_, __) => page)],
     ),
   ]);
-  await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+  // (The classic frame now has a top bar that says who you are, which reads the signed-in account: here there is none.)
+  await tester.pumpWidget(ProviderScope(
+    overrides: [currentVendorUserProvider.overrideWithValue(null)],
+    child: MaterialApp.router(routerConfig: router),
+  ));
   await tester.pumpAndSettle();
 }
 
@@ -78,7 +83,7 @@ Future<void> _scrollToEnd(WidgetTester tester) async {
 
 void main() {
   final frames = <String, Future<void> Function(WidgetTester, Widget)>{
-    'the classic frame (Dashboard, Events, Analytics, Venues, More)': _mainShell,
+    'the classic frame (Overview, Venues, Tonight, Reports, More)': _mainShell,
     'the workspace frame (every role)': _workspaceShell,
   };
 

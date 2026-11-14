@@ -7,6 +7,8 @@ import '../providers/event_filter_provider.dart';
 import '../widgets/event_card_enhanced.dart';
 import '../widgets/event_filter_bottom_sheet.dart';
 import '../../../shared/widgets/responsive_wrapper.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class EventsListScreen extends ConsumerStatefulWidget {
   const EventsListScreen({super.key});
@@ -39,57 +41,80 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen>
     final theme = Theme.of(context);
     final filter = ref.watch(eventFilterProvider);
 
+    final bu = context.bu;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Events',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: [
-          // Filter button with badge if filters are active
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Ionicons.filter_outline),
-                onPressed: () => _showFilterSheet(context),
-                tooltip: 'Filter Events',
-              ),
-              if (filter.hasActiveFilters)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.m),
+            child: BuPageHeader(
+              eyebrow: 'Your business',
+              title: 'Events',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Filter button, with a dot when filters are active
+                  Stack(
+                    children: [
+                      IconButton(
+                        key: const Key('events-filter'),
+                        icon: const Icon(Ionicons.filter_outline),
+                        onPressed: () => _showFilterSheet(context),
+                        tooltip: 'Filter Events',
+                      ),
+                      if (filter.hasActiveFilters)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(width: 8, height: 8, decoration: BoxDecoration(color: bu.orange, shape: BoxShape.circle)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                  Material(
+                    color: bu.orange,
+                    borderRadius: BorderRadius.circular(BuRadius.control),
+                    child: InkWell(
+                      key: const Key('events-add'),
+                      borderRadius: BorderRadius.circular(BuRadius.control),
+                      onTap: () => context.push('/events/create'),
+                      child: Tooltip(message: 'Create Event', child: const SizedBox(width: 44, height: 44, child: Icon(Ionicons.add, color: Colors.white, size: 24))),
                     ),
                   ),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Ionicons.add_outline),
-            onPressed: () => context.push('/events/create'),
-            tooltip: 'Create Event',
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+            child: Container(
+              key: const Key('events-tabs'),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(color: bu.panel, borderRadius: BorderRadius.circular(BuRadius.control + 2)),
+              child: TabBar(
+                controller: _tabController,
+                dividerColor: Colors.transparent,
+                labelPadding: EdgeInsets.zero,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(color: bu.raised, borderRadius: BorderRadius.circular(BuRadius.control - 2)),
+                labelColor: bu.ink,
+                unselectedLabelColor: bu.muted,
+                labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: bu.ink),
+                unselectedLabelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                tabs: _tabLabels.map((label) => Tab(text: label, height: 38)).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: BuSpace.s),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: _tabs.map((tab) => _buildTabContent(tab)).toList(),
+            ),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: _tabLabels.map((label) => Tab(text: label)).toList(),
-          indicatorColor: theme.colorScheme.primary,
-          labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: _tabs.map((tab) => _buildTabContent(tab)).toList(),
       ),
     );
   }
