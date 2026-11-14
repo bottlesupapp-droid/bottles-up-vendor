@@ -1,4 +1,5 @@
 import 'package:bottles_up_vendor/core/theme/app_theme.dart';
+import 'package:bottles_up_vendor/core/theme/app_tokens.dart';
 import 'package:bottles_up_vendor/core/ui/bu_coming_soon.dart';
 import 'package:bottles_up_vendor/core/ui/bu_kit.dart';
 import 'package:bottles_up_vendor/core/ui/glass_kit.dart';
@@ -252,6 +253,9 @@ void main() {
       expect(tester.widget<Text>(find.byKey(const Key('venue-setup-c1'))).data, '5 of 5');
       expect(tester.widget<Text>(find.byKey(const Key('venue-setup-c2'))).data, '0 of 5');
       expect(find.descendant(of: find.byKey(const Key('venue-status-c1')), matching: find.text('Open')), findsOneWidget);
+      Color pill(String key) => tester.widget<Text>(find.descendant(of: find.byKey(Key(key)), matching: find.byType(Text))).style!.color!;
+      expect(pill('venue-status-c1'), BuTokens.dark.green, reason: 'open is green');
+      expect(pill('venue-status-c2'), BuTokens.dark.amber, reason: 'pending asks for a look');
       expect(find.descendant(of: find.byKey(const Key('venue-status-c2')), matching: find.text('Pending')), findsOneWidget);
     });
 
@@ -382,11 +386,41 @@ void main() {
       }
       final lefts = [for (final l in labels) tester.getTopLeft(navLabel(l)).dx];
       expect(lefts, orderedEquals([...lefts]..sort()), reason: 'in the design\'s order, left to right');
-      for (final (label, path) in [('Venues', '/clubs'), ('Tonight', '/tonight'), ('Reports', '/analytics'), ('More', '/profile'), ('Overview', '/dashboard')]) {
+      for (final (label, path, lit) in [
+        ('Venues', '/clubs', Ionicons.business),
+        ('Tonight', '/tonight', Ionicons.moon),
+        ('Reports', '/analytics', Ionicons.stats_chart),
+        ('More', '/profile', Ionicons.menu),
+        ('Overview', '/dashboard', Ionicons.home),
+      ]) {
         await tester.tap(navLabel(label));
         await tester.pumpAndSettle();
         expect(find.text('WENT TO $path'), findsOneWidget, reason: label);
+        expect(find.byIcon(lit), findsOneWidget, reason: '$label is the lit tab: it shows its filled icon');
       }
+    });
+
+    testWidgets('the round Messages button is on the five tabs only; it is not built, so it says "Coming soon"', (tester) async {
+      tester.view.physicalSize = const Size(393 * 3, 852 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final router = GoRouter(initialLocation: '/dashboard', routes: [
+        ShellRoute(
+          builder: (context, state, child) => MainShell(child: child),
+          routes: [for (final p in ['/dashboard', '/events/create']) GoRoute(path: p, builder: (_, __) => Went(p))],
+        ),
+      ]);
+      await tester.pumpWidget(ProviderScope(overrides: [currentVendorUserProvider.overrideWithValue(null)], child: MaterialApp.router(theme: AppTheme.darkTheme, routerConfig: router)));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('classic-messages-button')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('classic-messages-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Chat with your team and your guests in one inbox, right from the app.'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('coming-soon-close')));
+      await tester.pumpAndSettle();
+      router.go('/events/create');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('classic-messages-button')), findsNothing, reason: 'not over a form');
     });
 
     testWidgets('Events, Bookings and Inventory belong to More: it is the tab that stays lit', (tester) async {

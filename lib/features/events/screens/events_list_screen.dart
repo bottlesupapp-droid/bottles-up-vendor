@@ -137,8 +137,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen>
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(filteredEventsProvider(tab)),
       child: ResponsiveWrapper(
+        padding: EdgeInsets.zero,
         child: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(BuSpace.page, 8, BuSpace.page, 100),
           itemCount: events.length,
           itemBuilder: (context, index) {
             final event = events[index];
@@ -190,6 +191,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen>
 
     return Center(
       child: ResponsiveWrapper(
+        padding: EdgeInsets.zero,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -238,6 +240,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen>
 
     return Center(
       child: ResponsiveWrapper(
+        padding: EdgeInsets.zero,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

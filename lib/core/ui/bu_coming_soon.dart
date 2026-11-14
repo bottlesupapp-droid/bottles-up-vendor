@@ -74,7 +74,7 @@ class BuComingSoonPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final bu = context.bu;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xxl),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, 100),
       children: [
         BuPageHeader(eyebrow: eyebrow, title: title, intro: intro, trailing: const BuComingSoonPill()),
         const SizedBox(height: BuSpace.xl),

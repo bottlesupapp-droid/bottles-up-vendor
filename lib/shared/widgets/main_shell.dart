@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
 
 import '../../core/connectivity/connection_banner.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/ui/bu_coming_soon.dart';
 import '../../core/ui/glass_kit.dart';
 import 'classic_top_bar.dart';
 
@@ -31,15 +33,22 @@ class MainShell extends StatelessWidget {
       // The page ends where the floating bar begins. It used to flow behind the bar (extendBody), which left the last line of a list, buttons such as "Delete Account" and the
       // last card under the bar.
       extendBody: false,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            const ClassicTopBar(),
-            const ConnectionBanner(),
-            Expanded(child: child),
-          ],
-        ),
+      body: Stack(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                const ClassicTopBar(),
+                const ConnectionBanner(),
+                Expanded(child: child),
+              ],
+            ),
+          ),
+          // The design's round Messages button, on the five tabs only (never over a form or a page with a button of its own). Messages are not built: it says so.
+          if (_isTab(context))
+            const Positioned(right: BuSpace.page, bottom: BuSpace.l, child: _MessagesButton()),
+        ],
       ),
       bottomNavigationBar: GlassBottomNavBar(
         currentIndex: currentIndex,
@@ -47,6 +56,13 @@ class MainShell extends StatelessWidget {
         items: _items,
       ),
     );
+  }
+
+  static const _tabRoots = ['/dashboard', '/clubs', '/tonight', '/analytics', '/profile'];
+
+  bool _isTab(BuildContext context) {
+    final path = GoRouterState.of(context).uri.path;
+    return _tabRoots.contains(path);
   }
 
   int _getCurrentIndex(BuildContext context) {
@@ -68,5 +84,30 @@ class MainShell extends StatelessWidget {
       case 3: context.go('/analytics');
       case 4: context.go('/profile');
     }
+  }
+}
+
+class _MessagesButton extends StatelessWidget {
+  const _MessagesButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    return Semantics(
+      button: true,
+      label: 'Messages, coming soon',
+      child: Material(
+        color: bu.orange,
+        shape: const CircleBorder(),
+        elevation: 6,
+        shadowColor: bu.orange.withValues(alpha: 0.4),
+        child: InkWell(
+          key: const Key('classic-messages-button'),
+          customBorder: const CircleBorder(),
+          onTap: () => showComingSoon(context, title: 'Messages', text: 'Chat with your team and your guests in one inbox, right from the app.'),
+          child: const SizedBox(width: 56, height: 56, child: Icon(Ionicons.chatbubble_outline, color: Colors.white, size: 24)),
+        ),
+      ),
+    );
   }
 }

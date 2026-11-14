@@ -45,10 +45,11 @@ void _phone(WidgetTester tester) {
 
 Future<void> _mainShell(WidgetTester tester, Widget page) async {
   _phone(tester);
-  final router = GoRouter(initialLocation: '/clubs', routes: [
+  // (A page that has a button of its own is not one of the five tabs; the tabs carry the round Messages button instead.)
+  final router = GoRouter(initialLocation: '/clubs/c1', routes: [
     ShellRoute(
       builder: (context, state, child) => MainShell(child: child),
-      routes: [GoRoute(path: '/clubs', builder: (_, __) => page)],
+      routes: [GoRoute(path: '/clubs/c1', builder: (_, __) => page)],
     ),
   ]);
   // (The classic frame now has a top bar that says who you are, which reads the signed-in account: here there is none.)

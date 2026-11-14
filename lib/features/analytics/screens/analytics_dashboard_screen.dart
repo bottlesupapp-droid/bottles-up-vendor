@@ -144,13 +144,14 @@ class _AnalyticsDashboardScreenState
   Widget _buildOverviewTab(BuildContext context, dynamic data) {
 
     return ResponsiveWrapper(
+      padding: EdgeInsets.zero,
       child: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(organizerAnalyticsProvider);
           await ref.read(organizerAnalyticsProvider.future);
         },
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+          padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -317,13 +318,14 @@ class _AnalyticsDashboardScreenState
 
     return revenueData.when(
       data: (data) => ResponsiveWrapper(
+        padding: EdgeInsets.zero,
         child: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(revenueBreakdownProvider);
             await ref.read(revenueBreakdownProvider.future);
           },
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -480,13 +482,14 @@ class _AnalyticsDashboardScreenState
 
     return performanceData.when(
       data: (insights) => ResponsiveWrapper(
+        padding: EdgeInsets.zero,
         child: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(eventPerformanceInsightsProvider);
             await ref.read(eventPerformanceInsightsProvider.future);
           },
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: insights.map((insight) => _buildEventPerformanceCard(context, insight)).toList(),
@@ -615,13 +618,14 @@ class _AnalyticsDashboardScreenState
     final theme = Theme.of(context);
 
     return ResponsiveWrapper(
+      padding: EdgeInsets.zero,
       child: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(organizerAnalyticsProvider);
           await ref.read(organizerAnalyticsProvider.future);
         },
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+          padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

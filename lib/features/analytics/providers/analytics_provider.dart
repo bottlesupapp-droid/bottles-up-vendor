@@ -3,6 +3,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/models/analytics_models.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 
+/// The events the account owns, as (id, name). The queries below read inquiries and bookings for these ids with a plain filter: the embedded form
+/// (`events!inner(...)`) needs a foreign key between the tables that the production database does not have (PostgREST answers PGRST200), which left the
+/// whole Reports page empty.
+Future<Map<String, String>> _myEvents(SupabaseClient supabase, String userId) async {
+  final rows = await supabase.from('events').select('id, name').eq('user_id', userId);
+  return {for (final r in rows as List) '${r['id']}': (r['name'] ?? 'Unknown Event') as String};
+}
+
 final organizerAnalyticsProvider = FutureProvider.autoDispose<OrganizerAnalytics>((ref) async {
   final user = ref.watch(currentVendorUserProvider);
 
@@ -25,32 +33,28 @@ final organizerAnalyticsProvider = FutureProvider.autoDispose<OrganizerAnalytics
     return const OrganizerAnalytics();
   }
 
-  // Fetch recent inquiries
-  final inquiriesData = await supabase
-      .from('inquiries')
-      .select('''
-        id,
-        event_id,
-        customer_name,
-        customer_email,
-        customer_phone,
-        message,
-        status,
-        created_at,
-        events!inner(id, name)
-      ''')
-      .eq('events.user_id', userId)
-      .order('created_at', ascending: false)
-      .limit(10);
+  // Fetch recent inquiries (for the events this account owns)
+  final myEvents = await _myEvents(supabase, userId);
+  final myEventIds = myEvents.keys.toList();
+  final List inquiriesData = myEventIds.isEmpty
+      ? const []
+      : await supabase
+          .from('inquiries')
+          .select('id, event_id, customer_name, customer_email, customer_phone, message, status, created_at')
+          .inFilter('event_id', myEventIds)
+          .order('created_at', ascending: false)
+          .limit(10);
 
   // Fetch booking trends (last 7 days)
   final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 6));
-  final bookingTrendsData = await supabase
-      .from('events_bookings')
-      .select('created_at, total_amount, event_id, events!inner(user_id)')
-      .eq('events.user_id', userId)
-      .gte('created_at', sevenDaysAgo.toIso8601String())
-      .order('created_at', ascending: true);
+  final List bookingTrendsData = myEventIds.isEmpty
+      ? const []
+      : await supabase
+          .from('events_bookings')
+          .select('created_at, total_amount, event_id')
+          .inFilter('event_id', myEventIds)
+          .gte('created_at', sevenDaysAgo.toIso8601String())
+          .order('created_at', ascending: true);
 
   // Process booking trends by day
   final Map<String, BookingTrend> trendsByDay = {};
@@ -74,11 +78,11 @@ final organizerAnalyticsProvider = FutureProvider.autoDispose<OrganizerAnalytics
   }
 
   // Convert inquiries data to model
-  final recentInquiries = (inquiriesData as List).map((inq) {
+  final recentInquiries = inquiriesData.map((inq) {
     return InquiryModel(
       id: inq['id'],
       eventId: inq['event_id'],
-      eventName: inq['events']['name'] ?? 'Unknown Event',
+      eventName: myEvents['${inq['event_id']}'] ?? 'Unknown Event',
       customerName: inq['customer_name'],
       customerEmail: inq['customer_email'],
       customerPhone: inq['customer_phone'],
@@ -145,13 +149,16 @@ final revenueBreakdownProvider = FutureProvider.autoDispose<RevenueBreakdown>((r
 
   // Fetch revenue by month (last 3 months)
   final threeMonthsAgo = DateTime.now().subtract(const Duration(days: 90));
-  final bookingsByMonth = await supabase
-      .from('events_bookings')
-      .select('created_at, total_amount, status, event_id, events!inner(user_id)')
-      .eq('events.user_id', userId)
-      .eq('status', 'confirmed')
-      .gte('created_at', threeMonthsAgo.toIso8601String())
-      .order('created_at', ascending: true);
+  final myEventIds = (await _myEvents(supabase, userId)).keys.toList();
+  final List bookingsByMonth = myEventIds.isEmpty
+      ? const []
+      : await supabase
+          .from('events_bookings')
+          .select('created_at, total_amount, status, event_id')
+          .inFilter('event_id', myEventIds)
+          .eq('status', 'confirmed')
+          .gte('created_at', threeMonthsAgo.toIso8601String())
+          .order('created_at', ascending: true);
 
   // Group by month
   final Map<String, RevenueByMonth> monthlyRevenue = {};
