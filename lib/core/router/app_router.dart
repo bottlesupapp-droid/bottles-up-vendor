@@ -18,6 +18,7 @@ import '../../features/auth/screens/onboarding/promoter_onboarding_screen.dart';
 import '../../features/auth/screens/onboarding/staff_onboarding_screen.dart';
 import '../../features/auth/providers/supabase_auth_provider.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
+import '../../features/tonight/screens/tonight_screen.dart';
 import '../../features/clubs/screens/clubs_list_screen.dart';
 import '../../features/clubs/screens/club_details_screen.dart';
 import '../../features/clubs/screens/create_club_screen.dart';
@@ -76,6 +77,7 @@ class AppRoutes {
   static const String onboardingPromoter = '/onboarding/promoter';
   static const String onboardingStaff = '/onboarding/staff';
   static const String dashboard = '/dashboard';
+  static const String tonight = '/tonight';
   static const String clubs = '/clubs';
   static const String clubDetails = '/clubs/:clubId';
   static const String createClub = '/clubs/create';
@@ -355,6 +357,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => CupertinoTransitionPage(
               name: 'dashboard',
               child: const DashboardScreen(),
+            ),
+          ),
+
+          // Tonight (not built yet: the screen says so)
+          GoRoute(
+            path: AppRoutes.tonight,
+            name: 'tonight',
+            pageBuilder: (context, state) => CupertinoTransitionPage(
+              name: 'tonight',
+              child: const TonightScreen(),
             ),
           ),
 
