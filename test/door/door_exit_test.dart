@@ -94,6 +94,9 @@ void main() {
 
     test('an answer the app does not know is an error, never a success', () {
       expect(parseExitOutcome(exitRow('admitted')).result, ExitResult.error);
+      // The app's own two answers are never taken from the server: it cannot say the door person's access has ended.
+      expect(parseExitOutcome(exitRow('access_ended')).result, ExitResult.error);
+      expect(parseExitOutcome(exitRow('error')).result, ExitResult.error);
       expect(parseExitOutcome(null).result, ExitResult.error);
       expect(parseExitOutcome({'result': 5}).result, ExitResult.error);
       expect(parseExitOutcome(exitRow('ok')).recorded, isTrue);
@@ -159,6 +162,12 @@ void main() {
       expect(db.paramsOf('door_record_exit'), [
         {'p_ticket_code': 'T-100', 'p_count': 1, 'p_event': 'e1'},
       ]);
+    });
+
+    test('recordExit sends the number of guests that are leaving', () async {
+      db.handlers['door_record_exit'] = (_) => [exitRow('ok', inside: 1)];
+      await db.service.recordExit('T-100', 'e1', count: 3);
+      expect(db.paramsOf('door_record_exit').single!['p_count'], 3);
     });
 
     test('nothing is sent for an empty code or a count below one', () async {

@@ -119,6 +119,7 @@ void main() {
       expect(validateOverrideReason('abcd'), isNotNull);
       expect(validateOverrideReason('abcde'), isNull);
       expect(validateOverrideReason('  abcde  '), isNull);
+      expect(validateOverrideReason('  ab  '), isNotNull, reason: 'the spaces around it do not count');
       expect(validateOverrideReason('x' * 300), isNull);
       expect(validateOverrideReason('x' * 301), isNotNull);
     });
@@ -154,6 +155,8 @@ void main() {
       expect(copy('ok').tone, OverrideTone.ok);
       expect(copy('ok').hint, contains('Your reason is kept.'));
       expect(copy('ok').hint, contains('2 more may still come in'));
+      expect(overrideCopy(parseOverrideOutcome(overrideRow('ok', remaining: 1, quantity: 3))!).hint, contains('1 more may still come in'));
+      expect(overrideCopy(parseOverrideOutcome(overrideRow('ok', remaining: 0, quantity: 3))!).hint, isNot(contains('more may still')));
       for (final r in ['not_paid', 'refunded', 'expired', 'wrong_event', 'not_found']) {
         expect(copy(r).tone, OverrideTone.error, reason: r);
       }
