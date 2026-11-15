@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:responsive_builder/responsive_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 

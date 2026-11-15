@@ -2,7 +2,6 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ionicons/ionicons.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../core/ui/bu_kit.dart';

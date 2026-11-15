@@ -15,7 +15,6 @@ import 'package:bottles_up_vendor/shared/models/venue_model.dart';
 import 'package:bottles_up_vendor/shared/widgets/classic_top_bar.dart' show classicRoleLabel;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'classic_detail_screens_test.dart' show pumpPage, shot, venue;
