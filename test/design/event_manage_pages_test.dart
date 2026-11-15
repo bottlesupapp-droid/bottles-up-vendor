@@ -29,6 +29,7 @@ class FakeTickets extends TicketService {
 
   List<TicketType> tiers;
   final created = <String>[];
+  final updated = <String>[];
   final deleted = <String>[];
   final toggled = <String, bool>{};
 
@@ -51,6 +52,13 @@ class FakeTickets extends TicketService {
   }
 
   @override
+  Future<TicketType> updateTicketType(String ticketId, TicketType ticket) async {
+    updated.add('$ticketId|${ticket.name}|${ticket.price}|${ticket.capacity}');
+    tiers = [for (final t in tiers) t.id == ticketId ? ticket : t];
+    return ticket;
+  }
+
+  @override
   Future<void> deleteTicketType(String ticketId) async {
     deleted.add(ticketId);
     tiers = tiers.where((t) => t.id != ticketId).toList();
@@ -68,6 +76,7 @@ class FakeTeam extends EventTeamService {
 
   List<EventTeamMember> members;
   final added = <String>[];
+  final updated = <String>[];
   final removed = <String>[];
 
   @override
@@ -77,6 +86,12 @@ class FakeTeam extends EventTeamService {
   Future<void> add({required String eventId, required String name, required String role, String? email, String? phone}) async {
     added.add('$name|$role');
     members = [...members, member('new$name', name, role)];
+  }
+
+  @override
+  Future<void> update(String id, {required String name, required String role, String? email, String? phone}) async {
+    updated.add('$id|$name|$role');
+    members = [for (final m in members) m.id == id ? member(id, name, role) : m];
   }
 
   @override
@@ -187,6 +202,20 @@ void main() {
       expect(fake.deleted, ['t2']);
     });
 
+    testWidgets('Edit changes the tier through the service, not by adding a new one', (tester) async {
+      final fake = await open(tester, two);
+      await tester.tap(find.byKey(const Key('tier-menu-t2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('tier-edit')));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit Ticket Tier'), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextFormField, 'Price *'), '55');
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+      expect(fake.updated, ['t2|General|55.0|200']);
+      expect(fake.created, isEmpty);
+    });
+
     testWidgets('Add Tier needs a name, a price and a capacity, then creates one', (tester) async {
       final fake = await open(tester, const []);
       expect(find.byKey(const Key('tiers-empty')), findsOneWidget);
@@ -258,6 +287,20 @@ void main() {
       await tester.pumpAndSettle();
       expect(fake.removed, ['m2']);
       expect(find.text('2 team members'), findsOneWidget);
+    });
+
+    testWidgets('Edit changes the member through the service, not by adding a new one', (tester) async {
+      final fake = await open(tester, team);
+      await tester.tap(find.byKey(const Key('member-menu-m3')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('member-edit')));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit Team Member'), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextFormField, 'Name *'), 'Leigh');
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+      expect(fake.updated, ['m3|Leigh|${TeamRole.bartender}']);
+      expect(fake.added, isEmpty);
     });
 
     testWidgets('Add Team Member needs a name, then adds one through the service', (tester) async {
