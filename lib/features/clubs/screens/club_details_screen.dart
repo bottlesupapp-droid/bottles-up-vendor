@@ -76,7 +76,7 @@ class _ClubDetailsScreenState extends ConsumerState<ClubDetailsScreen> {
           }
           return ListView(
             key: const Key('venue-page'),
-            padding: EdgeInsets.fromLTRB(BuSpace.page, top, BuSpace.page, 120),
+            padding: EdgeInsets.fromLTRB(BuSpace.page, top, BuSpace.page, BuSpace.xxl),
             children: [
               BuDetailHeader(eyebrow: venue.name, title: 'Manage venue', onBack: () => context.pop(), trailing: _StatusPill(venue.status)),
               const SizedBox(height: BuSpace.l),

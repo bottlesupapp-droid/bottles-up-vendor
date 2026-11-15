@@ -80,7 +80,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             child: ListView(
               key: const Key('inventory-list'),
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 120),
+              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.xxl),
               children: [
                 Row(
                   children: [

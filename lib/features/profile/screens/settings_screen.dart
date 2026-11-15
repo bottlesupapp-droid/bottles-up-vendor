@@ -26,7 +26,7 @@ class SettingsScreen extends StatelessWidget {
       appBar: const BuDetailAppBar(eyebrow: 'Account', title: 'Settings'),
       body: ListView(
         key: const Key('settings-list'),
-        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 120),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.xxl),
         children: [
           const BuEyebrow('Display'),
           const SizedBox(height: BuSpace.s),

@@ -62,7 +62,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             child: ListView(
               key: const Key('bookings-list'),
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 120),
+              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.xxl),
               children: [
                 Row(
                   children: [

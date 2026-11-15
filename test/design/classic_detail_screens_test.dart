@@ -12,6 +12,9 @@ import 'package:bottles_up_vendor/features/profile/screens/settings_screen.dart'
 import 'package:bottles_up_vendor/features/events/screens/bookings_screen.dart';
 import 'package:bottles_up_vendor/features/venues/providers/venues_provider.dart';
 import 'package:bottles_up_vendor/shared/models/venue_model.dart';
+import 'package:bottles_up_vendor/features/auth/providers/supabase_auth_provider.dart';
+import 'package:bottles_up_vendor/shared/widgets/classic_top_bar.dart';
+import 'package:bottles_up_vendor/shared/widgets/main_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -410,6 +413,41 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Billing and payouts'), findsWidgets);
       expect(find.byKey(const Key('coming-soon-close')), findsOneWidget);
+    });
+  });
+  group('The classic frame: the brand top bar belongs to the five tabs', () {
+    Future<void> openAt(WidgetTester tester, String path) async {
+      tester.view.physicalSize = const Size(393 * 3, 852 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final router = GoRouter(
+        initialLocation: path,
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) => MainShell(child: child),
+            routes: [
+              for (final p in ['/dashboard', '/clubs', '/tonight', '/analytics', '/profile', '/clubs/c1', '/bookings', '/inventory', '/events'])
+                GoRoute(path: p, builder: (_, __) => const Scaffold(body: Text('PAGE'))),
+            ],
+          ),
+        ],
+      );
+      await tester.pumpWidget(ProviderScope(overrides: [currentVendorUserProvider.overrideWithValue(null)], child: MaterialApp.router(theme: AppTheme.darkTheme, routerConfig: router)));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('each of the five tabs shows it', (tester) async {
+      for (final tab in ['/dashboard', '/clubs', '/tonight', '/analytics', '/profile']) {
+        await openAt(tester, tab);
+        expect(find.byType(ClassicTopBar), findsOneWidget, reason: tab);
+      }
+    });
+
+    testWidgets('a page opened from a tab does not: it has its own header and back button', (tester) async {
+      for (final page in ['/clubs/c1', '/bookings', '/inventory', '/events']) {
+        await openAt(tester, page);
+        expect(find.byType(ClassicTopBar), findsNothing, reason: page);
+      }
     });
   });
 }
