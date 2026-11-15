@@ -732,24 +732,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
-    final theme = Theme.of(context);
-
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 24,
-        ),
-        SizedBox(width: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.5),
-        ResponsiveText.titleMedium(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) => BuEyebrow(title);
 
   Widget _buildTextField({
     required TextEditingController controller,
