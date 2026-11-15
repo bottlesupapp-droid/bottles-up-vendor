@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../providers/event_details_provider.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class EventDetailsScreen extends ConsumerWidget {
   final String eventId;
@@ -22,10 +23,7 @@ class EventDetailsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Event Details'),
-        backgroundColor: Colors.transparent,
-        actions: [
+      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Event Details', actions: [
           IconButton(
             icon: const Icon(Ionicons.create_outline),
             onPressed: () {
@@ -34,8 +32,7 @@ class EventDetailsScreen extends ConsumerWidget {
             },
             tooltip: 'Edit Event',
           ),
-        ],
-      ),
+        ]),
       body: eventAsync.when(
         data: (event) => SingleChildScrollView(
           padding: const EdgeInsets.all(16),

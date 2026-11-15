@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/services/ticket_service.dart';
 import '../models/ticket_type.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class ManageTicketTiersScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -301,11 +302,7 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Manage Ticket Tiers'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Manage Ticket Tiers'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

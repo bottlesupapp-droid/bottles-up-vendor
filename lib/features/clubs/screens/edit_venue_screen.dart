@@ -12,6 +12,7 @@ import '../../../features/auth/providers/supabase_auth_provider.dart';
 import '../../../features/venues/providers/venues_provider.dart';
 import '../../../features/venues/services/venue_request_service.dart';
 import '../../../shared/models/venue_model.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class EditVenueScreen extends ConsumerStatefulWidget {
   final String venueId;
@@ -346,12 +347,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Edit Venue',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
+      appBar: BuDetailAppBar(eyebrow: 'Venue', title: 'Edit Venue', actions: [
           if (_isSaving)
             const Padding(
               padding: EdgeInsets.all(16),
@@ -369,8 +365,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
             ),
-        ],
-      ),
+        ]),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

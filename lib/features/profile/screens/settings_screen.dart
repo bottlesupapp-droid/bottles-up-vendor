@@ -3,6 +3,7 @@ import 'package:ionicons/ionicons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -13,19 +14,7 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Ionicons.arrow_back),
-        ),
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Account', title: 'Settings'),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Column(

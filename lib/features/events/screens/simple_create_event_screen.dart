@@ -11,6 +11,7 @@ import '../../../core/config/supabase_config.dart';
 import '../../../features/auth/providers/supabase_auth_provider.dart';
 import '../../../features/venues/providers/venues_provider.dart';
 import '../providers/event_list_provider.dart';
+import '../../../core/ui/bu_kit.dart';
 
 // ── Ticket tier data model ──────────────────────────────────────────────────
 
@@ -273,12 +274,7 @@ class _SimpleCreateEventScreenState
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Create Event',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
+      appBar: BuDetailAppBar(eyebrow: 'Events', title: 'Create Event', actions: [
           if (_isSubmitting)
             const Padding(
               padding: EdgeInsets.all(16),
@@ -296,8 +292,7 @@ class _SimpleCreateEventScreenState
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
             ),
-        ],
-      ),
+        ]),
       body: venuesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(couldNotLoad('venues', e))),

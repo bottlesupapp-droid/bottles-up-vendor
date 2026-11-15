@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import '../providers/inventory_provider.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
@@ -13,18 +14,14 @@ class InventoryScreen extends ConsumerWidget {
     final inventoryAsync = ref.watch(inventoryProvider);
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inventory Management'),
-        elevation: 0,
-        actions: [
+      appBar: BuDetailAppBar(eyebrow: 'Operations', title: 'Inventory Management', actions: [
           IconButton(
             icon: const Icon(Ionicons.add),
             onPressed: () {
               // TODO: Add new bottle dialog
             },
           ),
-        ],
-      ),
+        ]),
       body: inventoryAsync.when(
         data: (inventory) {
           if (inventory.isEmpty) {

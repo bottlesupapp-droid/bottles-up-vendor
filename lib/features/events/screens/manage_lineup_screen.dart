@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../models/event_team_member.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class ManageLineupScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -329,18 +330,13 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Manage Event Team'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
+      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Manage Event Team', actions: [
           IconButton(
             onPressed: () => _showAddEditDialog(),
             icon: const Icon(Ionicons.add_circle_outline),
             tooltip: 'Add Team Member',
           ),
-        ],
-      ),
+        ]),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

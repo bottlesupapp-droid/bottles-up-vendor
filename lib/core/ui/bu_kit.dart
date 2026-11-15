@@ -915,3 +915,138 @@ class BuMiniVenue extends StatelessWidget {
     );
   }
 }
+
+/// The top of a page you open from a list, as the design draws it: a rounded back button, a small orange eyebrow and the page's title, and something at the
+/// right (a status). The page itself sits under it with the usual side margin.
+class BuDetailHeader extends StatelessWidget {
+  const BuDetailHeader({super.key, required this.eyebrow, required this.title, this.onBack, this.trailing});
+
+  final String eyebrow;
+  final String title;
+
+  /// Where the back button goes. Without it the button pops the route.
+  final VoidCallback? onBack;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final canGoBack = onBack != null || Navigator.of(context).canPop();
+    return Row(
+      children: [
+        if (canGoBack) ...[
+        Semantics(
+          button: true,
+          label: 'Go back',
+          child: InkWell(
+            key: const Key('detail-back'),
+            borderRadius: BorderRadius.circular(BuRadius.control),
+            onTap: onBack ?? () => Navigator.of(context).maybePop(),
+            child: Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: bu.panel, borderRadius: BorderRadius.circular(BuRadius.control), border: Border.all(color: bu.line)),
+              child: Icon(Icons.arrow_back_ios_new_rounded, size: 17, color: bu.soft),
+            ),
+          ),
+        ),
+        const SizedBox(width: BuSpace.m),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [BuEyebrow(eyebrow), const SizedBox(height: 2), Semantics(header: true, child: Text(title, style: text.headlineSmall, maxLines: 1, overflow: TextOverflow.ellipsis))],
+          ),
+        ),
+        if (trailing != null) ...[const SizedBox(width: BuSpace.s), trailing!],
+      ],
+    );
+  }
+}
+
+/// A row of pill tabs that scrolls sideways, as the design draws a page's sections: the chosen one is light on dark, the others dark. [tabKeyPrefix] gives each tab
+/// the key `prefix-label`.
+class BuPillTabs extends StatelessWidget {
+  const BuPillTabs({super.key, required this.labels, required this.selected, required this.onSelected, this.tabKeyPrefix = 'tab', this.soon = const {}});
+
+  final List<String> labels;
+  final String selected;
+  final ValueChanged<String> onSelected;
+  final String tabKeyPrefix;
+
+  /// Labels that are designed but not built: they carry a small dot so nobody is surprised by what they open.
+  final Set<String> soon;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    Widget tab(String label) {
+      final on = label == selected;
+      return Semantics(
+        button: true,
+        selected: on,
+        child: InkWell(
+          key: Key('$tabKeyPrefix-$label'),
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => onSelected(label),
+          child: Container(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: on ? bu.ink : bu.panel, borderRadius: BorderRadius.circular(22), border: on ? null : Border.all(color: bu.hairline)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label, style: text.labelLarge?.copyWith(color: on ? bu.bg : bu.ink, fontWeight: FontWeight.w600)),
+                if (soon.contains(label)) ...[
+                  const SizedBox(width: 6),
+                  Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, color: on ? bu.bg : bu.orange)),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // A plain row in a sideways scroll, so every tab exists (a few tabs, no need to build them lazily) and a screen reader can reach them all.
+    return SizedBox(
+      height: 44,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        child: Row(children: [for (var i = 0; i < labels.length; i++) ...[if (i > 0) const SizedBox(width: 6), tab(labels[i])]]),
+      ),
+    );
+  }
+}
+
+/// The app bar of a page you open from a list, in the design's look: [BuDetailHeader] in a bar. Takes the place of `AppBar(title: ...)`: the same title and the same
+/// action buttons, with the design's back button and an eyebrow over the title.
+class BuDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const BuDetailAppBar({super.key, required this.title, required this.eyebrow, this.actions = const []});
+
+  final String title;
+  final String eyebrow;
+  final List<Widget> actions;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(72);
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.s),
+        child: SizedBox(
+          height: 56,
+          child: BuDetailHeader(eyebrow: eyebrow, title: title, trailing: actions.isEmpty ? null : Row(mainAxisSize: MainAxisSize.min, children: actions)),
+        ),
+      ),
+    );
+  }
+}

@@ -6,6 +6,7 @@ import 'package:ionicons/ionicons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/services/supabase_auth_service.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class SecurityScreen extends ConsumerWidget {
   const SecurityScreen({super.key});
@@ -16,14 +17,7 @@ class SecurityScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Security Settings',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Account', title: 'Security Settings'),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Column(

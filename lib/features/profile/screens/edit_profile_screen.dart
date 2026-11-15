@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../../auth/services/supabase_auth_service.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -149,14 +150,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Account', title: 'Edit Profile'),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Form(

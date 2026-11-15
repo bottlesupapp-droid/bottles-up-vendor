@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../workspace/providers/workspace_providers.dart' show siteUrlProvider;
 import '../logic/data_collected.dart';
+import '../../../core/ui/bu_kit.dart';
 
 /// Opens an address outside the app. Replaced in tests.
 final privacyLinkOpenerProvider = Provider<Future<bool> Function(Uri uri)>((ref) => (uri) => launchUrl(uri, mode: LaunchMode.externalApplication));
@@ -26,7 +27,7 @@ class PrivacyPolicyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('What this app collects', style: TextStyle(fontWeight: FontWeight.w600))),
+      appBar: BuDetailAppBar(eyebrow: 'Legal', title: 'What this app collects'),
       body: ListView(
         key: const Key('data-collected'),
         padding: const EdgeInsets.all(16),

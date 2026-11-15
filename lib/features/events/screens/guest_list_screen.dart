@@ -10,6 +10,7 @@ import 'dart:io';
 
 import '../../../shared/models/analytics_models.dart';
 import '../providers/guest_list_provider.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class GuestListScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -250,10 +251,7 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Guest List'),
-        backgroundColor: Colors.transparent,
-        actions: [
+      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Guest List', actions: [
           IconButton(
             icon: const Icon(Ionicons.help_circle_outline),
             onPressed: _showCSVFormatHelp,
@@ -264,8 +262,7 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
             onPressed: _pickAndUploadCSV,
             tooltip: 'Upload CSV',
           ),
-        ],
-      ),
+        ]),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addManualGuest,
         icon: const Icon(Ionicons.person_add_outline),
