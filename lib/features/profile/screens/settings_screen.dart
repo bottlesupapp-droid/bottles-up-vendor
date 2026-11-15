@@ -1,154 +1,129 @@
 import 'package:flutter/material.dart';
-import 'package:ionicons/ionicons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ionicons/ionicons.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_coming_soon.dart';
 import '../../../core/ui/bu_kit.dart';
 
+/// Settings, as the design draws it: a Display card (the app is dark for now, Light and "match my phone" are shown as Coming soon), then the account's pages as grouped rows
+/// (each opens the page that exists), help, and the legal pages.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final bu = context.bu;
+
+    Widget group(String eyebrow, List<Widget> rows, {Key? key}) => Padding(
+      padding: const EdgeInsets.only(bottom: BuSpace.xl),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [BuEyebrow(eyebrow), const SizedBox(height: BuSpace.s), BuListCard(key: key, children: rows)]),
+    );
+    Widget row(String key, IconData icon, String title, String subtitle, String path) => BuListRow(key: Key(key), icon: icon, title: title, subtitle: subtitle, onTap: () => context.push(path));
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Account', title: 'Settings'),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Coming Soon Message
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: AppTheme.darkContainerDecoration,
-              child: Column(
-                children: [
-                  Icon(
-                    Ionicons.construct_outline,
-                    size: 64,
-                    color: theme.colorScheme.primary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: const BuDetailAppBar(eyebrow: 'Account', title: 'Settings'),
+      body: ListView(
+        key: const Key('settings-list'),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 120),
+        children: [
+          const BuEyebrow('Display'),
+          const SizedBox(height: BuSpace.s),
+          BuCard(
+            key: const Key('settings-appearance'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Appearance', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text('The app is dark for now.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: bu.muted)),
+                const SizedBox(height: BuSpace.m),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: bu.panel2, borderRadius: BorderRadius.circular(BuRadius.control)),
+                  child: Row(
+                    children: [
+                      Expanded(child: _Segment(label: 'Dark', selected: true, segmentKey: const Key('appearance-dark'))),
+                      Expanded(
+                        child: _Segment(
+                          label: 'Light',
+                          segmentKey: const Key('appearance-light'),
+                          onTap: () => showComingSoon(context, title: 'Light appearance', text: 'A light look for the app, for people who prefer it in daylight.'),
+                        ),
+                      ),
+                      Expanded(
+                        child: _Segment(
+                          label: 'Auto',
+                          segmentKey: const Key('appearance-auto'),
+                          onTap: () => showComingSoon(context, title: 'Match my phone', text: 'Follow the phone: light by day, dark at night.'),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Settings Coming Soon',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'We\'re working on bringing you comprehensive settings to customize your experience.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: BuSpace.s),
+                const Align(alignment: Alignment.centerRight, child: BuComingSoonPill()),
+              ],
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Features Preview
-            Text(
-              'Upcoming Features',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: BuSpace.xl),
+          group('Account', [
+            row('settings-edit-profile', Ionicons.person_outline, 'Edit profile', 'Your name, photo and phone', '/profile/edit'),
+            row('settings-business', Ionicons.business_outline, 'Business details', 'Business name, address and contact', '/profile/business'),
+            row('settings-security', Ionicons.lock_closed_outline, 'Security', 'Password and sign-in', '/profile/security'),
+            row('settings-notifications', Ionicons.notifications_outline, 'Notifications', 'Choose what you are told about', '/profile/notifications'),
+            BuListRow(
+              key: const Key('settings-billing'),
+              icon: Ionicons.card_outline,
+              title: 'Billing and payouts',
+              subtitle: 'Payout account, schedule and plan',
+              trailing: const BuComingSoonPill(),
+              showChevron: false,
+              onTap: () => showComingSoon(context, title: 'Billing and payouts', text: 'Your payout account, when you are paid and your plan, in one place.'),
             ),
-            const SizedBox(height: 16),
-            
-            Container(
-              decoration: AppTheme.darkCardDecoration,
-              child: Column(
-                children: [
-                  _buildFeatureTile(
-                    context,
-                    icon: Ionicons.create_outline,
-                    title: 'Profile Editing',
-                    subtitle: 'Update your personal information',
-                  ),
-                  _buildFeatureTile(
-                    context,
-                    icon: Ionicons.lock_closed_outline,
-                    title: 'Security Settings',
-                    subtitle: 'Manage passwords and 2FA',
-                  ),
-                  _buildFeatureTile(
-                    context,
-                    icon: Ionicons.notifications_outline,
-                    title: 'Notification Preferences',
-                    subtitle: 'Control how you receive alerts',
-                  ),
-                  _buildFeatureTile(
-                    context,
-                    icon: Ionicons.shield_checkmark_outline,
-                    title: 'Privacy Controls',
-                    subtitle: 'Manage your data and privacy',
-                  ),
-                  _buildFeatureTile(
-                    context,
-                    icon: Ionicons.language_outline,
-                    title: 'Language & Region',
-                    subtitle: 'Customize localization settings',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ]),
+          group('Help', [
+            row('settings-help', Ionicons.help_circle_outline, 'Help Center', 'Answers to common questions', '/support/help'),
+            row('settings-support', Ionicons.chatbubbles_outline, 'Contact Support', 'Ask the BottlesUp team', '/support/contact'),
+          ]),
+          group('About', [
+            row('settings-terms', Ionicons.document_text_outline, 'Terms of Service', 'Legal terms and conditions', '/legal/terms'),
+            row('settings-privacy', Ionicons.shield_checkmark_outline, 'Privacy Policy', 'How we protect your data', '/legal/privacy'),
+            row('settings-about', Ionicons.information_circle_outline, 'About BottlesUp Business', 'Version and what the app does', '/about'),
+          ]),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildFeatureTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    final theme = Theme.of(context);
-    
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
+/// One of the three choices of the Display card: the chosen one is raised, the others are plain.
+class _Segment extends StatelessWidget {
+  const _Segment({required this.label, required this.segmentKey, this.selected = false, this.onTap});
+
+  final String label;
+  final Key segmentKey;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        key: segmentKey,
+        borderRadius: BorderRadius.circular(BuRadius.control - 4),
+        onTap: onTap,
+        child: Container(
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: selected ? bu.raised : Colors.transparent, borderRadius: BorderRadius.circular(BuRadius.control - 4)),
+          child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: selected ? bu.ink : bu.muted, fontWeight: FontWeight.w600)),
         ),
-        child: Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: Icon(
-        Ionicons.time_outline,
-        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-        size: 18,
-      ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 8,
       ),
     );
   }
-} 
+}

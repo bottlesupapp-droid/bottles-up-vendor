@@ -39,7 +39,8 @@ class MainShell extends StatelessWidget {
             bottom: false,
             child: Column(
               children: [
-                const ClassicTopBar(),
+                // The brand bar belongs to the five tabs; a page opened from a tab has its own header with a back button, as in the design.
+                if (_isTab(context)) const ClassicTopBar(),
                 const ConnectionBanner(),
                 Expanded(child: child),
               ],

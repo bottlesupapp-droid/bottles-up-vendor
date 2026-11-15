@@ -49,7 +49,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen>
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.m),
-            child: BuPageHeader(
+            child: BuDetailHeader(
               eyebrow: 'Your business',
               title: 'Events',
               trailing: Row(

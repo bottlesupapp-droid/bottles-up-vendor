@@ -6,6 +6,9 @@ import 'package:bottles_up_vendor/core/ui/bu_coming_soon.dart';
 import 'package:bottles_up_vendor/core/ui/bu_kit.dart';
 import 'package:bottles_up_vendor/features/clubs/screens/club_details_screen.dart';
 import 'package:bottles_up_vendor/features/events/providers/bookings_provider.dart';
+import 'package:bottles_up_vendor/features/events/providers/inventory_provider.dart';
+import 'package:bottles_up_vendor/features/events/screens/inventory_screen.dart';
+import 'package:bottles_up_vendor/features/profile/screens/settings_screen.dart';
 import 'package:bottles_up_vendor/features/events/screens/bookings_screen.dart';
 import 'package:bottles_up_vendor/features/venues/providers/venues_provider.dart';
 import 'package:bottles_up_vendor/shared/models/venue_model.dart';
@@ -295,6 +298,118 @@ void main() {
     testWidgets('a failed load says so and offers Retry', (tester) async {
       await pumpPage(tester, () => const BookingsScreen(), overrides: [bookingsProvider.overrideWith((ref) async => throw Exception('boom'))]);
       expect(find.text('Retry'), findsOneWidget);
+    });
+  });
+  group('Inventory', () {
+    Map<String, dynamic> bottle(String id, String name, int quantity, {num price = 180, bool featured = false}) => {
+      'id': id,
+      'name': name,
+      'brand': 'Grey Goose',
+      'quantity': quantity,
+      'price': price,
+      'volume': 750,
+      'featured': featured,
+      'description': 'Smooth',
+    };
+    final stock = [bottle('b1', 'Vodka', 12), bottle('b2', 'Champagne', 3, featured: true), bottle('b3', 'Tequila', 0)];
+
+    Future<void> open(WidgetTester tester, List<Map<String, dynamic>> items) => pumpPage(tester, () => const InventoryScreen(), overrides: [inventoryProvider.overrideWith((ref) async => items)]);
+
+    testWidgets('three figures: items, running low, out; and one card per bottle with how many are left', (tester) async {
+      await open(tester, stock);
+      expect(tester.widget<Text>(find.byKey(const Key('inventory-items'))).data, '3');
+      expect(tester.widget<Text>(find.byKey(const Key('inventory-low'))).data, '1');
+      expect(tester.widget<Text>(find.byKey(const Key('inventory-out'))).data, '1');
+      expect(find.text('12 in stock'), findsOneWidget);
+      expect(find.text('3 left'), findsOneWidget);
+      expect(find.text('Out of stock'), findsOneWidget);
+      expect(find.text('Featured'), findsOneWidget);
+      await shot(tester, 'inventory');
+    });
+
+    testWidgets('the Low and Out filters narrow the list; an empty filter says so', (tester) async {
+      await open(tester, stock);
+      await tester.tap(find.byKey(const Key('stock-filter-Low')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('bottle-b2')), findsOneWidget);
+      expect(find.byKey(const Key('bottle-b1')), findsNothing);
+      await tester.tap(find.byKey(const Key('stock-filter-Out')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('bottle-b3')), findsOneWidget);
+      await open(tester, [bottle('b1', 'Vodka', 12)]);
+      await tester.tap(find.byKey(const Key('stock-filter-Low')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('inventory-none')), findsOneWidget);
+      expect(find.text('Nothing is running low.'), findsOneWidget);
+    });
+
+    testWidgets('add, edit and remove say Coming soon instead of doing nothing', (tester) async {
+      await open(tester, stock);
+      await tester.tap(find.byKey(const Key('inventory-add')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('coming-soon-close')), findsOneWidget);
+      expect(find.text('Add a bottle'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('coming-soon-close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('bottle-edit')).first);
+      await tester.pumpAndSettle();
+      expect(find.text('Edit a bottle'), findsOneWidget);
+    });
+
+    testWidgets('no bottles, and a failed load', (tester) async {
+      await open(tester, const []);
+      expect(find.text('No inventory found'), findsOneWidget);
+      await pumpPage(tester, () => const InventoryScreen(), overrides: [inventoryProvider.overrideWith((ref) async => throw Exception('boom'))]);
+      expect(find.text('Retry'), findsOneWidget);
+    });
+  });
+
+  group('Settings', () {
+    Future<void> open(WidgetTester tester) => pumpPage(
+      tester,
+      () => const SettingsScreen(),
+      path: '/profile/settings',
+      stubs: ['/profile/edit', '/profile/business', '/profile/security', '/profile/notifications', '/support/help', '/support/contact', '/legal/terms', '/legal/privacy', '/about'],
+    );
+
+    testWidgets('a Display card (dark chosen; Light and Auto say Coming soon) and the account, help and about rows', (tester) async {
+      await open(tester);
+      expect(find.byKey(const Key('settings-appearance')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('appearance-light')));
+      await tester.pumpAndSettle();
+      expect(find.text('Light appearance'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('coming-soon-close')));
+      await tester.pumpAndSettle();
+      await shot(tester, 'settings');
+    });
+
+    testWidgets('each row opens the page that exists for it', (tester) async {
+      for (final (key, path) in [
+        ('settings-edit-profile', '/profile/edit'),
+        ('settings-business', '/profile/business'),
+        ('settings-security', '/profile/security'),
+        ('settings-notifications', '/profile/notifications'),
+        ('settings-help', '/support/help'),
+        ('settings-support', '/support/contact'),
+        ('settings-terms', '/legal/terms'),
+        ('settings-privacy', '/legal/privacy'),
+        ('settings-about', '/about'),
+      ]) {
+        await open(tester);
+        await tester.ensureVisible(find.byKey(Key(key)));
+        await tester.tap(find.byKey(Key(key)));
+        await tester.pumpAndSettle();
+        expect(find.text('WENT TO $path'), findsOneWidget, reason: key);
+      }
+    });
+
+    testWidgets('billing and payouts is not built: it says Coming soon', (tester) async {
+      await open(tester);
+      await tester.ensureVisible(find.byKey(const Key('settings-billing')));
+      await tester.tap(find.byKey(const Key('settings-billing')));
+      await tester.pumpAndSettle();
+      expect(find.text('Billing and payouts'), findsWidgets);
+      expect(find.byKey(const Key('coming-soon-close')), findsOneWidget);
     });
   });
 }
