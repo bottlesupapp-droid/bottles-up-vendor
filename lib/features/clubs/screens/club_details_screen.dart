@@ -395,7 +395,7 @@ class _PhotosTab extends StatelessWidget {
             childAspectRatio: 1.25,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            children: [for (var i = 0; i < photos.length; i++) frame(photos[i], cover: i == 0)],
+            children: [for (var i = 0; i < photos.length; i++) KeyedSubtree(key: Key('venue-photo-$i'), child: frame(photos[i], cover: i == 0))],
           ),
         const SizedBox(height: BuSpace.l),
         BuListCard(

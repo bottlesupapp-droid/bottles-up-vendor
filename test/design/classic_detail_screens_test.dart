@@ -128,6 +128,13 @@ void main() {
       for (final (status, word) in [(VenueStatus.active, 'Open'), (VenueStatus.approved, 'Approved'), (VenueStatus.pending, 'Pending'), (VenueStatus.suspended, 'Suspended')]) {
         await open(tester, venue(status: status));
         expect(find.descendant(of: find.byKey(const Key('venue-status')), matching: find.text(word)), findsOneWidget, reason: word);
+        final tone = tester.widget<BuStatusPill>(find.descendant(of: find.byKey(const Key('venue-status')), matching: find.byType(BuStatusPill))).tone;
+        expect(tone, switch (status) {
+          VenueStatus.active => BuTone.good,
+          VenueStatus.approved => BuTone.brand,
+          VenueStatus.pending => BuTone.attention,
+          VenueStatus.suspended => BuTone.bad,
+        }, reason: '$word has the colour of what it means');
       }
     });
 
@@ -214,6 +221,8 @@ void main() {
       expect(find.text('3 photos'), findsOneWidget);
       expect(find.byKey(const Key('venue-photos-grid')), findsOneWidget);
       expect(find.text('Cover'), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('venue-photo-0')), matching: find.text('Cover')), findsOneWidget, reason: 'the first photo is the cover');
+      expect(find.descendant(of: find.byKey(const Key('venue-photo-1')), matching: find.text('Cover')), findsNothing);
       expect(find.byKey(const Key('venue-photos-video')), findsOneWidget);
       await shot(tester, 'venue_photos');
 
@@ -281,14 +290,21 @@ void main() {
       expect(find.text('3 bookings'), findsOneWidget);
     });
 
-    testWidgets('each status has its word, and only the right buttons: pending gets Confirm and Cancel, confirmed gets Mark Completed', (tester) async {
+    testWidgets('each status has its word, and only the right buttons: pending gets Confirm and Cancel, confirmed gets Mark Completed, cancelled gets none', (tester) async {
       await open(tester, three);
       expect(find.text('PENDING'), findsOneWidget);
       expect(find.text('CONFIRMED'), findsOneWidget);
       expect(find.text('CANCELLED'), findsOneWidget);
-      expect(find.byKey(const Key('booking-confirm')), findsOneWidget);
-      expect(find.byKey(const Key('booking-cancel')), findsOneWidget);
-      expect(find.byKey(const Key('booking-complete')), findsOneWidget);
+      Finder inCard(String id, String key) => find.descendant(of: find.byKey(Key('booking-$id')), matching: find.byKey(Key(key)));
+      expect(inCard('aaaaaaaa-1', 'booking-confirm'), findsOneWidget);
+      expect(inCard('aaaaaaaa-1', 'booking-cancel'), findsOneWidget);
+      expect(inCard('aaaaaaaa-1', 'booking-complete'), findsNothing);
+      expect(inCard('bbbbbbbb-2', 'booking-complete'), findsOneWidget);
+      expect(inCard('bbbbbbbb-2', 'booking-confirm'), findsNothing);
+      expect(inCard('bbbbbbbb-2', 'booking-cancel'), findsNothing);
+      for (final k in ['booking-confirm', 'booking-cancel', 'booking-complete']) {
+        expect(inCard('cccccccc-3', k), findsNothing, reason: 'a cancelled booking has nothing left to do');
+      }
     });
 
     testWidgets('no bookings: the page says so, with nothing to filter', (tester) async {
