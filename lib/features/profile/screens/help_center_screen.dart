@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class HelpCenterScreen extends ConsumerStatefulWidget {
   const HelpCenterScreen({super.key});
@@ -114,14 +115,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Help Center',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Help', title: 'Help Center'),
       body: Column(
         children: [
           // Search Bar

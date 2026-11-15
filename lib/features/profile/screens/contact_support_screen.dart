@@ -8,6 +8,7 @@ import '../../../core/utils/plain_error.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../logic/site_contact.dart';
 import '../providers/site_contact_provider.dart';
+import '../../../core/ui/bu_kit.dart';
 
 /// Opens a web, mail or phone address. Returns whether the phone had something to open it with. Replaced in tests.
 typedef LinkOpener = Future<bool> Function(Uri uri);
@@ -65,7 +66,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     final contact = ref.watch(siteContactProvider);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Contact Support', style: TextStyle(fontWeight: FontWeight.w600)), backgroundColor: Colors.transparent, elevation: 0),
+      appBar: BuDetailAppBar(eyebrow: 'Help', title: 'Contact Support'),
       body: contact.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ionicons/ionicons.dart';
 import '../../../../core/config/supabase_config.dart';
+import '../../../core/ui/bu_kit.dart';
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
@@ -31,16 +32,13 @@ class ManageEventTablesScreen extends ConsumerWidget {
     final tablesAsync = ref.watch(eventTablesProvider(eventId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Table Management'),
-        actions: [
+      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Table Management', actions: [
           IconButton(
             icon: const Icon(Ionicons.add),
             tooltip: 'Add Table',
             onPressed: () => _showAddTableDialog(context, ref),
           ),
-        ],
-      ),
+        ]),
       body: tablesAsync.when(
         data: (tables) {
           if (tables.isEmpty) {

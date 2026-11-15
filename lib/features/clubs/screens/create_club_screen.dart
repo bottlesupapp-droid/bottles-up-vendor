@@ -13,6 +13,7 @@ import '../../../shared/services/club_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/responsive_wrapper.dart';
 import '../../../core/utils/responsive_utils.dart' as utils;
+import '../../../core/ui/bu_kit.dart';
 
 class CreateClubScreen extends ConsumerStatefulWidget {
   const CreateClubScreen({super.key});
@@ -176,12 +177,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: ResponsiveText.titleLarge('Create Club'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Venues', title: 'Create Club'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ResponsiveWrapper(

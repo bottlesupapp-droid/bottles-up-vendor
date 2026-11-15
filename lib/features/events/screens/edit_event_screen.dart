@@ -14,6 +14,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/responsive_wrapper.dart';
 import '../../../core/utils/responsive_utils.dart' as utils;
 import '../providers/event_details_provider.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class EditEventScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -292,22 +293,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: ResponsiveText.titleLarge('Edit Event'),
-          backgroundColor: Colors.transparent,
-        ),
+        appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Edit Event'),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: ResponsiveText.titleLarge('Edit Event'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Edit Event'),
       body: ResponsiveWrapper(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(

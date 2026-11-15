@@ -9,9 +9,18 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../core/ui/bu_kit.dart';
 import '../../../shared/widgets/responsive_wrapper.dart';
 import '../../../core/utils/responsive_utils.dart' as utils;
+import '../../../shared/models/analytics_models.dart';
 import '../providers/analytics_provider.dart';
 
 Color _primaryColor = BuTokens.dark.orange;
+
+/// The last seven days, oldest first, each with the bookings made that day (a day with none is 0). Read from the account's own bookings, never invented.
+List<(DateTime, int)> bookingsPerDay(List<BookingTrend> trends, DateTime now) {
+  final days = [for (var back = 6; back >= 0; back--) DateTime(now.year, now.month, now.day - back)];
+  return [for (final day in days) (day, trends.where((t) => _sameDay(t.date, day)).fold<int>(0, (sum, t) => sum + t.bookings))];
+}
+
+bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
   const AnalyticsDashboardScreen({super.key});
@@ -199,56 +208,70 @@ class _AnalyticsDashboardScreenState
   }
 
   Widget _buildBookingTrendsChart(BuildContext context, dynamic data) {
-    final theme = Theme.of(context);
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final days = bookingsPerDay((data.bookingTrends as List).cast<BookingTrend>(), DateTime.now());
+    final total = days.fold<int>(0, (sum, d) => sum + d.$2);
+    final peak = days.fold<int>(0, (m, d) => d.$2 > m ? d.$2 : m);
+    final top = (peak < 4 ? 4 : peak + 1).toDouble();
+    final step = (top / 4).ceilToDouble();
+    final label = text.labelSmall?.copyWith(color: bu.muted, fontSize: 11);
+    const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: BuTokens.dark.panel,
-        borderRadius: BorderRadius.circular(BuRadius.card),
-        border: Border.all(color: BuTokens.dark.hairline),
-      ),
+    return BuCard(
+      key: const Key('report-trend'),
+      padding: const EdgeInsets.all(BuSpace.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Booking Trends',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 20),
+          const BuEyebrow('Last 7 days'),
+          const SizedBox(height: 4),
+          Text('Booking Trends', style: text.titleLarge),
+          const SizedBox(height: 4),
+          Text(total == 0 ? 'No bookings in the last 7 days.' : '$total ${total == 1 ? 'booking' : 'bookings'} in the last 7 days.', key: const Key('report-trend-total'), style: text.bodySmall?.copyWith(color: bu.muted)),
+          const SizedBox(height: BuSpace.l),
           SizedBox(
-            height: 200,
+            height: 180,
             child: LineChart(
               LineChartData(
-                gridData: FlGridData(show: false),
+                minX: 0,
+                maxX: 6,
+                minY: 0,
+                maxY: top,
+                gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: step, getDrawingHorizontalLine: (_) => FlLine(color: bu.line, strokeWidth: 1)),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      interval: step,
+                      getTitlesWidget: (v, meta) => v == v.roundToDouble() ? Text('${v.toInt()}', style: label) : const SizedBox.shrink(),
+                    ),
                   ),
                   bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 24,
+                      interval: 1,
+                      getTitlesWidget: (v, meta) {
+                        final i = v.toInt();
+                        if (i < 0 || i >= days.length) return const SizedBox.shrink();
+                        return Padding(padding: const EdgeInsets.only(top: 6), child: Text(weekdays[days[i].$1.weekday - 1], style: label));
+                      },
+                    ),
                   ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: _generateSampleSpots(),
-                    isCurved: true,
+                    spots: [for (var i = 0; i < days.length; i++) FlSpot(i.toDouble(), days[i].$2.toDouble())],
+                    isCurved: false,
                     color: _primaryColor,
                     barWidth: 3,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: _primaryColor.withOpacity(0.1),
-                    ),
+                    dotData: FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: _primaryColor, strokeWidth: 0)),
+                    belowBarData: BarAreaData(show: true, color: _primaryColor.withValues(alpha: 0.10)),
                   ),
                 ],
               ),
@@ -257,12 +280,6 @@ class _AnalyticsDashboardScreenState
         ],
       ),
     );
-  }
-
-  List<FlSpot> _generateSampleSpots() {
-    return List.generate(7, (index) {
-      return FlSpot(index.toDouble(), (index * 2 + 10).toDouble());
-    });
   }
 
   Widget _buildQuickStats(BuildContext context, dynamic data) {

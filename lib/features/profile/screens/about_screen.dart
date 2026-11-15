@@ -6,6 +6,7 @@ import '../../../core/config/app_info.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/site_contact_provider.dart';
 import 'contact_support_screen.dart' show contactLinkOpenerProvider;
+import '../../../core/ui/bu_kit.dart';
 
 /// About: what the app is, the version it really is, how to reach BottlesUp and its social pages exactly as the BottlesUp team has set them in the CMS (a contact it has not filled in is not shown),
 /// and the legal pages. Nothing about the company is written into the app.
@@ -26,14 +27,7 @@ class AboutScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'About',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'BottlesUp', title: 'About'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class TermsOfServiceScreen extends ConsumerWidget {
   const TermsOfServiceScreen({super.key});
@@ -12,14 +13,7 @@ class TermsOfServiceScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Terms of Service',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Legal', title: 'Terms of Service'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

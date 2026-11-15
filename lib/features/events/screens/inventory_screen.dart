@@ -1,27 +1,49 @@
-import '../../../core/theme/app_tokens.dart';
-import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
+
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_coming_soon.dart';
+import '../../../core/ui/bu_kit.dart';
+import '../../../core/utils/plain_error.dart';
 import '../providers/inventory_provider.dart';
 
-class InventoryScreen extends ConsumerWidget {
+/// The filters over the stock list.
+const stockFilters = ['All', 'Low', 'Out'];
+
+/// How many is "low": a bottle with this many or fewer (but not none) is running out.
+const lowStockAt = 5;
+
+/// Inventory, as the design draws it: three figures (items, low, out), the filters as pill tabs and one card per bottle with how many are left. Adding, editing and
+/// removing a bottle are not built for this kind of account yet: each says "Coming soon".
+class InventoryScreen extends ConsumerStatefulWidget {
   const InventoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InventoryScreen> createState() => _InventoryScreenState();
+}
+
+class _InventoryScreenState extends ConsumerState<InventoryScreen> {
+  String _filter = stockFilters.first;
+
+  int _quantity(Map<String, dynamic> b) => (b['quantity'] as num?)?.toInt() ?? 0;
+
+  @override
+  Widget build(BuildContext context) {
     final inventoryAsync = ref.watch(inventoryProvider);
-    
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inventory Management'),
-        elevation: 0,
+      appBar: BuDetailAppBar(
+        eyebrow: 'Operations',
+        title: 'Inventory',
         actions: [
           IconButton(
+            key: const Key('inventory-add'),
+            tooltip: 'Add a bottle, coming soon',
             icon: const Icon(Ionicons.add),
-            onPressed: () {
-              // TODO: Add new bottle dialog
-            },
+            onPressed: () => showComingSoon(context, title: 'Add a bottle', text: 'Add a bottle to your stock with its price, size and how many you have.'),
           ),
         ],
       ),
@@ -29,55 +51,100 @@ class InventoryScreen extends ConsumerWidget {
         data: (inventory) {
           if (inventory.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Ionicons.wine_outline, size: 64, color: BuTokens.dark.muted),
-                  SizedBox(height: 16),
-                  Text(
-                    'No inventory found',
-                    style: TextStyle(fontSize: 18, color: BuTokens.dark.muted),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Add bottles to your inventory',
-                    style: TextStyle(color: BuTokens.dark.muted),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    BuIconTile(icon: Ionicons.wine_outline, size: 56),
+                    const SizedBox(height: BuSpace.l),
+                    Text('No inventory found', style: text.titleLarge),
+                    const SizedBox(height: BuSpace.s),
+                    Text('Add bottles to your inventory', style: text.bodyMedium?.copyWith(color: bu.muted)),
+                  ],
+                ),
               ),
             );
           }
 
+          final low = inventory.where((b) => _quantity(b) > 0 && _quantity(b) <= lowStockAt).length;
+          final out = inventory.where((b) => _quantity(b) == 0).length;
+          final shown = switch (_filter) {
+            'Low' => inventory.where((b) => _quantity(b) > 0 && _quantity(b) <= lowStockAt).toList(),
+            'Out' => inventory.where((b) => _quantity(b) == 0).toList(),
+            _ => inventory,
+          };
+
           return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(inventoryProvider);
-            },
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: inventory.length,
-              itemBuilder: (context, index) {
-                final bottle = inventory[index];
-                return _BottleCard(bottle: bottle);
-              },
+            onRefresh: () async => ref.invalidate(inventoryProvider),
+            child: ListView(
+              key: const Key('inventory-list'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.xxl),
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: _Figure(label: 'Items', value: '${inventory.length}', figureKey: const Key('inventory-items'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'Running low', value: '$low', color: low > 0 ? bu.amber : null, figureKey: const Key('inventory-low'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'Out', value: '$out', color: out > 0 ? bu.red : null, figureKey: const Key('inventory-out'))),
+                  ],
+                ),
+                const SizedBox(height: BuSpace.l),
+                BuPillTabs(labels: stockFilters, selected: _filter, tabKeyPrefix: 'stock-filter', onSelected: (f) => setState(() => _filter = f)),
+                const SizedBox(height: BuSpace.m),
+                if (shown.isEmpty)
+                  BuCard(key: const Key('inventory-none'), child: Text(_filter == 'Low' ? 'Nothing is running low.' : 'Nothing is out of stock.', style: text.bodyMedium?.copyWith(color: bu.muted)))
+                else
+                  for (final b in shown) _BottleCard(bottle: b),
+              ],
             ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Ionicons.alert_circle, size: 64, color: BuTokens.dark.red),
-              const SizedBox(height: 16),
-              Text(couldNotLoad('inventory', error)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(inventoryProvider),
-                child: const Text('Retry'),
+        error:
+            (error, stack) => Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Ionicons.alert_circle, size: 56, color: bu.red),
+                    const SizedBox(height: BuSpace.l),
+                    Text(couldNotLoad('inventory', error), textAlign: TextAlign.center),
+                    const SizedBox(height: BuSpace.l),
+                    FilledButton(onPressed: () => ref.invalidate(inventoryProvider), child: const Text('Retry')),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
+            ),
+      ),
+    );
+  }
+}
+
+class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value, required this.figureKey, this.color});
+
+  final String label;
+  final String value;
+  final Key figureKey;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    return BuCard(
+      padding: const EdgeInsets.symmetric(horizontal: BuSpace.m, vertical: BuSpace.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value, key: figureKey, style: text.headlineSmall?.copyWith(color: color ?? bu.ink), maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(label, style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
       ),
     );
   }
@@ -90,200 +157,74 @@ class _BottleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
     final price = bottle['price'] as num? ?? 0;
-    final quantity = bottle['quantity'] as int? ?? 0;
-    final volume = bottle['volume'] as int? ?? 750;
+    final quantity = (bottle['quantity'] as num?)?.toInt() ?? 0;
+    final volume = (bottle['volume'] as num?)?.toInt() ?? 750;
     final isFeatured = bottle['featured'] == true;
+    final imageUrl = bottle['imageUrl'] as String?;
+    final (stockLabel, tone) =
+        quantity == 0
+            ? ('Out of stock', BuTone.bad)
+            : quantity <= lowStockAt
+            ? ('$quantity left', BuTone.attention)
+            : ('$quantity in stock', BuTone.good);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    Widget fact(String label, String value) =>
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: text.bodySmall?.copyWith(color: bu.muted)), const SizedBox(height: 2), Text(value, style: text.titleSmall)]);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: BuSpace.m),
+      child: BuCard(
+        key: Key('bottle-${bottle['id'] ?? bottle['name']}'),
+        padding: const EdgeInsets.all(BuSpace.m),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bottle Image
             Container(
-              width: 80,
-              height: 120,
+              width: 72,
+              height: 104,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                image: bottle['imageUrl'] != null
-                    ? DecorationImage(
-                        image: NetworkImage(bottle['imageUrl']),
-                        fit: BoxFit.cover,
-                        onError: (exception, stackTrace) {},
-                      )
-                    : null,
-                color: bottle['imageUrl'] == null 
-                    ? Theme.of(context).primaryColor.withOpacity(0.1)
-                    : null,
+                color: bu.panel2,
+                borderRadius: BorderRadius.circular(BuRadius.control),
+                image: imageUrl != null ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover, onError: (exception, stackTrace) {}) : null,
               ),
-              child: bottle['imageUrl'] == null
-                  ? Icon(
-                      Ionicons.wine_outline,
-                      size: 32,
-                      color: Theme.of(context).primaryColor,
-                    )
-                  : null,
+              child: imageUrl == null ? Icon(Ionicons.wine_outline, size: 30, color: bu.orangeSoft) : null,
             ),
-
-            const SizedBox(width: 16),
-
-            // Bottle Info
+            const SizedBox(width: BuSpace.m),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Brand & Featured Badge
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          bottle['brand'] ?? 'Unknown Brand',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                        ),
-                      ),
-                      if (isFeatured)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: BuTokens.dark.amber,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'FEATURED',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-
+                  Row(children: [Expanded(child: BuEyebrow('${bottle['brand'] ?? 'Unknown Brand'}')), if (isFeatured) const BuStatusPill('Featured', tone: BuTone.attention)]),
                   const SizedBox(height: 4),
-
-                  // Bottle Name
-                  Text(
-                    bottle['name'] ?? 'Unknown Bottle',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Description
-                  if (bottle['description'] != null)
-                    Text(
-                      bottle['description'],
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).textTheme.bodySmall?.color,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                  const SizedBox(height: 12),
-
-                  // Price, Volume & Quantity
+                  Text('${bottle['name'] ?? 'Unknown Bottle'}', style: text.titleMedium),
+                  if (bottle['description'] != null) ...[
+                    const SizedBox(height: 4),
+                    Text('${bottle['description']}', style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  ],
+                  const SizedBox(height: BuSpace.m),
                   Row(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Price',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          Text(
-                            '\$${price.toStringAsFixed(0)}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 24),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Volume',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          Text(
-                            '${volume}ml',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'In Stock',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: quantity > 5 
-                                  ? BuTokens.dark.green.withOpacity(0.1)
-                                  : quantity > 0 
-                                      ? BuTokens.dark.amber.withOpacity(0.1)
-                                      : BuTokens.dark.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: quantity > 5 
-                                    ? BuTokens.dark.green
-                                    : quantity > 0 
-                                        ? BuTokens.dark.amber
-                                        : BuTokens.dark.red,
-                              ),
-                            ),
-                            child: Text(
-                              '$quantity',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: quantity > 5 
-                                    ? BuTokens.dark.green
-                                    : quantity > 0 
-                                        ? BuTokens.dark.amber
-                                        : BuTokens.dark.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [fact('Price', '\$${price.toStringAsFixed(0)}'), const SizedBox(width: BuSpace.xl), fact('Volume', '${volume}ml'), const Spacer(), BuStatusPill(stockLabel, tone: tone)],
                   ),
                 ],
               ),
             ),
-
-            // Actions
             Column(
               children: [
                 IconButton(
-                  icon: const Icon(Ionicons.create_outline),
-                  onPressed: () {
-                    // TODO: Edit bottle dialog
-                  },
+                  key: const Key('bottle-edit'),
+                  tooltip: 'Edit, coming soon',
+                  icon: Icon(Ionicons.create_outline, color: bu.soft),
+                  onPressed: () => showComingSoon(context, title: 'Edit a bottle', text: 'Change the price, the size or how many you have.'),
                 ),
                 IconButton(
-                  icon: Icon(Ionicons.trash, color: BuTokens.dark.red),
-                  onPressed: () {
-                    // TODO: Delete confirmation dialog
-                  },
+                  key: const Key('bottle-delete'),
+                  tooltip: 'Remove, coming soon',
+                  icon: Icon(Ionicons.trash_outline, color: bu.red),
+                  onPressed: () => showComingSoon(context, title: 'Remove a bottle', text: 'Take a bottle out of your stock list.'),
                 ),
               ],
             ),
@@ -292,4 +233,4 @@ class _BottleCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

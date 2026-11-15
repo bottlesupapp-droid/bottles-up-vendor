@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../shared/models/analytics_models.dart';
 import '../providers/scheduled_releases_provider.dart';
+import '../../../core/ui/bu_kit.dart';
 
 class ScheduledReleasesScreen extends ConsumerWidget {
   final String eventId;
@@ -23,10 +24,7 @@ class ScheduledReleasesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Scheduled Ticket Releases'),
-        backgroundColor: Colors.transparent,
-      ),
+      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Scheduled Ticket Releases'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddReleaseDialog(context, ref),
         icon: const Icon(Ionicons.add),
