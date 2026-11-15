@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 PostgrestException refuse(String message) => PostgrestException(message: message, code: 'P0001');
 
 class FakeBottle {
-  FakeBottle(this.id, this.name, {this.size, this.stock, this.threshold, this.soldOut = false});
+  FakeBottle(this.id, this.name, {this.size, this.stock, this.threshold, this.soldOut = false, this.reserved = 0, this.handed = 0, this.soldIn = const {}});
 
   final String id;
   final String name;
@@ -13,6 +13,13 @@ class FakeBottle {
   int? stock;
   int? threshold;
   bool soldOut;
+
+  /// Sold to tables and not handed over yet, and handed over (the overview's two figures; their sum is everything sold).
+  int reserved;
+  int handed;
+
+  /// Bottles sold within the last N days (the overview's "sold" for a period of that many days; 0 for a period not listed).
+  Map<int, int> soldIn;
 }
 
 class FakeMovement {
@@ -80,6 +87,32 @@ class FakeInventoryBackend {
                 'is_low': _low(b),
                 'is_sold_out': b.soldOut,
                 'last_moved_at': movements.where((m) => m.bottle == b).map((m) => m.at).fold<DateTime?>(null, (p, e) => p == null || e.isAfter(p) ? e : p)?.toIso8601String(),
+              },
+          ];
+        }
+      case 'stock_overview':
+        {
+          final from = params!['p_from'] == null ? null : DateTime.parse(params['p_from'] as String);
+          final to = params['p_to'] == null ? null : DateTime.parse(params['p_to'] as String);
+          if (from != null && to != null && !from.isBefore(to)) throw refuse('the period has to end after it starts');
+          final days = from == null || to == null ? 30 : to.difference(from).inDays;
+          final sorted = [...bottles]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          return [
+            for (final b in sorted)
+              {
+                'bottle_id': b.id,
+                'name': b.name,
+                'size': b.size,
+                'category': 'Spirits',
+                'tracked': b.stock != null,
+                'on_hand': b.stock,
+                'reserved': b.reserved,
+                'handed_over': b.handed,
+                'available': b.stock == null ? null : (b.stock! - b.reserved - b.handed).clamp(0, 1 << 30),
+                'sold': b.soldIn[days] ?? 0,
+                'low_threshold': b.threshold,
+                'is_low': _low(b),
+                'is_sold_out': b.soldOut,
               },
           ];
         }
