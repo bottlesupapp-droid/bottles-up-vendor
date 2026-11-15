@@ -75,8 +75,8 @@ Widget host(Widget child) => ProviderScope(
   child: MaterialApp(theme: ThemeData.dark(), home: Scaffold(body: child)),
 );
 
-Future<void> open(WidgetTester tester, Widget child) async {
-  tester.view.physicalSize = const Size(800, 3200);
+Future<void> open(WidgetTester tester, Widget child, {double height = 3200}) async {
+  tester.view.physicalSize = Size(800, height);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(host(child));
@@ -286,6 +286,8 @@ void main() {
       await tapKey(tester, 'overview-tab-Reserved');
       expect(rowIds(tester), ['b4', 'b1', 'b3']);
       expect(find.text('2 reserved, not handed over yet · 3 handed over'), findsOneWidget);
+      expect(find.byKey(const Key('overview-soldout-b3')), findsOneWidget, reason: 'Rum is sold out as well as low');
+      expect(find.byKey(const Key('overview-soldout-b1')), findsNothing);
       await tapKey(tester, 'overview-tab-Low stock');
       expect(rowIds(tester), ['b3']);
       expect(find.byKey(const Key('overview-low-b3')), findsOneWidget);
@@ -320,6 +322,19 @@ void main() {
 
       await tapKey(tester, 'overview-period-90 days');
       expect(find.text('9 sold in the last 90 days'), findsOneWidget);
+    });
+
+    testWidgets('pulling the page down reads the figures again', (tester) async {
+      // A short window: the page is pulled down by a quarter of its height to refresh, so a very tall one would need an enormous pull.
+      await open(tester, const StockOverviewScreen(venueId: 'v1'), height: 700);
+      final before = db.calledWith('stock_overview').length;
+      db.bottle('b1').reserved = 5;
+      await tester.drag(find.byKey(const Key('overview-list')), const Offset(0, 500));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(db.calledWith('stock_overview').length, greaterThan(before));
+      expect(textOf(tester, 'overview-summary'), '10 bottles are reserved for tables, 1 bottle is low.', reason: 'Vodka now has 5 reserved: 5 + 1 + 4');
     });
 
     testWidgets('a period in which nothing sold says so', (tester) async {
