@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:responsive_builder/responsive_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -733,24 +732,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
-    final theme = Theme.of(context);
-
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 24,
-        ),
-        SizedBox(width: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.5),
-        ResponsiveText.titleMedium(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) => BuEyebrow(title);
 
   Widget _buildTextField({
     required TextEditingController controller,

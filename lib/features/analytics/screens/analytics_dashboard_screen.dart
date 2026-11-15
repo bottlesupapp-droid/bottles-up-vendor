@@ -283,25 +283,17 @@ class _AnalyticsDashboardScreenState
   }
 
   Widget _buildQuickStats(BuildContext context, dynamic data) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: BuTokens.dark.panel,
-        borderRadius: BorderRadius.circular(BuRadius.card),
-        border: Border.all(color: BuTokens.dark.hairline),
-      ),
+    final text = Theme.of(context).textTheme;
+    return BuCard(
+      key: const Key('report-quick-stats'),
+      padding: const EdgeInsets.all(BuSpace.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Quick Statistics',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
+          const BuEyebrow('At a glance'),
+          const SizedBox(height: 4),
+          Text('Quick Statistics', style: text.titleLarge),
+          const SizedBox(height: BuSpace.s),
           _buildStatRow('Total Inquiries', data.totalInquiries.toString()),
           _buildStatRow('Accepted Inquiries', data.acceptedInquiries.toString()),
           _buildStatRow('Rejected Inquiries', data.rejectedInquiries.toString()),
@@ -312,19 +304,14 @@ class _AnalyticsDashboardScreenState
   }
 
   Widget _buildStatRow(String label, String value) {
+    final text = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: BuTokens.dark.muted)),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
+          Text(label, style: text.bodyMedium?.copyWith(color: BuTokens.dark.muted)),
+          Text(value, style: text.titleSmall),
         ],
       ),
     );

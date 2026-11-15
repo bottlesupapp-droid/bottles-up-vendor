@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../../auth/services/supabase_auth_service.dart';
 import '../../../core/ui/bu_kit.dart';
@@ -19,7 +18,6 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
   late TextEditingController _businessNameController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
@@ -32,7 +30,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void initState() {
     super.initState();
     final user = ref.read(currentVendorUserProvider);
-    _nameController = TextEditingController(text: user?.businessName ?? '');
     _businessNameController = TextEditingController(text: user?.businessName ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
@@ -41,7 +38,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _businessNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -50,12 +46,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _pickAndUploadPhoto() async {
     try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
+      final pickedFile = await _imagePicker.pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, imageQuality: 85);
       if (pickedFile == null) return;
 
       final currentUser = ref.read(currentVendorUserProvider);
@@ -67,11 +58,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final fileExt = pickedFile.path.split('.').last.toLowerCase();
       final fileName = 'vendors/${currentUser.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
 
-      await Supabase.instance.client.storage.from('media').uploadBinary(
-            fileName,
-            bytes,
-            fileOptions: FileOptions(contentType: 'image/$fileExt'),
-          );
+      await Supabase.instance.client.storage.from('media').uploadBinary(fileName, bytes, fileOptions: FileOptions(contentType: 'image/$fileExt'));
 
       final photoUrl = Supabase.instance.client.storage.from('media').getPublicUrl(fileName);
 
@@ -80,12 +67,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(couldNot('upload photo', e)),
-            backgroundColor: BuTokens.dark.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(couldNot('upload photo', e)), backgroundColor: BuTokens.dark.red));
       }
     } finally {
       if (mounted) {
@@ -106,12 +88,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
 
       // Update the vendor user with new data
-      final updatedUser = currentUser.copyWith(
-        businessName: _businessNameController.text.trim(),
-        phone: _phoneController.text.trim(),
-        logoUrl: _logoUrl,
-        updatedAt: DateTime.now(),
-      );
+      final updatedUser = currentUser.copyWith(businessName: _businessNameController.text.trim(), phone: _phoneController.text.trim(), logoUrl: _logoUrl, updatedAt: DateTime.now());
 
       // Call Supabase to update the profile
       await ref.read(supabaseAuthServiceProvider).updateVendorUser(updatedUser);
@@ -120,22 +97,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ref.invalidate(currentVendorUserProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: BuTokens.dark.green,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile updated successfully'), backgroundColor: BuTokens.dark.green));
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(couldNot('update profile', e)),
-            backgroundColor: BuTokens.dark.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(couldNot('update profile', e)), backgroundColor: BuTokens.dark.red));
       }
     } finally {
       if (mounted) {
@@ -146,69 +113,75 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final shown = _businessNameController.text.trim();
+
+    Widget field({
+      required Key key,
+      required TextEditingController controller,
+      required String label,
+      required IconData icon,
+      String? Function(String?)? validator,
+      TextInputType? keyboardType,
+      bool enabled = true,
+      Widget? suffix,
+    }) => TextFormField(
+      key: key,
+      controller: controller,
+      enabled: enabled,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon, size: 20), suffixIcon: suffix),
+    );
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Account', title: 'Edit Profile'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: const BuDetailAppBar(eyebrow: 'Account', title: 'Edit Profile'),
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
+        padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.xxl),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Profile Photo Section
+              // The photo: the design's rounded tile with the business's initials, and a camera button to change it.
               Center(
                 child: Stack(
                   children: [
                     Container(
-                      width: 120,
-                      height: 120,
+                      key: const Key('profile-photo'),
+                      width: 104,
+                      height: 104,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(60),
-                        border: Border.all(
-                          color: theme.colorScheme.primary,
-                          width: 3,
-                        ),
-                        image: _logoUrl != null
-                            ? DecorationImage(
-                                image: NetworkImage(_logoUrl!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
+                        borderRadius: BorderRadius.circular(BuRadius.hero),
+                        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF392219), Color(0xFF211816)]),
+                        border: Border.all(color: bu.orange.withValues(alpha: 0.5), width: 2),
+                        image: _logoUrl != null ? DecorationImage(image: NetworkImage(_logoUrl!), fit: BoxFit.cover) : null,
                       ),
-                      child: _isUploadingPhoto
-                          ? const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : _logoUrl == null
-                              ? Icon(
-                                  Ionicons.person,
-                                  size: 60,
-                                  color: theme.colorScheme.primary,
-                                )
+                      child:
+                          _isUploadingPhoto
+                              ? const CircularProgressIndicator(strokeWidth: 2)
+                              : _logoUrl == null
+                              ? Text(BuMiniVenue.initialsOf(shown.isEmpty ? '?' : shown), style: text.headlineMedium?.copyWith(color: bu.orangeSoft, fontWeight: FontWeight.w800))
                               : null,
                     ),
                     Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: GestureDetector(
-                        onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: theme.scaffoldBackgroundColor,
-                              width: 2,
-                            ),
-                          ),
-                          child: const Icon(
-                            Ionicons.camera,
-                            size: 18,
-                            color: Colors.white,
+                      right: -2,
+                      bottom: -2,
+                      child: Semantics(
+                        button: true,
+                        label: 'Change photo',
+                        child: InkWell(
+                          key: const Key('profile-photo-change'),
+                          customBorder: const CircleBorder(),
+                          onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(color: bu.orange, shape: BoxShape.circle, border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 3)),
+                            child: const Icon(Ionicons.camera, size: 18, color: Colors.white),
                           ),
                         ),
                       ),
@@ -216,143 +189,51 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ],
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Form Fields
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: AppTheme.darkCardDecoration,
+              const SizedBox(height: BuSpace.xl),
+              const BuEyebrow('Business'),
+              const SizedBox(height: BuSpace.s),
+              BuCard(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Personal Information',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Name Field
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Full Name',
-                        prefixIcon: const Icon(Ionicons.person_outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your name';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Email Field (Read-only)
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Ionicons.mail_outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        suffixIcon: Icon(
-                          Ionicons.lock_closed,
-                          size: 18,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      enabled: false,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Phone Field
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: InputDecoration(
-                        labelText: 'Phone Number',
-                        prefixIcon: const Icon(Ionicons.call_outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    Text(
-                      'Business Information',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Business Name Field
-                    TextFormField(
+                    field(
+                      key: const Key('profile-business-name'),
                       controller: _businessNameController,
-                      decoration: InputDecoration(
-                        labelText: 'Business Name',
-                        prefixIcon: const Icon(Ionicons.storefront_outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your business name';
-                        }
-                        return null;
-                      },
+                      label: 'Business Name',
+                      icon: Ionicons.storefront_outline,
+                      validator: (value) => value == null || value.isEmpty ? 'Please enter your business name' : null,
+                    ),
+                    const SizedBox(height: BuSpace.m),
+                    field(
+                      key: const Key('profile-phone'),
+                      controller: _phoneController,
+                      label: 'Phone Number',
+                      icon: Ionicons.call_outline,
+                      keyboardType: TextInputType.phone,
+                      validator: (value) => value == null || value.isEmpty ? 'Please enter your phone number' : null,
                     ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Save Button
-              SizedBox(
-                height: 56,
-                child: FilledButton(
-                  onPressed: _isLoading ? null : _saveProfile,
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+              const SizedBox(height: BuSpace.xl),
+              const BuEyebrow('Sign-in'),
+              const SizedBox(height: BuSpace.s),
+              BuCard(
+                child: field(
+                  key: const Key('profile-email'),
+                  controller: _emailController,
+                  label: 'Email',
+                  icon: Ionicons.mail_outline,
+                  enabled: false,
+                  suffix: Icon(Ionicons.lock_closed, size: 18, color: bu.muted),
                 ),
+              ),
+              const SizedBox(height: BuSpace.s),
+              Text('Your email is how you sign in, so it cannot be changed here.', style: text.bodySmall?.copyWith(color: bu.muted)),
+              const SizedBox(height: BuSpace.xl),
+              FilledButton(
+                key: const Key('profile-save'),
+                onPressed: _isLoading ? null : _saveProfile,
+                child: _isLoading ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Save Changes'),
               ),
             ],
           ),

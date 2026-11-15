@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/ui/bu_kit.dart';
 
 class TermsOfServiceScreen extends ConsumerWidget {
@@ -20,27 +21,14 @@ class TermsOfServiceScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Last Updated
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
+            BuCard(
+              key: const Key('terms-updated'),
+              padding: const EdgeInsets.symmetric(horizontal: BuSpace.l, vertical: BuSpace.m),
               child: Row(
                 children: [
-                  Icon(
-                    Ionicons.calendar_outline,
-                    color: theme.colorScheme.onPrimaryContainer,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Last Updated: January 2025',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  Icon(Ionicons.calendar_outline, color: context.bu.orange, size: 20),
+                  const SizedBox(width: BuSpace.s),
+                  Text('Last Updated: January 2025', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
                 ],
               ),
             ),

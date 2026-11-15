@@ -1,15 +1,36 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_tokens.dart';
-import '../../../core/utils/plain_error.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ionicons/ionicons.dart';
 
-import '../providers/event_details_provider.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_coming_soon.dart';
 import '../../../core/ui/bu_kit.dart';
+import '../../../core/utils/plain_error.dart';
+import '../../../shared/models/event.dart';
+import '../providers/event_details_provider.dart';
 
+/// The word and colour for an event's status.
+(String, BuTone) eventStatusLook(String status) {
+  switch (status.toLowerCase()) {
+    case 'active':
+    case 'upcoming':
+      return (status.toLowerCase() == 'upcoming' ? 'Upcoming' : 'Live', BuTone.good);
+    case 'draft':
+      return ('Draft', BuTone.attention);
+    case 'completed':
+      return ('Completed', BuTone.brand);
+    case 'cancelled':
+      return ('Cancelled', BuTone.bad);
+    default:
+      return (status.isEmpty ? 'Unknown' : '${status[0].toUpperCase()}${status.substring(1)}', BuTone.neutral);
+  }
+}
+
+/// An event, as the design draws a detail page: what it is (picture, name, status, when, price), four figures, then what you can do with it as grouped rows (scanner, guests,
+/// releases, tiers, team, tables, bookings). Share, Duplicate and Delete are not built: they say "Coming soon" (Delete used to ask "are you sure?" and then say Coming Soon).
 class EventDetailsScreen extends ConsumerWidget {
   final String eventId;
 
@@ -17,542 +38,31 @@ class EventDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final eventAsync = ref.watch(eventDetailsProvider(eventId));
     final statsAsync = ref.watch(eventStatsProvider(eventId));
+    final bu = context.bu;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Event Details', actions: [
-          IconButton(
-            icon: const Icon(Ionicons.create_outline),
-            onPressed: () {
-              // TODO: Navigate to edit event screen
-              context.push('/events/$eventId/edit');
-            },
-            tooltip: 'Edit Event',
-          ),
-        ]),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: BuDetailAppBar(
+        eyebrow: 'Event',
+        title: 'Event Details',
+        actions: [IconButton(key: const Key('event-edit'), icon: const Icon(Ionicons.create_outline), onPressed: () => context.push('/events/$eventId/edit'), tooltip: 'Edit Event')],
+      ),
       body: eventAsync.when(
-        data: (event) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Event Info Card with real data
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.dividerColor.withOpacity(0.1),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Event Image if available
-                    if (event.images != null && event.images!.isNotEmpty) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: event.images!.first,
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            height: 200,
-                            color: BuTokens.dark.muted,
-                            child: const Center(child: CircularProgressIndicator()),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            height: 200,
-                            color: BuTokens.dark.muted,
-                            child: const Icon(Ionicons.image_outline, size: 48),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    Text(
-                      event.name,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (event.description != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        event.description!,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(
-                          Ionicons.calendar_outline,
-                          size: 16,
-                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${DateFormat('MMM dd, yyyy').format(event.eventDate)} • ${event.startTime} - ${event.endTime}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Ionicons.cash_outline,
-                          size: 16,
-                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '\$${event.ticketPrice.toStringAsFixed(2)}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Ionicons.people_outline,
-                          size: 16,
-                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Capacity: ${event.currentBookings}/${event.maxCapacity}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (event.dressCode != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Ionicons.shirt_outline,
-                            size: 16,
-                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Dress Code: ${event.dressCode}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (event.minAge != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Ionicons.person_outline,
-                            size: 16,
-                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Min Age: ${event.minAge}+',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(event.status).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        event.status.toUpperCase(),
-                        style: TextStyle(
-                          color: _getStatusColor(event.status),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-            // Quick Actions Section
-            Text(
-              'Quick Actions',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // QR Scanner Button
-            _buildActionCard(
-              context,
-              icon: Ionicons.qr_code_outline,
-              title: 'QR Scanner',
-              subtitle: 'Scan tickets & check-in guests',
-              color: BuTokens.dark.orange,
-              onTap: () {
-                context.push('/events/$eventId/scanner');
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // Guest List Button
-            _buildActionCard(
-              context,
-              icon: Ionicons.people_outline,
-              title: 'Guest List',
-              subtitle: 'Manage guests & bulk upload CSV',
-              color: BuTokens.dark.orangeSoft,
-              onTap: () {
-                context.push('/events/$eventId/guests');
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // Scheduled Releases Button
-            _buildActionCard(
-              context,
-              icon: Ionicons.time_outline,
-              title: 'Scheduled Releases',
-              subtitle: 'Set up timed ticket releases',
-              color: BuTokens.dark.soft,
-              onTap: () {
-                context.push('/events/$eventId/releases');
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // Ticket Tiers Button (NEW)
-            _buildActionCard(
-              context,
-              icon: Ionicons.pricetags_outline,
-              title: 'Ticket Tiers',
-              subtitle: 'Manage ticket pricing & capacity',
-              color: BuTokens.dark.soft,
-              onTap: () {
-                final name = Uri.encodeComponent(event.name);
-                context.push('/events/$eventId/tiers?name=$name');
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // DJ/Lineup Management Button
-            _buildActionCard(
-              context,
-              icon: Ionicons.musical_notes_outline,
-              title: 'Team & Lineup',
-              subtitle: 'Manage DJs, security & staff',
-              color: BuTokens.dark.soft,
-              onTap: () {
-                final name = Uri.encodeComponent(event.name);
-                context.push('/events/$eventId/lineup?name=$name');
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // Table Management Button
-            _buildActionCard(
-              context,
-              icon: Ionicons.grid_outline,
-              title: 'Table Management',
-              subtitle: 'Add & manage VIP tables for booking',
-              color: BuTokens.dark.amber,
-              onTap: () {
-                context.push('/events/$eventId/tables');
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            // Bookings Button
-            _buildActionCard(
-              context,
-              icon: Ionicons.ticket_outline,
-              title: 'View Bookings',
-              subtitle: 'See all event bookings',
-              color: BuTokens.dark.green,
-              onTap: () {
-                context.go('/bookings');
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // Event Stats Section
-            Text(
-              'Event Statistics',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Stats Grid - with real data
-            statsAsync.when(
-              data: (stats) => Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.ticket,
-                          label: 'Tickets Sold',
-                          value: '${stats['tickets_sold'] ?? event.currentBookings}',
-                          color: BuTokens.dark.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.people,
-                          label: 'Capacity',
-                          value: '${event.maxCapacity}',
-                          color: BuTokens.dark.orangeSoft,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.cash,
-                          label: 'Revenue',
-                          value: '\$${(stats['total_revenue'] ?? 0).toStringAsFixed(0)}',
-                          color: BuTokens.dark.green,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.ticket_outline,
-                          label: 'Available',
-                          value: '${stats['available_tickets'] ?? event.maxCapacity - event.currentBookings}',
-                          color: BuTokens.dark.soft,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              loading: () => Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.ticket,
-                          label: 'Tickets Sold',
-                          value: '${event.currentBookings}',
-                          color: BuTokens.dark.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.people,
-                          label: 'Capacity',
-                          value: '${event.maxCapacity}',
-                          color: BuTokens.dark.orangeSoft,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.cash,
-                          label: 'Revenue',
-                          value: '...',
-                          color: BuTokens.dark.green,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.ticket_outline,
-                          label: 'Available',
-                          value: '${event.maxCapacity - event.currentBookings}',
-                          color: BuTokens.dark.soft,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              error: (error, stack) => Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.ticket,
-                          label: 'Tickets Sold',
-                          value: '${event.currentBookings}',
-                          color: BuTokens.dark.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.people,
-                          label: 'Capacity',
-                          value: '${event.maxCapacity}',
-                          color: BuTokens.dark.orangeSoft,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.cash,
-                          label: 'Revenue',
-                          value: 'N/A',
-                          color: BuTokens.dark.green,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          icon: Ionicons.ticket_outline,
-                          label: 'Available',
-                          value: '${event.maxCapacity - event.currentBookings}',
-                          color: BuTokens.dark.soft,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // More Actions
-            Text(
-              'More Options',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            _buildSimpleActionTile(
-              context,
-              icon: Ionicons.share_social_outline,
-              title: 'Share Event',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Share Event - Coming Soon')),
-                );
-              },
-            ),
-
-            _buildSimpleActionTile(
-              context,
-              icon: Ionicons.copy_outline,
-              title: 'Duplicate Event',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Duplicate Event - Coming Soon')),
-                );
-              },
-            ),
-
-            _buildSimpleActionTile(
-              context,
-              icon: Ionicons.trash_outline,
-              title: 'Delete Event',
-              titleColor: BuTokens.dark.red,
-              onTap: () {
-                _showDeleteConfirmation(context);
-              },
-            ),
-
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-        loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(32.0),
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        data: (event) => _Body(event: event, eventId: eventId, stats: statsAsync),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.red),
-                const SizedBox(height: 16),
-                Text(
-                  'Error loading event',
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  loadFailedMessage('this event'),
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => ref.invalidate(eventDetailsProvider(eventId)),
-                  child: const Text('Retry'),
-                ),
+                Icon(Ionicons.alert_circle_outline, size: 56, color: bu.red),
+                const SizedBox(height: BuSpace.l),
+                Text(loadFailedMessage('this event'), textAlign: TextAlign.center),
+                const SizedBox(height: BuSpace.l),
+                FilledButton(onPressed: () => ref.invalidate(eventDetailsProvider(eventId)), child: const Text('Retry')),
               ],
             ),
           ),
@@ -560,216 +70,133 @@ class EventDetailsScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'active':
-      case 'upcoming':
-        return BuTokens.dark.green;
-      case 'draft':
-        return BuTokens.dark.amber;
-      case 'completed':
-        return BuTokens.dark.orangeSoft;
-      case 'cancelled':
-        return BuTokens.dark.red;
-      default:
-        return BuTokens.dark.muted;
-    }
-  }
+class _Body extends StatelessWidget {
+  const _Body({required this.event, required this.eventId, required this.stats});
 
-  Widget _buildActionCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
+  final Event event;
+  final String eventId;
+  final AsyncValue<Map<String, dynamic>> stats;
 
-    return Material(
-      color: theme.cardColor,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: theme.dividerColor.withOpacity(0.1),
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final (statusWord, statusTone) = eventStatusLook(event.status);
+    final s = stats.valueOrNull;
+    final sold = '${s?['tickets_sold'] ?? event.currentBookings}';
+    final available = '${s?['available_tickets'] ?? event.maxCapacity - event.currentBookings}';
+    final revenue = stats.when(data: (m) => '\$${((m['total_revenue'] ?? 0) as num).toStringAsFixed(0)}', loading: () => '…', error: (_, __) => 'N/A');
+    final name = Uri.encodeComponent(event.name);
+
+    Widget fact(IconData icon, String value) => Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(children: [Icon(icon, size: 16, color: bu.muted), const SizedBox(width: 8), Expanded(child: Text(value, style: text.bodyMedium?.copyWith(color: bu.soft)))]),
+        );
+    BuListRow go(String key, IconData icon, String title, String subtitle, VoidCallback onTap) => BuListRow(key: Key(key), icon: icon, title: title, subtitle: subtitle, onTap: onTap);
+    BuListRow soon(String key, IconData icon, String title, String sheet) =>
+        BuListRow(key: Key(key), icon: icon, title: title, trailing: const BuComingSoonPill(), showChevron: false, onTap: () => showComingSoon(context, title: title, text: sheet));
+
+    return ListView(
+      key: const Key('event-details-list'),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.xxl),
+      children: [
+        BuCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+              if (event.images != null && event.images!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(BuRadius.card)),
+                  child: CachedNetworkImage(
+                    imageUrl: event.images!.first,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(height: 180, color: bu.panel2, child: const Center(child: CircularProgressIndicator())),
+                    errorWidget: (context, url, error) => Container(height: 180, color: bu.panel2, child: Icon(Ionicons.image_outline, size: 40, color: bu.muted)),
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
+              Padding(
+                padding: const EdgeInsets.all(BuSpace.l),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: Text(event.name, key: const Key('event-name'), style: text.headlineSmall)),
+                        const SizedBox(width: BuSpace.s),
+                        KeyedSubtree(key: const Key('event-status'), child: BuStatusPill(statusWord, tone: statusTone)),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-                      ),
-                    ),
+                    if ((event.description ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: BuSpace.s),
+                      Text(event.description!, style: text.bodyMedium?.copyWith(color: bu.soft)),
+                    ],
+                    const SizedBox(height: BuSpace.s),
+                    fact(Ionicons.calendar_outline, '${DateFormat('EEE d MMM yyyy').format(event.eventDate)} · ${event.startTime} to ${event.endTime}'),
+                    fact(Ionicons.cash_outline, 'Tickets from \$${event.ticketPrice.toStringAsFixed(2)}'),
+                    if (event.dressCode != null) fact(Ionicons.shirt_outline, 'Dress code: ${event.dressCode}'),
+                    if (event.minAge != null) fact(Ionicons.person_outline, 'Age: ${event.minAge}+'),
                   ],
                 ),
               ),
-              Icon(
-                Ionicons.chevron_forward,
-                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3),
-              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.dividerColor.withOpacity(0.1),
+        const SizedBox(height: BuSpace.l),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: BuStatTile(key: const Key('event-stat-sold'), label: 'Tickets sold', value: sold, note: 'of ${event.maxCapacity}')),
+            const SizedBox(width: BuSpace.m),
+            Expanded(child: BuStatTile(key: const Key('event-stat-revenue'), label: 'Revenue', value: revenue, note: 'Gross')),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSimpleActionTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    Color? titleColor,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: titleColor ?? theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                size: 22,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: titleColor,
-                  ),
-                ),
-              ),
-              Icon(
-                Ionicons.chevron_forward,
-                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3),
-                size: 20,
-              ),
-            ],
-          ),
+        const SizedBox(height: BuSpace.m),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: BuStatTile(key: const Key('event-stat-capacity'), label: 'Capacity', value: '${event.maxCapacity}', note: 'Total')),
+            const SizedBox(width: BuSpace.m),
+            Expanded(child: BuStatTile(key: const Key('event-stat-available'), label: 'Available', value: available, note: 'Still to sell')),
+          ],
         ),
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Event'),
-        content: const Text(
-          'Are you sure you want to delete this event? This action cannot be undone.',
+        const SizedBox(height: BuSpace.xl),
+        const BuEyebrow('On the night'),
+        const SizedBox(height: BuSpace.s),
+        BuListCard(
+          children: [
+            go('event-scanner', Ionicons.qr_code_outline, 'QR Scanner', 'Scan tickets and check in guests', () => context.push('/events/$eventId/scanner')),
+            go('event-guests', Ionicons.people_outline, 'Guest List', 'Manage guests and upload a CSV', () => context.push('/events/$eventId/guests')),
+            go('event-tables', Ionicons.grid_outline, 'Table Management', 'Add and manage VIP tables for booking', () => context.push('/events/$eventId/tables')),
+            go('event-bookings', Ionicons.ticket_outline, 'View Bookings', 'See all event bookings', () => context.push('/bookings')),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Delete Event - Coming Soon')),
-              );
-            },
-            child: Text(
-              'Delete',
-              style: TextStyle(color: BuTokens.dark.red),
-            ),
-          ),
-        ],
-      ),
+        const SizedBox(height: BuSpace.xl),
+        const BuEyebrow('Before the night'),
+        const SizedBox(height: BuSpace.s),
+        BuListCard(
+          children: [
+            go('event-tiers', Ionicons.pricetags_outline, 'Ticket Tiers', 'Set ticket prices and capacity', () => context.push('/events/$eventId/tiers?name=$name')),
+            go('event-releases', Ionicons.time_outline, 'Scheduled Releases', 'Set up timed ticket releases', () => context.push('/events/$eventId/releases')),
+            go('event-lineup', Ionicons.musical_notes_outline, 'Team & Lineup', 'Manage DJs, security and staff', () => context.push('/events/$eventId/lineup?name=$name')),
+          ],
+        ),
+        const SizedBox(height: BuSpace.xl),
+        const BuEyebrow('More'),
+        const SizedBox(height: BuSpace.s),
+        BuListCard(
+          children: [
+            soon('event-share', Ionicons.share_social_outline, 'Share Event', 'Send a link to this event to your guests and your followers.'),
+            soon('event-duplicate', Ionicons.copy_outline, 'Duplicate Event', 'Start a new event from this one, with the same tickets and details.'),
+            soon('event-delete', Ionicons.trash_outline, 'Delete Event', 'Remove this event. Until then, Contact Support and the team will do it for you.'),
+          ],
+        ),
+      ],
     );
   }
-} 
+}

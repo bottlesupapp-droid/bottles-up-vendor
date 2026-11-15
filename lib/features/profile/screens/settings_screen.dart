@@ -72,7 +72,15 @@ class SettingsScreen extends StatelessWidget {
             row('settings-edit-profile', Ionicons.person_outline, 'Edit profile', 'Your name, photo and phone', '/profile/edit'),
             row('settings-business', Ionicons.business_outline, 'Business details', 'Business name, address and contact', '/profile/business'),
             row('settings-security', Ionicons.lock_closed_outline, 'Security', 'Password and sign-in', '/profile/security'),
-            row('settings-notifications', Ionicons.notifications_outline, 'Notifications', 'Choose what you are told about', '/profile/notifications'),
+            BuListRow(
+              key: const Key('settings-notifications'),
+              icon: Ionicons.notifications_outline,
+              title: 'Notifications',
+              subtitle: 'Choose what you are told about',
+              trailing: const BuComingSoonPill(),
+              showChevron: false,
+              onTap: () => context.push('/profile/notifications'),
+            ),
             BuListRow(
               key: const Key('settings-billing'),
               icon: Ionicons.card_outline,

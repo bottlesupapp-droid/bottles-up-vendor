@@ -701,11 +701,7 @@ class _SimpleCreateEventScreenState
         ),
       );
 
-  Widget _sectionTitle(ThemeData theme, String title) => Text(
-        title,
-        style: theme.textTheme.titleMedium
-            ?.copyWith(fontWeight: FontWeight.bold),
-      );
+  Widget _sectionTitle(ThemeData theme, String title) => BuEyebrow(title);
 
   Widget _field(
     TextEditingController ctrl,

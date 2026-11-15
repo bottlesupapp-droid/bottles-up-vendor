@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:responsive_builder/responsive_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -45,7 +44,8 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    // After the first build: when the categories cannot be asked for at once, the message needs a place to be shown, and initState has none yet.
+    Future.microtask(_loadCategories);
   }
 
   @override
@@ -156,7 +156,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Club created successfully!')),
+          const SnackBar(content: Text('Venue created successfully!')),
         );
         context.pop();
       }
@@ -177,7 +177,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Venues', title: 'Create Club'),
+      appBar: BuDetailAppBar(eyebrow: 'Venues', title: 'Create Venue'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ResponsiveWrapper(
@@ -193,40 +193,10 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
-                      ResponsiveContainer(
-                        decoration: AppTheme.darkContainerDecoration,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Ionicons.add_circle_outline,
-                                  color: theme.colorScheme.primary,
-                                  size: utils.ResponsiveUtils.getResponsiveIconSize(context),
-                                ),
-                                SizedBox(width: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.75),
-                                Expanded(
-                                  child: ResponsiveText.headlineSmall(
-                                    'Add New Club',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.75),
-                            ResponsiveText.bodyLarge(
-                              'Fill in the details below to create a new club',
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // The page's own header says what this is; one line says what to do.
+                      Text('Fill in the details below to add a new venue.', style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
 
-                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 2),
+                      SizedBox(height: utils.ResponsiveUtils.getResponsiveSpacing(context) * 1.5),
 
                       // Basic Information Section
                       _buildSectionHeader(context, 'Basic Information', Ionicons.information_circle_outline),
@@ -238,11 +208,11 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
                           children: [
                             _buildTextField(
                               controller: _nameController,
-                              label: 'Club Name *',
-                              hint: 'Enter club name',
+                              label: 'Venue Name *',
+                              hint: 'Enter venue name',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Club name is required';
+                                  return 'Venue name is required';
                                 }
                                 return null;
                               },
@@ -251,7 +221,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
                             _buildTextField(
                               controller: _locationController,
                               label: 'Location *',
-                              hint: 'Enter club location',
+                              hint: 'Enter venue location',
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Location is required';
@@ -445,7 +415,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
                                   width: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const Text('Create Club'),
+                              : const Text('Create Venue'),
                         ),
                       ),
 
@@ -458,24 +428,7 @@ class _CreateClubScreenState extends ConsumerState<CreateClubScreen> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
-    final theme = Theme.of(context);
-    
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 24,
-        ),
-        SizedBox(width: utils.ResponsiveUtils.getResponsiveSpacing(context) * 0.5),
-        ResponsiveText.titleMedium(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) => BuEyebrow(title);
 
   Widget _buildTextField({
     required TextEditingController controller,
