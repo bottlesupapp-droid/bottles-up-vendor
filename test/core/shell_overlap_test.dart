@@ -1,5 +1,6 @@
 
 import 'package:bottles_up_vendor/core/ui/glass_kit.dart';
+import 'package:bottles_up_vendor/features/auth/providers/supabase_auth_provider.dart';
 import 'package:bottles_up_vendor/features/workspace/logic/workspace_routing.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
@@ -44,13 +45,18 @@ void _phone(WidgetTester tester) {
 
 Future<void> _mainShell(WidgetTester tester, Widget page) async {
   _phone(tester);
-  final router = GoRouter(initialLocation: '/clubs', routes: [
+  // (A page that has a button of its own is not one of the five tabs; the tabs carry the round Messages button instead.)
+  final router = GoRouter(initialLocation: '/clubs/c1', routes: [
     ShellRoute(
       builder: (context, state, child) => MainShell(child: child),
-      routes: [GoRoute(path: '/clubs', builder: (_, __) => page)],
+      routes: [GoRoute(path: '/clubs/c1', builder: (_, __) => page)],
     ),
   ]);
-  await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+  // (The classic frame now has a top bar that says who you are, which reads the signed-in account: here there is none.)
+  await tester.pumpWidget(ProviderScope(
+    overrides: [currentVendorUserProvider.overrideWithValue(null)],
+    child: MaterialApp.router(routerConfig: router),
+  ));
   await tester.pumpAndSettle();
 }
 
@@ -78,7 +84,7 @@ Future<void> _scrollToEnd(WidgetTester tester) async {
 
 void main() {
   final frames = <String, Future<void> Function(WidgetTester, Widget)>{
-    'the classic frame (Dashboard, Events, Analytics, Venues, More)': _mainShell,
+    'the classic frame (Overview, Venues, Tonight, Reports, More)': _mainShell,
     'the workspace frame (every role)': _workspaceShell,
   };
 

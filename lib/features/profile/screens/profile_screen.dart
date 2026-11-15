@@ -5,12 +5,18 @@ import '../../../core/config/app_info.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/user_model.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
 import '../../auth/services/supabase_auth_service.dart';
 import '../providers/profile_stats_provider.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/ui/bu_coming_soon.dart';
+import '../../../core/ui/bu_kit.dart';
+import '../../../shared/widgets/classic_top_bar.dart' show classicRoleLabel;
+
+/// More (the last tab), as in the design: who you are, then the places the other tabs do not cover, in groups. What is not built yet says "Coming soon" and
+/// opens a sheet that says what it will do. Signing out and deleting the account are at the bottom, as before.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -21,6 +27,7 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(supabaseAuthProvider);
     final profileStatsAsync = ref.watch(profileStatsProvider);
     final theme = Theme.of(context);
+    final bu = context.bu;
 
     // Create fallback vendor user from Supabase Auth if database data is not available
     VendorUser? displayUser = vendorUser;
@@ -39,560 +46,134 @@ class ProfileScreen extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Profile',
-          style: TextStyle(fontWeight: FontWeight.w600),
+    if (displayUser == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text('Loading your profile...', style: theme.textTheme.bodyMedium?.copyWith(color: bu.muted)),
+          ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
-      body: displayUser == null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading profile...',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  if (authState.error != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Ionicons.warning_outline,
-                            color: theme.colorScheme.error,
-                            size: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Profile Load Error',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: theme.colorScheme.error,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            authState.error!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onErrorContainer,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
+      );
+    }
+
+    final business = (displayUser.businessName ?? '').trim();
+    final shownName = business.isNotEmpty ? business : displayUser.email;
+    final stats = profileStatsAsync.valueOrNull;
+    final rating = stats != null && stats.averageRating > 0 ? ' · ${stats.averageRating.toStringAsFixed(1)} rating' : '';
+
+    BuListRow soon(String key, IconData icon, String title, String subtitle, String sheetText) => BuListRow(
+          key: Key(key),
+          icon: icon,
+          title: title,
+          subtitle: subtitle,
+          trailing: const BuComingSoonPill(),
+          showChevron: false,
+          onTap: () => showComingSoon(context, title: title, text: sheetText),
+        );
+
+    return ListView(
+      key: const Key('more-list'),
+      padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, 100),
+      children: [
+        BuPageHeader(eyebrow: business.isNotEmpty ? business : 'Your account', title: 'More'),
+        const SizedBox(height: BuSpace.xl),
+        if (vendorUser == null) ...[
+          BuCard(accent: bu.orange, child: Row(children: [
+            Icon(Ionicons.information_circle_outline, color: bu.orangeSoft, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Profile data is being synchronized', style: theme.textTheme.bodyMedium)),
+          ])),
+          const SizedBox(height: BuSpace.m),
+        ],
+        BuCard(
+          key: const Key('more-profile-card'),
+          padding: const EdgeInsets.all(BuSpace.m + 2),
+          child: Row(
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [bu.orange, bu.orangeSoft.withValues(alpha: 0.7)])),
+                child: Text(BuMiniVenue.initialsOf(shownName), style: theme.textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+              ),
+              const SizedBox(width: BuSpace.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(shownName, style: theme.textTheme.titleSmall?.copyWith(fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 3),
+                    Text('${classicRoleLabel(displayUser.role)}$rating', style: theme.textTheme.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
-                ],
+                ),
               ),
-            )
-          : SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Profile status indicator if using fallback data
-                  if (vendorUser == null) 
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Ionicons.information_circle_outline,
-                            color: theme.colorScheme.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Profile data is being synchronized',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  
-                  // Profile Header
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: AppTheme.darkContainerDecoration,
-                    child: Column(
-                      children: [
-                        // Avatar with edit option
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            border: Border.all(
-                              color: theme.colorScheme.primary,
-                              width: 3,
-                            ),
-                          ),
-                          child: displayUser.logoUrl != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(47),
-                                  child: Image.network(
-                                    displayUser.logoUrl!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Icon(
-                                  Ionicons.person,
-                                  size: 50,
-                                  color: theme.colorScheme.primary,
-                                ),
-                        ),
-                        const SizedBox(height: 20),
-                        
-                        // Business Name and Email
-                        Text(
-                          displayUser.businessName ?? displayUser.email.split('@')[0],
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        
-                        Text(
-                          displayUser.email,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        
-                        if (displayUser.businessName != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Ionicons.storefront,
-                                  size: 16,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  displayUser.businessName!,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        
-                        const SizedBox(height: 20),
-                        
-                        // Quick Stats
-                        profileStatsAsync.when(
-                          data: (stats) => Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildQuickStat(
-                                context,
-                                icon: Ionicons.calendar,
-                                label: 'Events',
-                                value: stats.totalEvents.toString(),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: theme.colorScheme.outline.withOpacity(0.3),
-                              ),
-                              _buildQuickStat(
-                                context,
-                                icon: Ionicons.cube,
-                                label: 'Items',
-                                value: stats.totalInventoryItems.toString(),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: theme.colorScheme.outline.withOpacity(0.3),
-                              ),
-                              _buildQuickStat(
-                                context,
-                                icon: Ionicons.star,
-                                label: 'Rating',
-                                value: stats.averageRating > 0
-                                    ? stats.averageRating.toStringAsFixed(1)
-                                    : 'N/A',
-                              ),
-                            ],
-                          ),
-                          loading: () => const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(20),
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                          error: (_, __) => Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildQuickStat(
-                                context,
-                                icon: Ionicons.calendar,
-                                label: 'Events',
-                                value: '0',
-                              ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: theme.colorScheme.outline.withOpacity(0.3),
-                              ),
-                              _buildQuickStat(
-                                context,
-                                icon: Ionicons.cube,
-                                label: 'Items',
-                                value: '0',
-                              ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: theme.colorScheme.outline.withOpacity(0.3),
-                              ),
-                              _buildQuickStat(
-                                context,
-                                icon: Ionicons.star,
-                                label: 'Rating',
-                                value: 'N/A',
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-
-                  // Account Management
-                  _buildSection(
-                    context,
-                    'Account',
-                    [
-                      _buildActionTile(
-                        context,
-                        icon: Ionicons.create_outline,
-                        title: 'Edit Profile',
-                        subtitle: 'Update your information',
-                        onTap: () {
-                          context.push('/profile/edit');
-                        },
-                      ),
-                      _buildActionTile(
-                        context,
-                        icon: Ionicons.calendar_outline,
-                        title: 'My Bookings',
-                        subtitle: 'View your booking history',
-                        onTap: () {
-                          context.push('/bookings');
-                        },
-                      ),
-                      _buildActionTile(
-                        context,
-                        icon: Ionicons.settings_outline,
-                        title: 'Settings',
-                        subtitle: 'App preferences & account settings',
-                        onTap: () => context.push('/profile/settings'),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Support & Legal
-                  _buildSection(
-                    context,
-                    'Support & Legal',
-                    [
-                      _buildActionTile(
-                        context,
-                        icon: Ionicons.document_text_outline,
-                        title: 'Terms of Service',
-                        subtitle: 'Legal terms & conditions',
-                        onTap: () {
-                          context.push('/legal/terms');
-                        },
-                      ),
-                      _buildActionTile(
-                        context,
-                        icon: Ionicons.shield_outline,
-                        title: 'Privacy Policy',
-                        subtitle: 'How we protect your data',
-                        onTap: () {
-                          context.push('/legal/privacy');
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // About
-                  Container(
-                    decoration: AppTheme.darkCardDecoration,
-                    child: ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Ionicons.information_circle_outline,
-                          color: theme.colorScheme.primary,
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        'About BottlesUp Business',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Version $appVersion • App info',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      trailing: Icon(
-                        Ionicons.chevron_forward,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        size: 18,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      onTap: () {
-                        context.push('/about');
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Delete Account Button
-                  SizedBox(
-                    height: 56,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showDeleteAccountDialog(context, ref),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: theme.colorScheme.error),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: Icon(
-                        Ionicons.trash_outline,
-                        color: theme.colorScheme.error,
-                      ),
-                      label: Text(
-                        'Delete Account',
-                        style: TextStyle(
-                          color: theme.colorScheme.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Sign Out Button
-                  SizedBox(
-                    height: 56,
-                    child: OutlinedButton.icon(
-                      onPressed: authState.isLoading
-                          ? null
-                          : () => _showSignOutDialog(context, ref),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: theme.colorScheme.error),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: authState.isLoading
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  theme.colorScheme.error,
-                                ),
-                              ),
-                            )
-                          : Icon(
-                              Ionicons.log_out_outline,
-                              color: theme.colorScheme.error,
-                            ),
-                      label: Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          color: theme.colorScheme.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildQuickStat(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    final theme = Theme.of(context);
-    
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 24,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
+              TextButton(key: const Key('more-edit-profile'), onPressed: () => context.push('/profile/edit'), child: const Text('Edit')),
+            ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        const SizedBox(height: BuSpace.xl),
+        const BuEyebrow('Operations'),
+        const SizedBox(height: BuSpace.m),
+        BuListCard(children: [
+          soon('more-team', Ionicons.people_outline, 'Team', 'Staff, roles, and invitations', 'Invite your staff, give each a role, and see who is on shift.'),
+          BuListRow(
+            key: const Key('more-inventory'),
+            icon: Ionicons.cube_outline,
+            title: 'Inventory',
+            subtitle: 'Stock, deliveries, and low-stock alerts',
+            trailing: stats == null ? null : BuCountBadge(stats.totalInventoryItems, tone: BuTone.neutral),
+            onTap: () => context.go('/inventory'),
           ),
+          soon('more-vip', Ionicons.star_outline, 'VIP clients', 'Contacts, perks, hosts and private notes', 'Keep your regulars, their perks and your private notes in one list.'),
+        ]),
+        const SizedBox(height: BuSpace.xl),
+        const BuEyebrow('Business'),
+        const SizedBox(height: BuSpace.m),
+        BuListCard(children: [
+          soon('more-payments', Ionicons.card_outline, 'Payments', 'Payouts, balances, and transactions', 'See your payouts, your balance and every transaction.'),
+          BuListRow(
+            key: const Key('more-events'),
+            icon: Ionicons.calendar_outline,
+            title: 'Events',
+            subtitle: 'Create one-time or weekly events',
+            trailing: stats == null ? null : BuCountBadge(stats.totalEvents, tone: BuTone.brand),
+            onTap: () => context.go('/events'),
+          ),
+          BuListRow(key: const Key('more-bookings'), icon: Ionicons.bookmarks_outline, title: 'Bookings', subtitle: 'Your booking history', onTap: () => context.push('/bookings')),
+          soon('more-agreements', Ionicons.ticket_outline, 'Agreements', 'Organizer terms and approvals', 'Review and approve the terms organizers send you.'),
+        ]),
+        const SizedBox(height: BuSpace.xl),
+        const BuEyebrow('Account'),
+        const SizedBox(height: BuSpace.m),
+        BuListCard(children: [
+          BuListRow(key: const Key('more-settings'), icon: Ionicons.settings_outline, title: 'Settings', subtitle: 'App preferences and account settings', onTap: () => context.push('/profile/settings')),
+          BuListRow(key: const Key('more-terms'), icon: Ionicons.document_text_outline, title: 'Terms of Service', subtitle: 'Legal terms and conditions', onTap: () => context.push('/legal/terms')),
+          BuListRow(key: const Key('more-privacy'), icon: Ionicons.shield_outline, title: 'Privacy Policy', subtitle: 'How we protect your data', onTap: () => context.push('/legal/privacy')),
+          BuListRow(key: const Key('more-about'), icon: Ionicons.information_circle_outline, title: 'About BottlesUp Business', subtitle: 'Version $appVersion · App info', onTap: () => context.push('/about')),
+        ]),
+        const SizedBox(height: BuSpace.xl),
+        OutlinedButton.icon(
+          key: const Key('more-delete-account'),
+          onPressed: () => _showDeleteAccountDialog(context, ref),
+          style: OutlinedButton.styleFrom(foregroundColor: bu.red, side: BorderSide(color: bu.red.withValues(alpha: 0.6))),
+          icon: const Icon(Ionicons.trash_outline, size: 18),
+          label: const Text('Delete Account'),
         ),
+        const SizedBox(height: BuSpace.m),
+        OutlinedButton.icon(
+          key: const Key('more-sign-out'),
+          onPressed: authState.isLoading ? null : () => _showSignOutDialog(context, ref),
+          style: OutlinedButton.styleFrom(foregroundColor: bu.red, side: BorderSide(color: bu.red.withValues(alpha: 0.6))),
+          icon: authState.isLoading ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(bu.red))) : const Icon(Ionicons.log_out_outline, size: 18),
+          label: const Text('Sign Out'),
+        ),
+        const SizedBox(height: BuSpace.xl),
+        Center(child: Text('BottlesUp Business · $appVersionLabel', style: theme.textTheme.bodySmall?.copyWith(color: bu.muted))),
       ],
-    );
-  }
-
-  Widget _buildSection(
-    BuildContext context,
-    String title,
-    List<Widget> children,
-  ) {
-    final theme = Theme.of(context);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: AppTheme.darkCardDecoration,
-          child: Column(children: children),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    
-    return ListTile(
-      onTap: onTap,
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: Icon(
-        Ionicons.chevron_forward,
-        color: theme.colorScheme.onSurfaceVariant,
-        size: 18,
-      ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 8,
-      ),
     );
   }
 

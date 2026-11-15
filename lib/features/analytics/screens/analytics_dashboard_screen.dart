@@ -6,7 +6,7 @@ import 'package:ionicons/ionicons.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/bu_kit.dart';
 import '../../../shared/widgets/responsive_wrapper.dart';
 import '../../../core/utils/responsive_utils.dart' as utils;
 import '../providers/analytics_provider.dart';
@@ -41,33 +41,53 @@ class _AnalyticsDashboardScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final bu = context.bu;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Analytics',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Revenue'),
-            Tab(text: 'Events'),
-            Tab(text: 'Inquiries'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildOverviewTabWithState(context),
-          _buildRevenueTab(context),
-          _buildEventsTab(context),
-          _buildInquiriesTabWithState(context),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.m),
+            child: BuPageHeader(eyebrow: 'Performance', title: 'Reports'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+            child: Container(
+              key: const Key('reports-tabs'),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(color: bu.panel, borderRadius: BorderRadius.circular(BuRadius.control + 2)),
+              child: TabBar(
+                controller: _tabController,
+                dividerColor: Colors.transparent,
+                labelPadding: EdgeInsets.zero,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(color: bu.raised, borderRadius: BorderRadius.circular(BuRadius.control - 2)),
+                labelColor: bu.ink,
+                unselectedLabelColor: bu.muted,
+                labelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: bu.ink),
+                unselectedLabelStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                tabs: const [
+                  Tab(text: 'Overview', height: 38),
+                  Tab(text: 'Revenue', height: 38),
+                  Tab(text: 'Events', height: 38),
+                  Tab(text: 'Inquiries', height: 38),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: BuSpace.m),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOverviewTabWithState(context),
+                _buildRevenueTab(context),
+                _buildEventsTab(context),
+                _buildInquiriesTabWithState(context),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -85,7 +105,7 @@ class _AnalyticsDashboardScreenState
           children: [
             Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.muted),
             const SizedBox(height: 16),
-            Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: BuSpace.xl), child: Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.invalidate(organizerAnalyticsProvider),
@@ -109,7 +129,7 @@ class _AnalyticsDashboardScreenState
           children: [
             Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.muted),
             const SizedBox(height: 16),
-            Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: BuSpace.xl), child: Text(loadFailedMessage('your analytics'), key: const Key('analytics-error'), textAlign: TextAlign.center)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.invalidate(organizerAnalyticsProvider),
@@ -122,16 +142,16 @@ class _AnalyticsDashboardScreenState
   }
 
   Widget _buildOverviewTab(BuildContext context, dynamic data) {
-    final theme = Theme.of(context);
 
     return ResponsiveWrapper(
+      padding: EdgeInsets.zero,
       child: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(organizerAnalyticsProvider);
           await ref.read(organizerAnalyticsProvider.future);
         },
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+          padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -155,88 +175,26 @@ class _AnalyticsDashboardScreenState
   }
 
   Widget _buildKeyMetricsGrid(BuildContext context, dynamic data) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
+    return Column(
       children: [
-        _buildMetricCard(
-          context,
-          'Total Bookings',
-          data.totalBookings.toString(),
-          Ionicons.ticket_outline,
-          BuTokens.dark.orangeSoft,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: BuStatTile(key: const Key('report-bookings'), label: 'Total bookings', value: data.totalBookings.toString(), note: '${data.confirmedBookings} confirmed')),
+            const SizedBox(width: 10),
+            Expanded(child: BuStatTile(key: const Key('report-revenue'), label: 'Total revenue', value: NumberFormat.currency(symbol: '\$', decimalDigits: 0).format(data.totalRevenue), note: 'Gross · before fees')),
+          ],
         ),
-        _buildMetricCard(
-          context,
-          'Total Revenue',
-          NumberFormat.currency(symbol: '\$').format(data.totalRevenue),
-          Ionicons.cash_outline,
-          BuTokens.dark.green,
-        ),
-        _buildMetricCard(
-          context,
-          'Pending Inquiries',
-          data.pendingInquiries.toString(),
-          Ionicons.mail_unread_outline,
-          BuTokens.dark.amber,
-        ),
-        _buildMetricCard(
-          context,
-          'Confirmed Bookings',
-          data.confirmedBookings.toString(),
-          Ionicons.checkmark_circle_outline,
-          BuTokens.dark.soft,
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: BuStatTile(key: const Key('report-inquiries'), label: 'Pending inquiries', value: data.pendingInquiries.toString(), note: 'Waiting for a reply', trend: data.pendingInquiries > 0 ? 'Reply' : null, trendTone: BuTone.attention)),
+            const SizedBox(width: 10),
+            Expanded(child: BuStatTile(key: const Key('report-confirmed'), label: 'Confirmed', value: data.confirmedBookings.toString(), note: 'Bookings you can count on')),
+          ],
         ),
       ],
-    );
-  }
-
-  Widget _buildMetricCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(icon, color: color, size: 28),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: BuTokens.dark.muted,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -246,9 +204,9 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: BuTokens.dark.panel,
+        borderRadius: BorderRadius.circular(BuRadius.card),
+        border: Border.all(color: BuTokens.dark.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,9 +271,9 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: BuTokens.dark.panel,
+        borderRadius: BorderRadius.circular(BuRadius.card),
+        border: Border.all(color: BuTokens.dark.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,13 +318,14 @@ class _AnalyticsDashboardScreenState
 
     return revenueData.when(
       data: (data) => ResponsiveWrapper(
+        padding: EdgeInsets.zero,
         child: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(revenueBreakdownProvider);
             await ref.read(revenueBreakdownProvider.future);
           },
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -401,9 +360,9 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: BuTokens.dark.panel,
+        borderRadius: BorderRadius.circular(BuRadius.card),
+        border: Border.all(color: BuTokens.dark.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,9 +436,9 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: BuTokens.dark.panel,
+        borderRadius: BorderRadius.circular(BuRadius.card),
+        border: Border.all(color: BuTokens.dark.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,13 +482,14 @@ class _AnalyticsDashboardScreenState
 
     return performanceData.when(
       data: (insights) => ResponsiveWrapper(
+        padding: EdgeInsets.zero,
         child: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(eventPerformanceInsightsProvider);
             await ref.read(eventPerformanceInsightsProvider.future);
           },
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+            padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: insights.map((insight) => _buildEventPerformanceCard(context, insight)).toList(),
@@ -549,9 +509,9 @@ class _AnalyticsDashboardScreenState
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: BuTokens.dark.panel,
+        borderRadius: BorderRadius.circular(BuRadius.card),
+        border: Border.all(color: BuTokens.dark.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,13 +618,14 @@ class _AnalyticsDashboardScreenState
     final theme = Theme.of(context);
 
     return ResponsiveWrapper(
+      padding: EdgeInsets.zero,
       child: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(organizerAnalyticsProvider);
           await ref.read(organizerAnalyticsProvider.future);
         },
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(utils.ResponsiveUtils.getResponsivePadding(context)),
+          padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -695,7 +656,6 @@ class _AnalyticsDashboardScreenState
   }
 
   Widget _buildInquiryCard(BuildContext context, dynamic inquiry) {
-    final theme = Theme.of(context);
 
     Color statusColor;
     switch (inquiry.status) {
@@ -713,9 +673,9 @@ class _AnalyticsDashboardScreenState
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        color: BuTokens.dark.panel,
+        borderRadius: BorderRadius.circular(BuRadius.card),
+        border: Border.all(color: BuTokens.dark.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -781,3 +781,137 @@ class BuMetricTile extends StatelessWidget {
     );
   }
 }
+
+/// One figure with its name above and a line under it, as on the design's Overview: the label at the top left, a small trend pill at the top right (or a
+/// chevron when the tile opens something), the number big, and what it counts in a muted line.
+class BuStatTile extends StatelessWidget {
+  const BuStatTile({super.key, required this.label, required this.value, this.note, this.trend, this.trendTone = BuTone.good, this.onTap});
+
+  final String label;
+  final String value;
+  final String? note;
+
+  /// "+12%": shown in a soft pill at the top right. Without one, a tile that opens something shows a chevron.
+  final String? trend;
+  final BuTone trendTone;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    // One item for a screen reader: "Bookings, 19, 114 guests at tables".
+    return Semantics(
+      container: true,
+      button: onTap != null,
+      child: BuCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(BuSpace.l),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 106),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: Text(label, style: text.bodyMedium?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if (trend != null)
+                    _TrendPill(trend!, trendTone)
+                  else if (onTap != null)
+                    Icon(Ionicons.chevron_forward, size: 15, color: bu.muted),
+                ],
+              ),
+              const SizedBox(height: BuSpace.m),
+              FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(value, style: text.headlineMedium?.copyWith(fontSize: 27, letterSpacing: -1.2))),
+              if (note != null) ...[
+                const SizedBox(height: 3),
+                Text(note!, style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendPill extends StatelessWidget {
+  const _TrendPill(this.text, this.tone);
+
+  final String text;
+  final BuTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final color = switch (tone) {
+      BuTone.good => bu.green,
+      BuTone.attention => bu.amber,
+      BuTone.bad => bu.red,
+      BuTone.brand => bu.orangeSoft,
+      BuTone.neutral => bu.muted,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.13), borderRadius: BorderRadius.circular(9)),
+      child: Text(text, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
+    );
+  }
+}
+
+/// A venue in one line: its initials in a warm tile, its name, a line under it, and a dot for how it is doing (green: open, amber: not live yet).
+class BuMiniVenue extends StatelessWidget {
+  const BuMiniVenue({super.key, required this.name, required this.line, this.live = false, this.onTap});
+
+  final String name;
+  final String line;
+  final bool live;
+  final VoidCallback? onTap;
+
+  static String initialsOf(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
+    return (parts.first[0] + parts[1][0]).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    return BuCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(BuSpace.m),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF392219), Color(0xFF211816)])),
+            child: Text(initialsOf(name), style: text.labelLarge?.copyWith(color: bu.orangeSoft, fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(width: BuSpace.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: text.titleSmall?.copyWith(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 3),
+                Text(line, style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          const SizedBox(width: BuSpace.s),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: live ? bu.green : bu.amber, boxShadow: [BoxShadow(color: (live ? bu.green : bu.amber).withValues(alpha: 0.12), spreadRadius: 4)]),
+          ),
+        ],
+      ),
+    );
+  }
+}
