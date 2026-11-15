@@ -1,4 +1,5 @@
 import 'package:bottles_up_vendor/features/booking_conflicts/screens/booking_conflicts_screen.dart';
+import 'package:bottles_up_vendor/features/door_control/screens/door_control_screen.dart';
 import 'package:bottles_up_vendor/features/bottle_signs/screens/bottle_signs_screen.dart';
 import 'package:bottles_up_vendor/features/chat/providers/chat_providers.dart';
 import 'package:bottles_up_vendor/features/venue_access/screens/organizer_sales_screen.dart';
@@ -37,7 +38,7 @@ const Set<String> builtMore = {
   'manager/chat', 'manager/settings', 'manager/security', 'manager/inventory', 'manager/vip',
   'organizer/settings', 'organizer/agreements', 'owner/agreements', 'manager/agreements',
   'owner/refunds', 'manager/refunds', 'owner/conflicts', 'manager/conflicts', 'owner/discounts', 'manager/discounts', 'owner/payouts', 'organizer/payouts', 'door/shift-summary',
-  'owner/bottle-signs', 'manager/bottle-signs',
+  'owner/bottle-signs', 'manager/bottle-signs', 'owner/door-control', 'manager/door-control',
   'owner/report-emails', 'manager/report-emails', 'organizer/report-emails',
   'owner/sales-tracking', 'manager/sales-tracking',
 };
@@ -131,6 +132,15 @@ void main() {
       }
     }
     expect(hidden, {'owner/complimentary', 'manager/complimentary', 'organizer/settlement', 'organizer/notifications', 'door/promo-codes'});
+  });
+
+  test('door control is the club manager\'s and the owner\'s, and door staff do not get it', () {
+    expect(moreDestinationFor(ws(WorkspaceRole.manager), 'door-control'), isA<DoorControlScreen>());
+    expect(moreDestinationFor(ws(WorkspaceRole.owner), 'door-control'), isA<DoorControlScreen>());
+    for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security, WorkspaceRole.server, WorkspaceRole.verifier]) {
+      expect(moreDestinationFor(ws(role), 'door-control'), isNull, reason: role.name);
+      expect(moreEntriesFor(role).any((e) => e.id == 'door-control'), isFalse, reason: role.name);
+    }
   });
 
   test('the double-booked tables page is the club manager\'s and the owner\'s, and nobody else gets it', () {
