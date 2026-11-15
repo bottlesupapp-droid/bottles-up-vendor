@@ -1,9 +1,11 @@
 import '../../core/utils/plain_error.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/events/models/ticket_type.dart';
 
 class TicketService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  // Looked up when first used, so the service can be made (and replaced by a fake in a test) where Supabase has not been started.
+  late final SupabaseClient _supabase = Supabase.instance.client;
 
   // Create a new ticket type
   Future<TicketType> createTicketType(String eventId, TicketType ticket) async {
@@ -161,3 +163,5 @@ class TicketService {
     }
   }
 }
+
+final ticketServiceProvider = Provider<TicketService>((ref) => TicketService());

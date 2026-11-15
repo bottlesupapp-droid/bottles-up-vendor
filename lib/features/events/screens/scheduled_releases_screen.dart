@@ -19,194 +19,128 @@ class ScheduledReleasesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final releasesAsync = ref.watch(scheduledReleasesProvider(eventId));
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Scheduled Ticket Releases'),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddReleaseDialog(context, ref),
-        icon: const Icon(Ionicons.add),
-        label: const Text('Add Release'),
-      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: const BuDetailAppBar(eyebrow: 'Event', title: 'Scheduled Releases'),
+      floatingActionButton: FloatingActionButton.extended(key: const Key('releases-add'), onPressed: () => _showAddReleaseDialog(context, ref), icon: const Icon(Ionicons.add), label: const Text('Add Release')),
       body: releasesAsync.when(
         data: (releases) {
           if (releases.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Ionicons.calendar_outline, size: 64, color: BuTokens.dark.muted),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No scheduled releases',
-                    style: TextStyle(fontSize: 18, color: BuTokens.dark.muted),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Create timed ticket releases to build anticipation',
-                    style: TextStyle(color: BuTokens.dark.muted),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+                child: Column(
+                  key: const Key('releases-empty'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    BuIconTile(icon: Ionicons.calendar_outline, size: 56),
+                    const SizedBox(height: BuSpace.l),
+                    Text('No scheduled releases', style: text.titleLarge),
+                    const SizedBox(height: BuSpace.s),
+                    Text('Create timed ticket releases to build anticipation', style: text.bodyMedium?.copyWith(color: bu.muted), textAlign: TextAlign.center),
+                  ],
+                ),
               ),
             );
           }
-
+          final now = DateTime.now();
+          final upcoming = releases.where((r) => r.releaseDate.isAfter(now)).length;
+          final tickets = releases.fold<int>(0, (sum, r) => sum + r.ticketQuantity);
           return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(scheduledReleasesProvider(eventId));
-            },
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88), // room for the Add button
-              itemCount: releases.length,
-              itemBuilder: (context, index) {
-                final release = releases[index];
-                return _buildReleaseCard(context, theme, release, ref);
-              },
+            onRefresh: () async => ref.invalidate(scheduledReleasesProvider(eventId)),
+            child: ListView(
+              key: const Key('releases-list'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 88), // room for the Add button
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: _Figure(label: 'Releases', value: '${releases.length}', figureKey: const Key('releases-total'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'Upcoming', value: '$upcoming', figureKey: const Key('releases-upcoming'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'Tickets', value: '$tickets', figureKey: const Key('releases-tickets'))),
+                  ],
+                ),
+                const SizedBox(height: BuSpace.l),
+                for (final release in releases) _buildReleaseCard(context, release, ref),
+              ],
             ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Ionicons.alert_circle_outline, size: 64, color: BuTokens.dark.red),
-              const SizedBox(height: 16),
-              Text(couldNotLoad('this page', error)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(scheduledReleasesProvider(eventId)),
-                child: const Text('Retry'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Ionicons.alert_circle_outline, size: 56, color: bu.red),
+                const SizedBox(height: BuSpace.l),
+                Text(couldNotLoad('this page', error), textAlign: TextAlign.center),
+                const SizedBox(height: BuSpace.l),
+                FilledButton(onPressed: () => ref.invalidate(scheduledReleasesProvider(eventId)), child: const Text('Retry')),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildReleaseCard(BuildContext context, ThemeData theme,
-      ScheduledTicketRelease release, WidgetRef ref) {
+  Widget _buildReleaseCard(BuildContext context, ScheduledTicketRelease release, WidgetRef ref) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
     final isUpcoming = release.releaseDate.isAfter(DateTime.now());
-    final isPast = release.releaseDate.isBefore(DateTime.now());
+    final tint = isUpcoming ? bu.amber : bu.green;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: theme.cardColor,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    Widget fact(IconData icon, String value) => Expanded(
+          child: Row(children: [Icon(icon, size: 15, color: bu.muted), const SizedBox(width: 6), Expanded(child: Text(value, style: text.bodySmall?.copyWith(color: bu.soft)))]),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: BuSpace.m),
+      child: BuCard(
+        key: Key('release-${release.id}'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  isUpcoming ? Ionicons.time_outline : Ionicons.checkmark_circle,
-                  color: isUpcoming ? BuTokens.dark.amber : BuTokens.dark.green,
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(color: tint.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(BuRadius.control)),
+                  child: Icon(isUpcoming ? Ionicons.time_outline : Ionicons.checkmark_circle, color: tint, size: 21),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    release.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (!release.isActive)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: BuTokens.dark.muted.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'INACTIVE',
-                      style: TextStyle(fontSize: 10, color: BuTokens.dark.muted),
-                    ),
-                  ),
+                const SizedBox(width: BuSpace.m),
+                Expanded(child: Text(release.name, style: text.titleMedium)),
+                if (!release.isActive) const BuStatusPill('Inactive'),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: BuSpace.m),
+            Row(children: [fact(Ionicons.calendar_outline, DateFormat('MMM dd, yyyy HH:mm').format(release.releaseDate))]),
+            const SizedBox(height: BuSpace.s),
+            Row(children: [fact(Ionicons.ticket_outline, '${release.ticketQuantity} tickets'), fact(Ionicons.cash_outline, NumberFormat.currency(symbol: '\$').format(release.price))]),
+            const SizedBox(height: BuSpace.s),
             Row(
               children: [
                 Expanded(
-                  child: _buildDetailItem(
-                    Ionicons.calendar_outline,
-                    DateFormat('MMM dd, yyyy HH:mm').format(release.releaseDate),
-                  ),
+                  child: isUpcoming
+                      ? Text('Releases ${_getTimeUntil(release.releaseDate)}', key: Key('release-status-${release.id}'), style: text.labelLarge?.copyWith(color: bu.amber))
+                      : Text('Released', key: Key('release-status-${release.id}'), style: text.labelLarge?.copyWith(color: bu.green, fontWeight: FontWeight.w600)),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDetailItem(
-                    Ionicons.ticket_outline,
-                    '${release.ticketQuantity} tickets',
-                  ),
-                ),
-                Expanded(
-                  child: _buildDetailItem(
-                    Ionicons.cash_outline,
-                    NumberFormat.currency(symbol: '\$').format(release.price),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (isPast)
-                  Text(
-                    'Released',
-                    style: TextStyle(color: BuTokens.dark.green, fontWeight: FontWeight.w600),
-                  )
-                else if (isUpcoming)
-                  Text(
-                    'Releases ${_getTimeUntil(release.releaseDate)}',
-                    style: TextStyle(color: BuTokens.dark.amber),
-                  ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Ionicons.create_outline, size: 20),
-                      onPressed: () => _showEditReleaseDialog(context, ref, release),
-                      tooltip: 'Edit',
-                    ),
-                    IconButton(
-                      icon: const Icon(Ionicons.trash_outline, size: 20),
-                      color: BuTokens.dark.red,
-                      onPressed: () => _confirmDelete(context, ref, release.id),
-                      tooltip: 'Delete',
-                    ),
-                  ],
-                ),
+                IconButton(key: Key('release-edit-${release.id}'), icon: const Icon(Ionicons.create_outline, size: 20), onPressed: () => _showEditReleaseDialog(context, ref, release), tooltip: 'Edit'),
+                IconButton(key: Key('release-delete-${release.id}'), icon: const Icon(Ionicons.trash_outline, size: 20), color: bu.red, onPressed: () => _confirmDelete(context, ref, release.id), tooltip: 'Delete'),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDetailItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: BuTokens.dark.muted),
-        const SizedBox(width: 8),
-        Text(text, style: TextStyle(fontSize: 13, color: BuTokens.dark.muted)),
-      ],
     );
   }
 
@@ -389,5 +323,31 @@ class ScheduledReleasesScreen extends ConsumerWidget {
         ref.invalidate(scheduledReleasesProvider(eventId));
       }
     }
+  }
+}
+
+/// One of the figures at the top of a list page: a big number over a small label.
+class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value, required this.figureKey});
+
+  final String label;
+  final String value;
+  final Key figureKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    return BuCard(
+      padding: const EdgeInsets.symmetric(horizontal: BuSpace.m, vertical: BuSpace.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value, key: figureKey, style: text.headlineSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(label, style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
   }
 }

@@ -11,6 +11,9 @@ import '../../../shared/models/analytics_models.dart';
 import '../providers/guest_list_provider.dart';
 import '../../../core/ui/bu_kit.dart';
 
+/// The filters over the guest list.
+const guestFilters = ['All', 'Arrived', 'Waiting'];
+
 class GuestListScreen extends ConsumerStatefulWidget {
   final String eventId;
 
@@ -26,6 +29,7 @@ class GuestListScreen extends ConsumerStatefulWidget {
 class _GuestListScreenState extends ConsumerState<GuestListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _filter = guestFilters.first;
 
   @override
   void dispose() {
@@ -245,225 +249,180 @@ class _GuestListScreenState extends ConsumerState<GuestListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
     final guestListAsync = ref.watch(guestListProvider(widget.eventId));
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Guest List', actions: [
-          IconButton(
-            icon: const Icon(Ionicons.help_circle_outline),
-            onPressed: _showCSVFormatHelp,
-            tooltip: 'CSV Format Help',
-          ),
-          IconButton(
-            icon: const Icon(Ionicons.cloud_upload_outline),
-            onPressed: _pickAndUploadCSV,
-            tooltip: 'Upload CSV',
-          ),
-        ]),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addManualGuest,
-        icon: const Icon(Ionicons.person_add_outline),
-        label: const Text('Add Guest'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: BuDetailAppBar(
+        eyebrow: 'Event',
+        title: 'Guest List',
+        actions: [
+          IconButton(key: const Key('guests-help'), icon: const Icon(Ionicons.help_circle_outline), onPressed: _showCSVFormatHelp, tooltip: 'CSV Format Help'),
+          IconButton(key: const Key('guests-upload'), icon: const Icon(Ionicons.cloud_upload_outline), onPressed: _pickAndUploadCSV, tooltip: 'Upload CSV'),
+        ],
       ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search guests...',
-                prefixIcon: const Icon(Ionicons.search_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: theme.cardColor,
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
-            ),
-          ),
+      floatingActionButton: FloatingActionButton.extended(key: const Key('guests-add'), onPressed: _addManualGuest, icon: const Icon(Ionicons.person_add_outline), label: const Text('Add Guest')),
+      body: guestListAsync.when(
+        data: (guests) {
+          final arrived = guests.where((g) => g.checkedIn).length;
+          final byFilter = switch (_filter) {
+            'Arrived' => guests.where((g) => g.checkedIn).toList(),
+            'Waiting' => guests.where((g) => !g.checkedIn).toList(),
+            _ => guests,
+          };
+          final shown = _searchQuery.isEmpty
+              ? byFilter
+              : byFilter.where((guest) {
+                  return guest.name.toLowerCase().contains(_searchQuery) || (guest.email?.toLowerCase().contains(_searchQuery) ?? false) || (guest.phone?.contains(_searchQuery) ?? false);
+                }).toList();
 
-          // Guest list
-          Expanded(
-            child: guestListAsync.when(
-              data: (guests) {
-                final filteredGuests = _searchQuery.isEmpty
-                    ? guests
-                    : guests.where((guest) {
-                        return guest.name.toLowerCase().contains(_searchQuery) ||
-                            (guest.email?.toLowerCase().contains(_searchQuery) ?? false) ||
-                            (guest.phone?.contains(_searchQuery) ?? false);
-                      }).toList();
-
-                if (filteredGuests.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Ionicons.people_outline,
-                          size: 64,
-                          color: BuTokens.dark.muted,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchQuery.isEmpty
-                              ? 'No guests yet'
-                              : 'No guests found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: BuTokens.dark.muted,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (_searchQuery.isEmpty)
-                          Text(
-                            'Add guests manually or upload a CSV file',
-                            style: TextStyle(color: BuTokens.dark.muted),
-                          ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(guestListProvider(widget.eventId));
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredGuests.length,
-                    itemBuilder: (context, index) {
-                      final guest = filteredGuests[index];
-                      return _buildGuestCard(guest, theme);
-                    },
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(guestListProvider(widget.eventId)),
+            child: ListView(
+              key: const Key('guests-list'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 88), // room for the Add button
+              children: [
+                Row(
                   children: [
-                    Icon(Ionicons.alert_circle_outline,
-                        size: 64, color: BuTokens.dark.red),
-                    const SizedBox(height: 16),
-                    Text(couldNotLoad('this page', error)),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.invalidate(guestListProvider(widget.eventId));
-                      },
-                      child: const Text('Retry'),
-                    ),
+                    Expanded(child: _Figure(label: 'Guests', value: '${guests.length}', figureKey: const Key('guests-total'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'Arrived', value: '$arrived', figureKey: const Key('guests-arrived'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'Waiting', value: '${guests.length - arrived}', figureKey: const Key('guests-waiting'))),
                   ],
                 ),
-              ),
+                const SizedBox(height: BuSpace.l),
+                TextField(
+                  key: const Key('guests-search'),
+                  controller: _searchController,
+                  decoration: const InputDecoration(hintText: 'Search guests', prefixIcon: Icon(Ionicons.search_outline, size: 18)),
+                  onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+                ),
+                const SizedBox(height: BuSpace.m),
+                BuPillTabs(labels: guestFilters, selected: _filter, tabKeyPrefix: 'guest-filter', onSelected: (f) => setState(() => _filter = f)),
+                const SizedBox(height: BuSpace.l),
+                if (shown.isEmpty)
+                  BuCard(
+                    key: const Key('guests-none'),
+                    child: Column(
+                      children: [
+                        BuIconTile(icon: Ionicons.people_outline, size: 52),
+                        const SizedBox(height: BuSpace.m),
+                        Text(guests.isEmpty ? 'No guests yet' : 'No guests found', style: text.titleMedium),
+                        if (guests.isEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text('Add guests manually or upload a CSV file', style: text.bodySmall?.copyWith(color: bu.muted)),
+                        ],
+                      ],
+                    ),
+                  )
+                else
+                  for (final guest in shown) _buildGuestCard(guest),
+              ],
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Ionicons.alert_circle_outline, size: 56, color: bu.red),
+                const SizedBox(height: BuSpace.l),
+                Text(couldNotLoad('this page', error), textAlign: TextAlign.center),
+                const SizedBox(height: BuSpace.l),
+                FilledButton(onPressed: () => ref.invalidate(guestListProvider(widget.eventId)), child: const Text('Retry')),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildGuestCard(GuestListEntry guest, ThemeData theme) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: theme.cardColor,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: guest.checkedIn ? BuTokens.dark.green : BuTokens.dark.amber,
-          child: Icon(
-            guest.checkedIn ? Ionicons.checkmark : Ionicons.person,
-            color: Colors.white,
-          ),
-        ),
-        title: Text(
-          guest.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Column(
+  Widget _buildGuestCard(GuestListEntry guest) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final tint = guest.checkedIn ? bu.green : bu.amber;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: BuSpace.m),
+      child: BuCard(
+        key: Key('guest-${guest.id}'),
+        padding: const EdgeInsets.all(BuSpace.m + 2),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (guest.email != null) ...[
-              const SizedBox(height: 4),
-              Text(guest.email!, style: const TextStyle(fontSize: 13)),
-            ],
-            if (guest.phone != null) ...[
-              const SizedBox(height: 2),
-              Text(guest.phone!, style: const TextStyle(fontSize: 13)),
-            ],
-            if (guest.ticketType != null) ...[
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: BuTokens.dark.orange.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  guest.ticketType!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: BuTokens.dark.orange,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        trailing: guest.checkedIn
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: tint.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(BuRadius.control)),
+              child: Icon(guest.checkedIn ? Ionicons.checkmark : Ionicons.person, color: tint, size: 22),
+            ),
+            const SizedBox(width: BuSpace.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Ionicons.checkmark_circle, color: BuTokens.dark.green),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Checked In',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: BuTokens.dark.muted,
-                    ),
-                  ),
+                  Text(guest.name, style: text.titleMedium),
+                  if (guest.email != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(guest.email!, style: text.bodySmall?.copyWith(color: bu.muted))),
+                  if (guest.phone != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(guest.phone!, style: text.bodySmall?.copyWith(color: bu.muted))),
+                  if (guest.ticketType != null) Padding(padding: const EdgeInsets.only(top: 6), child: BuStatusPill(guest.ticketType!, tone: BuTone.brand)),
                 ],
+              ),
+            ),
+            if (guest.checkedIn)
+              Column(
+                key: Key('guest-arrived-${guest.id}'),
+                mainAxisSize: MainAxisSize.min,
+                children: [Icon(Ionicons.checkmark_circle, color: bu.green), const SizedBox(height: 4), Text('Checked In', style: text.labelSmall?.copyWith(color: bu.muted))],
               )
-            : IconButton(
+            else
+              IconButton(
+                key: Key('guest-checkin-${guest.id}'),
                 icon: const Icon(Ionicons.checkmark_circle_outline),
                 onPressed: () async {
-                  final success = await ref
-                      .read(guestListProvider(widget.eventId).notifier)
-                      .checkInGuest(guest.id);
-
+                  final success = await ref.read(guestListProvider(widget.eventId).notifier).checkInGuest(guest.id);
                   if (success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${guest.name} checked in'),
-                        backgroundColor: BuTokens.dark.green,
-                      ),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${guest.name} checked in'), backgroundColor: bu.green));
                     ref.invalidate(guestListProvider(widget.eventId));
                   }
                 },
                 tooltip: 'Check In',
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One of the figures at the top of the list: a big number over a small label.
+class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value, required this.figureKey});
+
+  final String label;
+  final String value;
+  final Key figureKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    return BuCard(
+      padding: const EdgeInsets.symmetric(horizontal: BuSpace.m, vertical: BuSpace.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value, key: figureKey, style: text.headlineSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(label, style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
       ),
     );
   }
