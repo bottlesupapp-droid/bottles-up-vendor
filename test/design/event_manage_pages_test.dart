@@ -420,10 +420,14 @@ void main() {
 
     testWidgets('three figures; a release still to come says when, one that has happened says Released', (tester) async {
       final now = DateTime.now();
-      await open(tester, [release('r1', 'Early Bird', now.subtract(const Duration(days: 3)), qty: 40), release('r2', 'General', now.add(const Duration(days: 5, hours: 1)), qty: 60, active: false)]);
-      expect(tester.widget<Text>(find.byKey(const Key('releases-total'))).data, '2');
-      expect(tester.widget<Text>(find.byKey(const Key('releases-upcoming'))).data, '1');
-      expect(tester.widget<Text>(find.byKey(const Key('releases-tickets'))).data, '100');
+      await open(tester, [
+        release('r1', 'Early Bird', now.subtract(const Duration(days: 3)), qty: 40),
+        release('r2', 'General', now.add(const Duration(days: 5, hours: 1)), qty: 60, active: false),
+        release('r3', 'Last Call', now.add(const Duration(days: 9, hours: 1)), qty: 10),
+      ]);
+      expect(tester.widget<Text>(find.byKey(const Key('releases-total'))).data, '3');
+      expect(tester.widget<Text>(find.byKey(const Key('releases-upcoming'))).data, '2', reason: 'two are still to come and one has happened, so the count cannot be read the wrong way round');
+      expect(tester.widget<Text>(find.byKey(const Key('releases-tickets'))).data, '110');
       expect(tester.widget<Text>(find.byKey(const Key('release-status-r1'))).data, 'Released');
       expect(tester.widget<Text>(find.byKey(const Key('release-status-r2'))).data, 'Releases in 5 days');
       expect(find.descendant(of: find.byKey(const Key('release-r2')), matching: find.text('Inactive')), findsOneWidget);
