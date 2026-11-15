@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:bottles_up_vendor/core/ui/bu_coming_soon.dart';
 import 'package:bottles_up_vendor/features/auth/providers/supabase_auth_provider.dart';
+import 'package:bottles_up_vendor/features/clubs/screens/create_club_screen.dart';
+import 'package:bottles_up_vendor/features/clubs/screens/edit_venue_screen.dart';
 import 'package:bottles_up_vendor/features/profile/screens/business_details_screen.dart';
 import 'package:bottles_up_vendor/features/profile/screens/edit_profile_screen.dart';
 import 'package:bottles_up_vendor/features/profile/screens/help_center_screen.dart';
@@ -199,6 +201,36 @@ void main() {
     testWidgets('with no photo the business\'s initials stand in for it', (tester) async {
       await open(tester);
       expect(find.text('BU'), findsOneWidget);
+    });
+  });
+  group('Venue forms', () {
+    testWidgets('Create Venue: says Venue (not Club), section headings in the design\'s capitals, and asks for the name and location before saving', (tester) async {
+      await pumpPage(tester, () => const CreateClubScreen(), height: 2600);
+      expect(find.text('Create Venue'), findsWidgets);
+      expect(find.text('Create Club'), findsNothing);
+      expect(find.text('Add New Club'), findsNothing);
+      expect(find.text('BASIC INFORMATION'), findsOneWidget);
+      expect(find.text('CONTACT INFORMATION'), findsOneWidget);
+      expect(find.text('Venue Name *'), findsOneWidget);
+      await shot(tester, 'create_venue');
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Create Venue'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Create Venue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Venue name is required'), findsOneWidget);
+      expect(find.text('Location is required'), findsOneWidget);
+    });
+
+    testWidgets('Edit Venue: the venue\'s own details, the design\'s section headings, and Save asks for what is required', (tester) async {
+      await pumpPage(tester, () => EditVenueScreen(venueId: 'c1', initialVenue: venue()), height: 3600);
+      expect(find.text('Edit Venue'), findsOneWidget);
+      expect(find.text('BASIC INFORMATION'), findsOneWidget);
+      expect(find.text('VENUE DETAILS'), findsOneWidget);
+      expect(tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Venue Name *')).controller!.text, 'XnO Lounge');
+      await shot(tester, 'edit_venue');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Venue Name *'), '');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(find.text('Required'), findsWidgets);
     });
   });
 }

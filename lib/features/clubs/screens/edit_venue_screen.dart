@@ -10,7 +10,6 @@ import 'package:ionicons/ionicons.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../features/auth/providers/supabase_auth_provider.dart';
 import '../../../features/venues/providers/venues_provider.dart';
-import '../../../features/venues/services/venue_request_service.dart';
 import '../../../shared/models/venue_model.dart';
 import '../../../core/ui/bu_kit.dart';
 
@@ -369,7 +368,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -416,18 +415,17 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
               _field(_venueTypeCtrl, 'Venue Type',
                   hint: 'e.g., Lounge & Nightclub'),
               const SizedBox(height: 12),
+              // Two to a row: three labels do not fit side by side on a phone ("VIP Booths" and "Side Tables" were cut off).
               Row(children: [
-                Expanded(
-                    child: _field(_minAgeCtrl, 'Min Age',
-                        keyboard: TextInputType.number, suffix: '+')),
+                Expanded(child: _field(_minAgeCtrl, 'Min Age', keyboard: TextInputType.number, suffix: '+')),
                 const SizedBox(width: 12),
-                Expanded(
-                    child: _field(_vipBoothsCtrl, 'VIP Booths',
-                        keyboard: TextInputType.number)),
+                Expanded(child: _field(_vipBoothsCtrl, 'VIP Booths', keyboard: TextInputType.number)),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: _field(_sideTablesCtrl, 'Side Tables', keyboard: TextInputType.number)),
                 const SizedBox(width: 12),
-                Expanded(
-                    child: _field(_sideTablesCtrl, 'Side Tables',
-                        keyboard: TextInputType.number)),
+                const Expanded(child: SizedBox.shrink()),
               ]),
               const SizedBox(height: 12),
               _field(_dressCodeCtrl, 'Dress Code', maxLines: 2),
@@ -684,11 +682,7 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
 
   // ── Field / section helpers ────────────────────────────────────────────────
 
-  Widget _sectionTitle(ThemeData theme, String title) => Text(
-        title,
-        style: theme.textTheme.titleMedium
-            ?.copyWith(fontWeight: FontWeight.bold),
-      );
+  Widget _sectionTitle(ThemeData theme, String title) => BuEyebrow(title);
 
   Widget _photoSubtitle(ThemeData theme, String title, String sub) =>
       Column(
@@ -721,9 +715,6 @@ class _EditVenueScreenState extends ConsumerState<EditVenueScreen> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12)),
-          filled: true,
           prefixIcon: prefix,
           suffixText: suffix,
           alignLabelWithHint: maxLines > 1,
