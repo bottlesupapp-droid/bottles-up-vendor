@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/services/ticket_service.dart';
 import '../models/ticket_type.dart';
 import '../../../core/ui/bu_kit.dart';
@@ -25,7 +24,7 @@ class ManageTicketTiersScreen extends ConsumerStatefulWidget {
 }
 
 class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScreen> {
-  final TicketService _ticketService = TicketService();
+  TicketService get _ticketService => ref.read(ticketServiceProvider);
   List<TicketType> _ticketTiers = [];
   bool _isLoading = true;
   Map<String, dynamic>? _summary;
@@ -297,413 +296,158 @@ class _ManageTicketTiersScreenState extends ConsumerState<ManageTicketTiersScree
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final summary = _summary;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Manage Ticket Tiers'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: BuDetailAppBar(eyebrow: widget.eventName, title: 'Ticket Tiers'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadTicketTiers,
-              child: SingleChildScrollView(
+              child: ListView(
+                key: const Key('tiers-list'),
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Event Info Header
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: AppTheme.darkContainerDecoration,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Ionicons.calendar_outline,
-                                color: theme.colorScheme.primary,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  widget.eventName,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Summary Card
-                    if (_summary != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: AppTheme.darkCardDecoration,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Ticket Sales Summary',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildSummaryItem(
-                                    'Total Capacity',
-                                    _summary!['total_capacity'].toString(),
-                                    Ionicons.people_outline,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _buildSummaryItem(
-                                    'Sold',
-                                    _summary!['total_sold'].toString(),
-                                    Ionicons.ticket_outline,
-                                    BuTokens.dark.green,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildSummaryItem(
-                                    'Available',
-                                    _summary!['total_available'].toString(),
-                                    Ionicons.checkmark_circle_outline,
-                                    BuTokens.dark.orangeSoft,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _buildSummaryItem(
-                                    'Revenue',
-                                    '\$${_summary!['total_revenue'].toStringAsFixed(2)}',
-                                    Ionicons.cash_outline,
-                                    theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Header
+                padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, BuSpace.xxl),
+                children: [
+                  if (summary != null) ...[
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Ticket Tiers (${_ticketTiers.length})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        FilledButton.icon(
-                          onPressed: () => _showAddEditDialog(),
-                          icon: const Icon(Ionicons.add_outline, size: 20),
-                          label: const Text('Add Tier'),
-                        ),
+                        Expanded(child: BuStatTile(key: const Key('tiers-sold'), label: 'Sold', value: '${summary['total_sold']}', note: 'of ${summary['total_capacity']}')),
+                        const SizedBox(width: BuSpace.m),
+                        Expanded(child: BuStatTile(key: const Key('tiers-revenue'), label: 'Revenue', value: '\$${(summary['total_revenue'] as num).toStringAsFixed(2)}', note: 'Gross')),
                       ],
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Ticket Tiers List
-                    if (_ticketTiers.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(48.0),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Ionicons.ticket_outline,
-                                size: 64,
-                                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No ticket tiers yet',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: () => _showAddEditDialog(),
-                                child: const Text('Add your first tier'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      ...List.generate(_ticketTiers.length, (index) {
-                        final tier = _ticketTiers[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildTierCard(tier),
-                        );
-                      }),
+                    const SizedBox(height: BuSpace.m),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: BuStatTile(key: const Key('tiers-available'), label: 'Available', value: '${summary['total_available']}', note: 'Still to sell')),
+                        const SizedBox(width: BuSpace.m),
+                        Expanded(child: BuStatTile(key: const Key('tiers-capacity'), label: 'Capacity', value: '${summary['total_capacity']}', note: 'All tiers')),
+                      ],
+                    ),
+                    const SizedBox(height: BuSpace.xl),
                   ],
-                ),
+                  Row(
+                    children: [
+                      Expanded(child: Text('Ticket Tiers (${_ticketTiers.length})', key: const Key('tiers-count'), style: text.titleLarge)),
+                      FilledButton.icon(key: const Key('tier-add'), onPressed: () => _showAddEditDialog(), icon: const Icon(Ionicons.add_outline, size: 20), label: const Text('Add Tier')),
+                    ],
+                  ),
+                  const SizedBox(height: BuSpace.l),
+                  if (_ticketTiers.isEmpty)
+                    BuCard(
+                      key: const Key('tiers-empty'),
+                      child: Column(
+                        children: [
+                          BuIconTile(icon: Ionicons.ticket_outline, size: 52),
+                          const SizedBox(height: BuSpace.m),
+                          Text('No ticket tiers yet', style: text.titleMedium),
+                          const SizedBox(height: 4),
+                          Text('Tiers set the price and how many tickets each kind has.', style: text.bodySmall?.copyWith(color: bu.muted), textAlign: TextAlign.center),
+                          const SizedBox(height: BuSpace.s),
+                          TextButton(key: const Key('tier-add-first'), onPressed: () => _showAddEditDialog(), child: const Text('Add your first tier')),
+                        ],
+                      ),
+                    )
+                  else
+                    for (final tier in _ticketTiers) Padding(padding: const EdgeInsets.only(bottom: BuSpace.m), child: _buildTierCard(tier)),
+                ],
               ),
             ),
-    );
-  }
-
-  Widget _buildSummaryItem(String label, String value, IconData icon, [Color? color]) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 
   Widget _buildTierCard(TicketType tier) {
-    final theme = Theme.of(context);
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
     final percentSold = tier.percentageSold;
+    final barColor = percentSold >= 90
+        ? bu.red
+        : percentSold >= 70
+            ? bu.amber
+            : bu.green;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.darkCardDecoration.copyWith(
-        border: Border.all(
-          color: tier.isActive
-              ? theme.colorScheme.primary.withOpacity(0.3)
-              : theme.colorScheme.onSurfaceVariant.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
+    Widget fact(String label, String value, {Color? color}) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [Text(label, style: text.bodySmall?.copyWith(color: bu.muted)), const SizedBox(height: 2), Text(value, style: text.titleSmall?.copyWith(color: color))],
+          ),
+        );
+
+    return BuCard(
+      key: Key('tier-${tier.id}'),
+      highlight: tier.isActive,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text(
-                          tier.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (!tier.isActive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: BuTokens.dark.muted.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'Inactive',
-                              style: TextStyle(fontSize: 10),
-                            ),
-                          ),
-                        if (tier.isSoldOut)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: BuTokens.dark.red.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Sold Out',
-                              style: TextStyle(fontSize: 10, color: BuTokens.dark.red),
-                            ),
-                          ),
+                        Text(tier.name, style: text.titleMedium),
+                        if (!tier.isActive) const BuStatusPill('Inactive'),
+                        if (tier.isSoldOut) const BuStatusPill('Sold Out', tone: BuTone.bad),
                       ],
                     ),
                     if (tier.description != null && tier.description!.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(
-                        tier.description!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      Text(tier.description!, style: text.bodySmall?.copyWith(color: bu.muted)),
                     ],
                   ],
                 ),
               ),
               PopupMenuButton(
+                key: Key('tier-menu-${tier.id}'),
                 icon: const Icon(Ionicons.ellipsis_vertical),
                 itemBuilder: (context) => [
                   PopupMenuItem(
-                    onTap: () => Future.delayed(
-                      Duration.zero,
-                      () => _showAddEditDialog(existingTier: tier),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Ionicons.create_outline, size: 18),
-                        SizedBox(width: 12),
-                        Text('Edit'),
-                      ],
-                    ),
+                    key: const Key('tier-edit'),
+                    onTap: () => Future.delayed(Duration.zero, () => _showAddEditDialog(existingTier: tier)),
+                    child: const Row(children: [Icon(Ionicons.create_outline, size: 18), SizedBox(width: 12), Text('Edit')]),
                   ),
                   PopupMenuItem(
+                    key: const Key('tier-toggle'),
                     onTap: () => Future.delayed(Duration.zero, () => _toggleActive(tier)),
-                    child: Row(
-                      children: [
-                        Icon(
-                          tier.isActive ? Ionicons.pause_outline : Ionicons.play_outline,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(tier.isActive ? 'Deactivate' : 'Activate'),
-                      ],
-                    ),
+                    child: Row(children: [Icon(tier.isActive ? Ionicons.pause_outline : Ionicons.play_outline, size: 18), const SizedBox(width: 12), Text(tier.isActive ? 'Deactivate' : 'Activate')]),
                   ),
                   if (tier.soldCount == 0)
                     PopupMenuItem(
+                      key: const Key('tier-delete'),
                       onTap: () => Future.delayed(Duration.zero, () => _deleteTier(tier)),
-                      child: Row(
-                        children: [
-                          Icon(Ionicons.trash_outline, size: 18, color: BuTokens.dark.red),
-                          SizedBox(width: 12),
-                          Text('Delete', style: TextStyle(color: BuTokens.dark.red)),
-                        ],
-                      ),
+                      child: Row(children: [Icon(Ionicons.trash_outline, size: 18, color: bu.red), const SizedBox(width: 12), Text('Delete', style: TextStyle(color: bu.red))]),
                     ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: BuSpace.m),
           Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Price',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      '\$${tier.price.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Sold',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      '${tier.soldCount} / ${tier.capacity}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Available',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      tier.availableTickets.toString(),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              fact('Price', '\$${tier.price.toStringAsFixed(2)}', color: bu.orangeSoft),
+              fact('Sold', '${tier.soldCount} / ${tier.capacity}'),
+              fact('Available', tier.availableTickets.toString()),
             ],
           ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: percentSold / 100,
-            backgroundColor: theme.colorScheme.surfaceVariant,
-            color: percentSold >= 90
-                ? BuTokens.dark.red
-                : percentSold >= 70
-                    ? BuTokens.dark.amber
-                    : BuTokens.dark.green,
+          const SizedBox(height: BuSpace.m),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(BuRadius.pill),
+            child: LinearProgressIndicator(value: percentSold / 100, minHeight: 6, backgroundColor: bu.line, color: barColor),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '${percentSold.toStringAsFixed(1)}% sold',
-            style: TextStyle(
-              fontSize: 11,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
+          const SizedBox(height: 6),
+          Text('${percentSold.toStringAsFixed(1)}% sold', style: text.bodySmall?.copyWith(color: bu.muted)),
         ],
       ),
     );

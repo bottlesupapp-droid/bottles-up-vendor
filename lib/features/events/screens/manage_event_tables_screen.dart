@@ -29,50 +29,57 @@ class ManageEventTablesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tablesAsync = ref.watch(eventTablesProvider(eventId));
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Table Management', actions: [
-          IconButton(
-            icon: const Icon(Ionicons.add),
-            tooltip: 'Add Table',
-            onPressed: () => _showAddTableDialog(context, ref),
-          ),
-        ]),
+      appBar: BuDetailAppBar(
+        eyebrow: 'Event',
+        title: 'Table Management',
+        actions: [IconButton(key: const Key('tables-add'), icon: const Icon(Ionicons.add), tooltip: 'Add Table', onPressed: () => _showAddTableDialog(context, ref))],
+      ),
       body: tablesAsync.when(
         data: (tables) {
           if (tables.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.table_restaurant_outlined,
-                      size: 64, color: BuTokens.dark.muted),
-                  const SizedBox(height: 16),
-                  Text('No tables yet',
-                      style: TextStyle(fontSize: 18, color: BuTokens.dark.muted)),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add tables so customers can make\nVIP table reservations.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: BuTokens.dark.muted),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddTableDialog(context, ref),
-                    icon: const Icon(Ionicons.add),
-                    label: const Text('Add First Table'),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: BuSpace.page),
+                child: Column(
+                  key: const Key('tables-empty'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    BuIconTile(icon: Icons.table_restaurant_outlined, size: 56),
+                    const SizedBox(height: BuSpace.l),
+                    Text('No tables yet', style: text.titleLarge),
+                    const SizedBox(height: BuSpace.s),
+                    Text('Add tables so customers can make\nVIP table reservations.', textAlign: TextAlign.center, style: text.bodyMedium?.copyWith(color: bu.muted)),
+                    const SizedBox(height: BuSpace.xl),
+                    FilledButton.icon(key: const Key('tables-add-first'), onPressed: () => _showAddTableDialog(context, ref), icon: const Icon(Ionicons.add), label: const Text('Add First Table')),
+                  ],
+                ),
               ),
             );
           }
+          final active = tables.where((t) => (t['is_active'] as bool? ?? true)).length;
+          final vip = tables.where((t) => (t['is_vip'] as bool? ?? false)).length;
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(eventTablesProvider(eventId)),
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88), // room for the Add button
-              itemCount: tables.length,
-              itemBuilder: (context, index) =>
-                  _TableCard(table: tables[index], eventId: eventId),
+            child: ListView(
+              key: const Key('tables-list'),
+              padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 88), // room for the Add button
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: _Figure(label: 'Tables', value: '${tables.length}', figureKey: const Key('tables-total'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'On sale', value: '$active', figureKey: const Key('tables-active'))),
+                    const SizedBox(width: BuSpace.m),
+                    Expanded(child: _Figure(label: 'VIP', value: '$vip', figureKey: const Key('tables-vip'))),
+                  ],
+                ),
+                const SizedBox(height: BuSpace.l),
+                for (final t in tables) _TableCard(table: t, eventId: eventId),
+              ],
             ),
           );
         },
@@ -80,13 +87,7 @@ class ManageEventTablesScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text(couldNotLoad('this page', e))),
       ),
       floatingActionButton: tablesAsync.maybeWhen(
-        data: (t) => t.isEmpty
-            ? null
-            : FloatingActionButton.extended(
-                onPressed: () => _showAddTableDialog(context, ref),
-                icon: const Icon(Ionicons.add),
-                label: const Text('Add Table'),
-              ),
+        data: (t) => t.isEmpty ? null : FloatingActionButton.extended(key: const Key('tables-fab'), onPressed: () => _showAddTableDialog(context, ref), icon: const Icon(Ionicons.add), label: const Text('Add Table')),
         orElse: () => null,
       ),
     );
@@ -116,75 +117,54 @@ class _TableCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
     final isActive = table['is_active'] as bool? ?? true;
     final isVip = table['is_vip'] as bool? ?? false;
     final price = (table['price'] as num?)?.toDouble() ?? 0;
     final capacity = table['capacity'] as int? ?? 0;
+    final tint = isVip ? bu.amber : bu.orangeSoft;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: isVip
-              ? BuTokens.dark.amber.withOpacity(0.15)
-              : BuTokens.dark.orangeSoft.withOpacity(0.15),
-          child: Icon(
-            isVip ? Ionicons.star : Icons.table_restaurant,
-            color: isVip ? BuTokens.dark.amber : BuTokens.dark.orangeSoft,
-          ),
-        ),
-        title: Row(
-          children: [
-            Text(
-              table['name'] ?? 'Unnamed',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            if (isVip) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: BuTokens.dark.amber.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'VIP',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: BuTokens.dark.amber,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        subtitle: Column(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: BuSpace.m),
+      child: BuCard(
+        key: Key('table-${table['id']}'),
+        padding: const EdgeInsets.all(BuSpace.m + 2),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            Text('Capacity: $capacity guests · Deposit: \$${price.toStringAsFixed(0)}'),
-            if (table['location_description'] != null)
-              Text(
-                table['location_description'],
-                style: const TextStyle(fontSize: 12),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Switch(
-              value: isActive,
-              onChanged: (val) => _toggleActive(context, ref, val),
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(color: tint.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(BuRadius.control)),
+              child: Icon(isVip ? Ionicons.star : Icons.table_restaurant, color: tint, size: 22),
             ),
-            IconButton(
-              icon: Icon(Ionicons.trash_outline, color: BuTokens.dark.red),
-              onPressed: () => _confirmDelete(context, ref),
+            const SizedBox(width: BuSpace.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(table['name'] ?? 'Unnamed', style: text.titleMedium),
+                      if (isVip) const BuStatusPill('VIP', tone: BuTone.attention),
+                      if (!isActive) const BuStatusPill('Off sale'),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Capacity: $capacity guests · Deposit: \$${price.toStringAsFixed(0)}', style: text.bodySmall?.copyWith(color: bu.muted)),
+                  if (table['location_description'] != null) Text('${table['location_description']}', style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                Switch(key: Key('table-switch-${table['id']}'), value: isActive, onChanged: (val) => _toggleActive(context, ref, val)),
+                IconButton(key: Key('table-delete-${table['id']}'), icon: Icon(Ionicons.trash_outline, color: bu.red), onPressed: () => _confirmDelete(context, ref)),
+              ],
             ),
           ],
         ),
@@ -423,6 +403,32 @@ class _AddTableSheetState extends State<_AddTableSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// One of the figures at the top of a list page: a big number over a small label.
+class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value, required this.figureKey});
+
+  final String label;
+  final String value;
+  final Key figureKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    return BuCard(
+      padding: const EdgeInsets.symmetric(horizontal: BuSpace.m, vertical: BuSpace.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value, key: figureKey, style: text.headlineSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(label, style: text.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
       ),
     );
   }

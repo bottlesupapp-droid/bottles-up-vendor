@@ -3,10 +3,9 @@ import '../../../core/utils/plain_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../models/event_team_member.dart';
+import '../services/event_team_service.dart';
 import '../../../core/ui/bu_kit.dart';
 
 class ManageLineupScreen extends ConsumerStatefulWidget {
@@ -24,7 +23,7 @@ class ManageLineupScreen extends ConsumerStatefulWidget {
 }
 
 class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  EventTeamService get _team => ref.read(eventTeamServiceProvider);
   List<EventTeamMember> _teamMembers = [];
   bool _isLoading = true;
 
@@ -37,16 +36,10 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
   Future<void> _loadTeamMembers() async {
     setState(() => _isLoading = true);
     try {
-      final response = await _supabase
-          .from('event_team_members')
-          .select()
-          .eq('event_id', widget.eventId)
-          .order('created_at', ascending: true);
+      final members = await _team.list(widget.eventId);
 
       setState(() {
-        _teamMembers = (response as List)
-            .map((json) => EventTeamMember.fromJson(json))
-            .toList();
+        _teamMembers = members;
         _isLoading = false;
       });
     } catch (e) {
@@ -191,27 +184,10 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
     try {
       if (existingMember == null) {
         // Create new member
-        final memberData = {
-          'event_id': widget.eventId,
-          'name': name,
-          'role': role,
-          'email': email,
-          'phone': phone,
-        };
-        await _supabase.from('event_team_members').insert(memberData);
+        await _team.add(eventId: widget.eventId, name: name, role: role, email: email, phone: phone);
       } else {
         // Update existing member
-        final memberData = {
-          'name': name,
-          'role': role,
-          'email': email,
-          'phone': phone,
-          'updated_at': DateTime.now().toIso8601String(),
-        };
-        await _supabase
-            .from('event_team_members')
-            .update(memberData)
-            .eq('id', existingMember.id);
+        await _team.update(existingMember.id, name: name, role: role, email: email, phone: phone);
       }
 
       await _loadTeamMembers();
@@ -258,7 +234,7 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
 
     if (confirmed == true) {
       try {
-        await _supabase.from('event_team_members').delete().eq('id', member.id);
+        await _team.remove(member.id);
         await _loadTeamMembers();
 
         if (mounted) {
@@ -324,326 +300,143 @@ class _ManageLineupScreenState extends ConsumerState<ManageLineupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final djCount = _getMembersByRole(TeamRole.dj).length;
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
+    final djs = _getMembersByRole(TeamRole.dj);
     final otherMembers = _teamMembers.where((m) => m.role != TeamRole.dj).toList();
 
+    Widget sectionTitle(String key, IconData icon, String title, {VoidCallback? onAdd, String? addTooltip}) => Row(
+          children: [
+            Icon(icon, color: bu.soft, size: 20),
+            const SizedBox(width: BuSpace.s),
+            Expanded(child: Text(title, key: Key(key), style: text.titleLarge)),
+            if (onAdd != null) IconButton(onPressed: onAdd, icon: const Icon(Ionicons.add_outline, size: 20), tooltip: addTooltip),
+          ],
+        );
+
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: BuDetailAppBar(eyebrow: 'Event', title: 'Manage Event Team', actions: [
-          IconButton(
-            onPressed: () => _showAddEditDialog(),
-            icon: const Icon(Ionicons.add_circle_outline),
-            tooltip: 'Add Team Member',
-          ),
-        ]),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: BuDetailAppBar(
+        eyebrow: widget.eventName,
+        title: 'Team & Lineup',
+        actions: [IconButton(key: const Key('lineup-add'), onPressed: () => _showAddEditDialog(), icon: const Icon(Ionicons.add_circle_outline), tooltip: 'Add Team Member')],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadTeamMembers,
-              child: SingleChildScrollView(
+              child: ListView(
+                key: const Key('lineup-list'),
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88), // room for the Add button
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Event Info Header
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: AppTheme.darkContainerDecoration,
-                      child: Row(
+                padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.s, BuSpace.page, 88), // room for the Add button
+                children: [
+                  Text('${_teamMembers.length} team member${_teamMembers.length != 1 ? 's' : ''}', key: const Key('lineup-count'), style: text.bodyMedium?.copyWith(color: bu.muted)),
+                  const SizedBox(height: BuSpace.l),
+                  sectionTitle('lineup-djs-title', Ionicons.musical_notes_outline, 'DJs & Performers (${djs.length})', onAdd: () => _showAddEditDialog(), addTooltip: 'Add DJ/Performer'),
+                  const SizedBox(height: BuSpace.m),
+                  if (djs.isEmpty)
+                    BuCard(
+                      key: const Key('lineup-no-djs'),
+                      child: Column(
                         children: [
-                          Icon(
-                            Ionicons.calendar_outline,
-                            color: theme.colorScheme.primary,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.eventName,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${_teamMembers.length} team member${_teamMembers.length != 1 ? 's' : ''}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          Text('No DJs added yet', style: text.bodyMedium?.copyWith(color: bu.muted)),
+                          const SizedBox(height: BuSpace.xs),
+                          TextButton.icon(key: const Key('lineup-add-dj'), onPressed: () => _showAddEditDialog(), icon: const Icon(Ionicons.add_outline), label: const Text('Add DJ')),
                         ],
                       ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // DJs / Performers Section
-                    Row(
-                      children: [
-                        Icon(
-                          Ionicons.musical_notes_outline,
-                          color: BuTokens.dark.soft,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'DJs & Performers ($djCount)',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: () => _showAddEditDialog(),
-                          icon: const Icon(Ionicons.add_outline, size: 20),
-                          tooltip: 'Add DJ/Performer',
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    if (_getMembersByRole(TeamRole.dj).isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: AppTheme.darkCardDecoration,
-                        child: Center(
-                          child: Column(
-                            children: [
-                              Icon(
-                                Ionicons.musical_notes_outline,
-                                size: 48,
-                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'No DJs added yet',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              TextButton.icon(
-                                onPressed: () => _showAddEditDialog(),
-                                icon: const Icon(Ionicons.add_outline),
-                                label: const Text('Add DJ'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      ..._getMembersByRole(TeamRole.dj).map((dj) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildMemberCard(dj, highlight: true),
-                          )),
-
-                    const SizedBox(height: 32),
-
-                    // Other Team Members Section
-                    if (otherMembers.isNotEmpty) ...[
-                      Row(
-                        children: [
-                          Icon(
-                            Ionicons.people_outline,
-                            color: theme.colorScheme.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Other Team Members (${otherMembers.length})',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      ...otherMembers.map((member) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildMemberCard(member),
-                          )),
-                    ],
-
-                    if (_teamMembers.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(48.0),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Ionicons.people_outline,
-                                size: 64,
-                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No team members yet',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              FilledButton.icon(
-                                onPressed: () => _showAddEditDialog(),
-                                icon: const Icon(Ionicons.add_outline),
-                                label: const Text('Add Team Member'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    )
+                  else
+                    for (final dj in djs) Padding(padding: const EdgeInsets.only(bottom: BuSpace.m), child: _buildMemberCard(dj, highlight: true)),
+                  if (otherMembers.isNotEmpty) ...[
+                    const SizedBox(height: BuSpace.xl),
+                    sectionTitle('lineup-others-title', Ionicons.people_outline, 'Other Team Members (${otherMembers.length})'),
+                    const SizedBox(height: BuSpace.m),
+                    for (final member in otherMembers) Padding(padding: const EdgeInsets.only(bottom: BuSpace.m), child: _buildMemberCard(member)),
                   ],
-                ),
+                  if (_teamMembers.isEmpty) ...[
+                    const SizedBox(height: BuSpace.xl),
+                    BuCard(
+                      key: const Key('lineup-empty'),
+                      child: Column(
+                        children: [
+                          BuIconTile(icon: Ionicons.people_outline, size: 52),
+                          const SizedBox(height: BuSpace.m),
+                          Text('No team members yet', style: text.titleMedium),
+                          const SizedBox(height: BuSpace.xs),
+                          Text('Add the DJs, security and staff working this night.', style: text.bodySmall?.copyWith(color: bu.muted), textAlign: TextAlign.center),
+                          const SizedBox(height: BuSpace.m),
+                          FilledButton.icon(key: const Key('lineup-add-first'), onPressed: () => _showAddEditDialog(), icon: const Icon(Ionicons.add_outline), label: const Text('Add Team Member')),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-      floatingActionButton: _teamMembers.isNotEmpty
-          ? FloatingActionButton(
-              onPressed: () => _showAddEditDialog(),
-              child: const Icon(Ionicons.add_outline),
-            )
-          : null,
+      floatingActionButton: _teamMembers.isNotEmpty ? FloatingActionButton(key: const Key('lineup-fab'), onPressed: () => _showAddEditDialog(), child: const Icon(Ionicons.add_outline)) : null,
     );
   }
 
   Widget _buildMemberCard(EventTeamMember member, {bool highlight = false}) {
-    final theme = Theme.of(context);
+    final bu = context.bu;
+    final text = Theme.of(context).textTheme;
     final roleColor = _getRoleColor(member.role);
     final roleIcon = _getRoleIcon(member.role);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.darkCardDecoration.copyWith(
-        border: highlight
-            ? Border.all(color: roleColor.withValues(alpha: 0.5), width: 2)
-            : null,
-      ),
+    Widget contact(IconData icon, String value, {bool ellipsis = false}) => Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            children: [
+              Icon(icon, size: 13, color: bu.muted),
+              const SizedBox(width: 6),
+              Expanded(child: Text(value, style: text.bodySmall?.copyWith(color: bu.muted), overflow: ellipsis ? TextOverflow.ellipsis : null)),
+            ],
+          ),
+        );
+
+    return BuCard(
+      key: Key('member-${member.id}'),
+      accent: highlight ? roleColor : null,
+      padding: const EdgeInsets.all(BuSpace.m + 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: roleColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Icon(roleIcon, color: roleColor, size: 24),
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(color: roleColor.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(BuRadius.control)),
+            child: Icon(roleIcon, color: roleColor, size: 22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: BuSpace.m),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  member.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(member.name, style: text.titleMedium),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: roleColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        member.role,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: roleColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: BoxDecoration(color: roleColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(BuRadius.pill)),
+                  child: Text(member.role, style: text.labelSmall?.copyWith(color: roleColor, fontWeight: FontWeight.w700)),
                 ),
-                if (member.email != null || member.phone != null) ...[
-                  const SizedBox(height: 8),
-                  if (member.email != null)
-                    Row(
-                      children: [
-                        Icon(
-                          Ionicons.mail_outline,
-                          size: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            member.email!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (member.phone != null)
-                    Row(
-                      children: [
-                        Icon(
-                          Ionicons.call_outline,
-                          size: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          member.phone!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
+                if (member.email != null) contact(Ionicons.mail_outline, member.email!, ellipsis: true),
+                if (member.phone != null) contact(Ionicons.call_outline, member.phone!),
               ],
             ),
           ),
           PopupMenuButton(
+            key: Key('member-menu-${member.id}'),
             icon: const Icon(Ionicons.ellipsis_vertical),
             itemBuilder: (context) => [
               PopupMenuItem(
-                onTap: () => Future.delayed(
-                  Duration.zero,
-                  () => _showAddEditDialog(existingMember: member),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Ionicons.create_outline, size: 18),
-                    SizedBox(width: 12),
-                    Text('Edit'),
-                  ],
-                ),
+                key: const Key('member-edit'),
+                onTap: () => Future.delayed(Duration.zero, () => _showAddEditDialog(existingMember: member)),
+                child: const Row(children: [Icon(Ionicons.create_outline, size: 18), SizedBox(width: 12), Text('Edit')]),
               ),
               PopupMenuItem(
+                key: const Key('member-remove'),
                 onTap: () => Future.delayed(Duration.zero, () => _deleteMember(member)),
-                child: Row(
-                  children: [
-                    Icon(Ionicons.trash_outline, size: 18, color: BuTokens.dark.red),
-                    SizedBox(width: 12),
-                    Text('Remove', style: TextStyle(color: BuTokens.dark.red)),
-                  ],
-                ),
+                child: Row(children: [Icon(Ionicons.trash_outline, size: 18, color: bu.red), const SizedBox(width: 12), Text('Remove', style: TextStyle(color: bu.red))]),
               ),
             ],
           ),
