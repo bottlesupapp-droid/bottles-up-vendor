@@ -12,6 +12,7 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/report_emails/screens/report_recipients_screen.dart';
 import 'package:bottles_up_vendor/features/sales_source/screens/sales_tracking_screen.dart';
+import 'package:bottles_up_vendor/features/settlements/screens/settlements_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,6 +41,7 @@ const Set<String> builtMore = {
   'owner/bottle-signs', 'manager/bottle-signs',
   'owner/report-emails', 'manager/report-emails', 'organizer/report-emails',
   'owner/sales-tracking', 'manager/sales-tracking',
+  'owner/organizer-settlements', 'manager/organizer-settlements', 'organizer/settlement',
 };
 
 void main() {
@@ -58,6 +60,22 @@ void main() {
       }
     }
     expect(actual, builtMore);
+  });
+
+  test('organizer settlements: the owner and the manager have the club\'s side (named as the brief names them), the organizer has its own; nobody else reaches them', () {
+    expect(moreEntriesFor(WorkspaceRole.owner).firstWhere((e) => e.id == 'organizer-settlements').label, 'Organizer settlements');
+    expect(moreEntriesFor(WorkspaceRole.manager).firstWhere((e) => e.id == 'organizer-settlements').label, 'Settlement review');
+    expect(moreEntriesFor(WorkspaceRole.organizer).firstWhere((e) => e.id == 'settlement').label, 'Settlement');
+    for (final role in [WorkspaceRole.owner, WorkspaceRole.manager]) {
+      expect(moreDestinationFor(ws(role), 'organizer-settlements'), isA<SettlementsScreen>(), reason: role.name);
+      expect(moreDestinationFor(ws(role), 'settlement'), isNull, reason: '${role.name} has no organizer\'s Settlement page');
+    }
+    expect(moreDestinationFor(ws(WorkspaceRole.organizer), 'settlement'), isA<SettlementsScreen>());
+    expect(moreDestinationFor(ws(WorkspaceRole.organizer), 'organizer-settlements'), isNull, reason: 'an organizer cannot reach the club\'s side');
+    for (final role in [WorkspaceRole.door, WorkspaceRole.security]) {
+      expect(moreDestinationFor(ws(role), 'organizer-settlements'), isNull, reason: role.name);
+      expect(moreDestinationFor(ws(role), 'settlement'), isNull, reason: role.name);
+    }
   });
 
   test('entry ids are unique within a role, and each has a label and words', () {
@@ -123,14 +141,14 @@ void main() {
     expect(showUnbuiltMoreEntries, isFalse);
   });
 
-  testWidgets('the four parts that are not built are the ones left out', (tester) async {
+  testWidgets('the three parts that are not built are the ones left out', (tester) async {
     final hidden = <String>{};
     for (final role in WorkspaceRole.values) {
       for (final e in moreEntriesFor(role)) {
         if (!builtMore.contains('${role.name}/${e.id}')) hidden.add('${role.name}/${e.id}');
       }
     }
-    expect(hidden, {'owner/complimentary', 'manager/complimentary', 'organizer/settlement', 'organizer/notifications', 'door/promo-codes'});
+    expect(hidden, {'owner/complimentary', 'manager/complimentary', 'organizer/notifications', 'door/promo-codes'});
   });
 
   test('the double-booked tables page is the club manager\'s and the owner\'s, and nobody else gets it', () {

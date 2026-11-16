@@ -25,7 +25,9 @@ const _agreements = MoreEntry(id: 'agreements', label: 'Events and agreements', 
 const _orgAgreements = MoreEntry(id: 'agreements', label: 'Venue agreements', subtitle: 'Ask a club to host your event and agree the terms.', icon: Ionicons.document_text_outline);
 const _sales = MoreEntry(id: 'sales', label: 'Sales', subtitle: 'Ticket sales for your events and what each club shares with you. Share it as a PDF.', icon: Ionicons.stats_chart_outline);
 const _venueAccess = MoreEntry(id: 'venue-access', label: 'Your venue access', subtitle: 'What each club has chosen to share with you about your events.', icon: Ionicons.eye_outline);
-const _settlement = MoreEntry(id: 'settlement', label: 'Settlement', subtitle: 'What is owed between your events and the venues.', icon: Ionicons.cash_outline);
+const _settlement = MoreEntry(id: 'settlement', label: 'Settlement', subtitle: 'What the clubs owe you for your share of bar sales, and when it was paid.', icon: Ionicons.cash_outline);
+const _organizerSettlements = MoreEntry(id: 'organizer-settlements', label: 'Organizer settlements', subtitle: 'What each club owes each organizer for their share of bar sales: record the sales, approve, and record the payment.', icon: Ionicons.cash_outline);
+const _settlementReview = MoreEntry(id: 'organizer-settlements', label: 'Settlement review', subtitle: 'The organizers\' share of this club\'s bar sales: enter the sales and review the figures.', icon: Ionicons.cash_outline);
 const _notifications = MoreEntry(id: 'notifications', label: 'Notifications', subtitle: 'What the app tells you, and how.', icon: Ionicons.notifications_outline);
 const _security = MoreEntry(id: 'security', label: 'Security', subtitle: 'Alerts, tasks and incident reports for your club.', icon: Ionicons.shield_outline);
 const _chat = MoreEntry(id: 'chat', label: 'Chat', subtitle: 'Your club\'s staff chat, event chats and direct messages.', icon: Ionicons.chatbubbles_outline);
@@ -42,8 +44,8 @@ const _settings = MoreEntry(id: 'settings', label: 'Settings', subtitle: 'Who yo
 
 /// The entries of a role's More tab, in the order the brief lists them. Roles without a More tab have none.
 List<MoreEntry> moreEntriesFor(WorkspaceRole role) => switch (role) {
-      WorkspaceRole.owner => const [_money, _salesTracking, _team, _inventory, _vip, _discounts, _bottleSigns, _complimentary, _refunds, _conflicts, _agreements, _organizerDoor, _payouts, _chat, _reportEmails, _settings],
-      WorkspaceRole.manager => const [_security, _salesTracking, _inventory, _vip, _discounts, _bottleSigns, _complimentary, _refunds, _conflicts, _agreements, _organizerDoor, _chat, _reportEmails, _settings],
+      WorkspaceRole.owner => const [_money, _salesTracking, _team, _inventory, _vip, _discounts, _bottleSigns, _complimentary, _refunds, _conflicts, _agreements, _organizerSettlements, _organizerDoor, _payouts, _chat, _reportEmails, _settings],
+      WorkspaceRole.manager => const [_security, _salesTracking, _inventory, _vip, _discounts, _bottleSigns, _complimentary, _refunds, _conflicts, _agreements, _settlementReview, _organizerDoor, _chat, _reportEmails, _settings],
       WorkspaceRole.organizer => const [_orgAgreements, _orgTeam, _sales, _venueAccess, _settlement, _payouts, _notifications, _reportEmails, _settings],
       WorkspaceRole.door => const [_shiftSummary, _promoCodes, _settings],
       WorkspaceRole.security => const [_incidents, _settings],
