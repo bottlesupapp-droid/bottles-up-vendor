@@ -9,10 +9,11 @@ import '../../owner/providers/owner_providers.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
 import '../logic/report_email_rules.dart';
+import '../widgets/auto_send_switch.dart';
 import '../widgets/recipients_editor.dart';
 
-/// Report e-mails (More): who receives each report. An owner keeps the combined list and a list for each club; a manager their club's; an organizer the event report's. Nothing is sent from here:
-/// a report goes out only when someone presses E-mail this report on it.
+/// Report e-mails (More): who receives each report, and whether it is sent on its own when the night is closed. An owner keeps the combined list and a list for each club; a manager their club's; an
+/// organizer the event report's. A report goes out when someone presses E-mail this report on it, or, where the switch under a list is on, when the night is closed.
 class ReportRecipientsScreen extends ConsumerWidget {
   const ReportRecipientsScreen({super.key, required this.workspace});
 
@@ -33,6 +34,7 @@ class ReportRecipientsScreen extends ConsumerWidget {
             Text(listExplainer(scope.kind), style: theme.textTheme.bodySmall),
             const SizedBox(height: 8),
             RecipientsEditor(scope: scope, keyPrefix: keyPrefix),
+            AutoSendSwitch(scope: scope, keyPrefix: keyPrefix),
           ],
         ),
       ),

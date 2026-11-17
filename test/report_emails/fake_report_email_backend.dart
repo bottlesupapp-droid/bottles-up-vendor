@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:bottles_up_vendor/features/ops/services/ops_rpc.dart';
@@ -22,6 +23,18 @@ class FakeReportEmailBackend {
   final List<({String name, Map<String, dynamic> body})> sends = [];
   bool offline = false;
   bool missing = false;
+
+  /// Holds the answer to switching it on or off until the test lets it go.
+  Completer<void>? setGate;
+
+  /// Functions this server does not have (a migration not applied yet), by name.
+  final Set<String> missingFor = {};
+
+  /// The automatic-sending switches, keyed like the lists: on or off, and who last changed it ('me' is the person signed in).
+  final Map<String, ({bool enabled, String by, DateTime at})> autos = {};
+
+  /// The newest automatic send for a list, if there has been one.
+  final Map<String, ({String status, String ref, String? error, DateTime at})> lastJobs = {};
 
   /// Addresses the e-mail provider refuses.
   final Set<String> failFor = {};
@@ -51,7 +64,7 @@ class FakeReportEmailBackend {
   Future<dynamic> call(String function, {Map<String, dynamic>? params}) async {
     calls.add((function: function, params: params));
     if (offline) throw const SocketLikeException();
-    if (missing) throw PostgrestException(message: 'Could not find the function public.$function in the schema cache', code: 'PGRST202');
+    if (missing || missingFor.contains(function)) throw PostgrestException(message: 'Could not find the function public.$function in the schema cache', code: 'PGRST202');
     final p = params ?? const <String, dynamic>{};
     switch (function) {
       case 'report_recipients':
@@ -80,6 +93,29 @@ class FakeReportEmailBackend {
           }
         }
         throw refuse('not allowed');
+      case 'report_auto_status':
+        if (!_may(p['p_kind'] as String)) throw refuse('not allowed');
+        final a = autos[_key(p)];
+        final j = lastJobs[_key(p)];
+        return [
+          {
+            'enabled': a?.enabled ?? false,
+            'changed_by_name': a == null ? null : (a.by == 'me' ? 'Me Myself' : a.by),
+            'changed_at': a?.at.toIso8601String(),
+            'mine': a?.by == 'me',
+            'recipients': (lists[_key(p)] ?? const []).length,
+            'last_status': j?.status,
+            'last_ref': j?.ref,
+            'last_at': j?.at.toIso8601String(),
+            'last_error': j?.error,
+          },
+        ];
+      case 'report_auto_set':
+        if (setGate != null) await setGate!.future;
+        if (!_may(p['p_kind'] as String)) throw refuse('not allowed');
+        if (p['p_enabled'] == null) throw refuse('choose on or off');
+        autos[_key(p)] = (enabled: p['p_enabled'] as bool, by: 'me', at: _now);
+        return p['p_enabled'];
       case 'report_deliveries':
         if (!_may(p['p_kind'] as String)) throw refuse('not allowed');
         final rows = log.where((d) => d.ref == p['p_ref']).toList().reversed.take(p['p_limit'] as int);

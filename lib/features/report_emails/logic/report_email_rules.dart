@@ -1,3 +1,4 @@
+import '../../floor/logic/bookings_rules.dart' show formatNight;
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
 
@@ -195,7 +196,99 @@ String listExplainer(ReportKind kind) => switch (kind) {
     'Everyone here gets an event report when you e-mail it. It never holds more than your Sales page shows, so it never holds what a club has not shared with you.',
 };
 
-const String reportEmailNote = 'Nothing is sent on its own. A report is e-mailed only when someone presses E-mail this report.';
+const String reportEmailNote = 'A report is e-mailed when someone presses E-mail this report. Where automatic sending is switched on for a list, it is also sent when the night is closed.';
+
+// ---------------------------------------------------------------------------------------------------------------------------------------
+// Sending automatically when the night is closed (website 20261126100000_auto_report_jobs.sql and the run-report-jobs function)
+// ---------------------------------------------------------------------------------------------------------------------------------------------------
+
+/// The switch for one list and what the latest automatic send did. The database decides who may switch it (the same people as the button) and does the sending AS the person who switched it on.
+class ReportAutoStatus {
+  const ReportAutoStatus({required this.enabled, required this.mine, required this.recipients, this.changedByName, this.changedAt, this.lastStatus, this.lastRef, this.lastAt, this.lastError});
+
+  final bool enabled;
+  final String? changedByName;
+  final DateTime? changedAt;
+
+  /// The person looking is the one it is sent as.
+  final bool mine;
+  final int recipients;
+
+  /// pending, running, sent, failed or skipped: the newest automatic send for this list, if there has been one.
+  final String? lastStatus;
+
+  /// The night (YYYY-MM-DD), or for an organizer's event report the event's id.
+  final String? lastRef;
+  final DateTime? lastAt;
+  final String? lastError;
+}
+
+ReportAutoStatus? parseReportAutoStatus(Map<String, dynamic> row) {
+  if (row['enabled'] is! bool) return null;
+  final r = row['recipients'];
+  return ReportAutoStatus(
+    enabled: row['enabled'] as bool,
+    mine: row['mine'] == true,
+    recipients: r is int ? r : (r is num ? r.toInt() : 0),
+    changedByName: _text(row['changed_by_name']),
+    changedAt: DateTime.tryParse(row['changed_at']?.toString() ?? '')?.toLocal(),
+    lastStatus: _text(row['last_status']),
+    lastRef: _text(row['last_ref']),
+    lastAt: DateTime.tryParse(row['last_at']?.toString() ?? '')?.toLocal(),
+    lastError: _text(row['last_error']),
+  );
+}
+
+String? _text(Object? v) {
+  final s = v?.toString();
+  return s == null || s.isEmpty ? null : s;
+}
+
+/// When each kind of report goes out on its own.
+String autoWhen(ReportKind kind) => switch (kind) {
+  ReportKind.ownerCombined => 'when every club has closed the night',
+  ReportKind.venueNight => 'when the night is closed',
+  ReportKind.organizerSales => 'when every club hosting an event of yours has closed its night',
+};
+
+String autoSwitchTitle(ReportKind kind) => 'Send automatically ${autoWhen(kind)}';
+
+/// What the switch says about itself, under the title.
+String autoStateLine(ReportAutoStatus s) {
+  if (!s.enabled) return 'Off. This report is e-mailed only when someone presses E-mail this report.';
+  final who = s.mine ? 'you' : (s.changedByName ?? 'someone else');
+  return 'On. It is sent as $who: if ${s.mine ? 'you' : 'they'} lose access to this report, it stops and says so here.';
+}
+
+/// Shown when it is on but nobody would receive it.
+const String autoNoRecipientsText = 'No one is on the list, so nothing will be sent. Add an e-mail address above.';
+
+/// What the latest automatic send did, in words, or null when there has not been one.
+String? autoLastLine(ReportAutoStatus s, ReportKind kind) {
+  final status = s.lastStatus;
+  if (status == null) return null;
+  final what = kind == ReportKind.organizerSales || s.lastRef == null ? 'Last automatic send' : 'Last automatic send, ${formatNight(s.lastRef!)}';
+  final reason = s.lastError == null ? '' : ': ${s.lastError}';
+  return switch (status) {
+    'pending' => '$what: waiting to be sent$reason',
+    'running' => '$what: being sent now',
+    'sent' => '$what: sent',
+    'failed' => '$what: not sent$reason',
+    'skipped' => '$what: skipped$reason',
+    _ => '$what: $status',
+  };
+}
+
+/// What the person is told before they switch it on.
+String autoConfirmMessage(ReportKind kind, int recipients) {
+  final report = switch (kind) {
+    ReportKind.ownerCombined => 'The combined report',
+    ReportKind.venueNight => 'This club\'s night report',
+    ReportKind.organizerSales => 'Each event report',
+  };
+  final who = recipients == 0 ? 'the list (it is empty, so nothing will be sent until you add an address)' : (recipients == 1 ? 'the 1 address on this list' : 'the $recipients addresses on this list');
+  return '$report will be e-mailed to $who ${autoWhen(kind)}, as if you pressed E-mail this report. It uses your access: if you leave this business or lose access, it stops. Nights that are already closed are not sent.';
+}
 
 const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

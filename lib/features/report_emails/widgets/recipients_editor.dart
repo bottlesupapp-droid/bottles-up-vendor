@@ -48,6 +48,7 @@ class _RecipientsEditorState extends ConsumerState<RecipientsEditor> {
       await ref.read(reportEmailServiceProvider).add(widget.scope, _field.text);
       _field.clear();
       ref.invalidate(reportRecipientsProvider(widget.scope));
+      ref.invalidate(reportAutoStatusProvider(widget.scope));
     } on OpsActionException catch (e) {
       _message = e.message;
     } finally {
@@ -63,6 +64,7 @@ class _RecipientsEditorState extends ConsumerState<RecipientsEditor> {
     try {
       await ref.read(reportEmailServiceProvider).remove(r.id);
       ref.invalidate(reportRecipientsProvider(widget.scope));
+      ref.invalidate(reportAutoStatusProvider(widget.scope));
     } on OpsActionException catch (e) {
       _message = e.message;
     } finally {
