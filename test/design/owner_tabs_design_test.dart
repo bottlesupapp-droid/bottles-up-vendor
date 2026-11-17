@@ -34,6 +34,8 @@ import '../table_service/fake_table_backend.dart';
 final _bu = BuTokens.dark;
 
 const _owner = Workspace(membershipId: 'm-o', orgId: 'o1', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.owner);
+// The door's More still has a row that is not built (Promo codes): the one place a not-built row can be looked at now that every row of the owner's More opens something.
+const _door = Workspace(membershipId: 'm-d', orgId: 'o1', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.door, venueId: 'v1', venueName: 'Club A');
 const _manager = Workspace(membershipId: 'm-m', orgId: 'o1', orgName: 'Club Co', orgKind: 'venue_owner', role: WorkspaceRole.manager, venueId: 'v1', venueName: 'Club A');
 
 DateTime _friday9pm() => DateTime(2026, 10, 9, 21);
@@ -640,9 +642,9 @@ void main() {
 
   // ---------------------------------------------------------------------------------------------------------------------------------------------------------
   group('More', () {
-    Future<void> open(WidgetTester tester, {bool showUnbuilt = false}) async {
+    Future<void> open(WidgetTester tester, {bool showUnbuilt = false, Workspace workspace = _owner}) async {
       _phone(tester, height: 4000);
-      await tester.pumpWidget(MaterialApp(theme: AppTheme.darkTheme, home: Scaffold(body: MoreScreen(workspace: _owner, showUnbuilt: showUnbuilt))));
+      await tester.pumpWidget(MaterialApp(theme: AppTheme.darkTheme, home: Scaffold(body: MoreScreen(workspace: workspace, showUnbuilt: showUnbuilt))));
       await tester.pumpAndSettle();
     }
 
@@ -668,13 +670,13 @@ void main() {
     });
 
     testWidgets('an entry that is not built is dimmed, says so, has no chevron and does nothing', (tester) async {
-      await open(tester, showUnbuilt: true);
-      final row = find.byKey(const Key('more-complimentary'));
+      await open(tester, showUnbuilt: true, workspace: _door);
+      final row = find.byKey(const Key('more-promo-codes'));
       expect(tester.widget<ListTile>(row).onTap, isNull);
       expect(tester.widget<ListTile>(row).enabled, isFalse);
       expect(find.descendant(of: row, matching: find.textContaining('Not available yet.')), findsOneWidget);
       expect(find.descendant(of: row, matching: find.byIcon(Ionicons.chevron_forward)), findsNothing);
-      expect(_color(tester, find.descendant(of: row, matching: find.text('Complimentary bottles'))), _bu.muted);
+      expect(_color(tester, find.descendant(of: row, matching: find.text('Promo codes'))), _bu.muted);
       final tile = tester.widget<Container>(find.descendant(of: find.descendant(of: row, matching: find.byType(BuIconTile)), matching: find.byType(Container)).first);
       expect((tile.decoration! as BoxDecoration).color, _bu.panel2);
     });
