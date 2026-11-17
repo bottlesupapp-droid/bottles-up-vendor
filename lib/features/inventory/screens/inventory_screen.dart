@@ -14,6 +14,7 @@ import '../logic/inventory_rules.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/movement_dialog.dart';
 import 'stock_ledger_screen.dart';
+import 'stock_overview_screen.dart';
 
 /// Inventory (manager, and the owner for any of their clubs): each bottle's level, which ones are low, and a way to record a delivery,
 /// wastage, an adjustment or a count. Every change goes in the history with who made it and why. A bottle nobody has counted has no
@@ -104,6 +105,12 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     ));
   }
 
+  void _overview() {
+    final venue = _venueId;
+    if (venue == null) return;
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => StockOverviewScreen(venueId: venue, venueName: widget.workspace.venueName)));
+  }
+
   Future<void> _open(StockItem item) async {
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -149,7 +156,17 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(BuSpace.page, BuSpace.l, BuSpace.page, BuSpace.xl),
         children: [
-          BuPageHeader(eyebrow: 'Stock', title: 'Inventory', trailing: TextButton.icon(key: const Key('stock-history-all'), onPressed: () => _history(null), icon: const Icon(Ionicons.time_outline, size: 18), label: const Text('History'))),
+          BuPageHeader(
+            eyebrow: 'Stock',
+            title: 'Inventory',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton.icon(key: const Key('stock-overview-open'), onPressed: _overview, icon: const Icon(Ionicons.layers_outline, size: 18), label: const Text('Overview')),
+                TextButton.icon(key: const Key('stock-history-all'), onPressed: () => _history(null), icon: const Icon(Ionicons.time_outline, size: 18), label: const Text('History')),
+              ],
+            ),
+          ),
           if (widget.workspace.venueName != null && widget.workspace.venueId != null) Text(widget.workspace.venueName!, style: theme.textTheme.bodyMedium),
           if (widget.workspace.venueId == null)
             TextButton(key: const Key('inventory-change-club'), onPressed: () => setState(() => _chosenVenue = null), child: const Text('Choose another club')),
