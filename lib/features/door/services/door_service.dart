@@ -168,4 +168,33 @@ class DoorService {
     if (admitted.isEmpty) return guests;
     return [for (final g in guests) admitted.containsKey(g.orderId) ? g.withAdmittedKeepingTime(admitted[g.orderId]!) : g];
   }
+
+  /// Whether the server has exits and occupancy (website 20261122100000). Null until the first ask finds out; once it is known to be missing the door keeps working as before and
+  /// the bar says "checked in".
+  bool _occupancyMissing = false;
+
+  /// How many guests are in, and whether exits are tracked for this event. Null when the server does not have it or cannot say: the screen then falls back to the figure
+  /// door_events gives, never to a guess.
+  Future<Occupancy?> occupancy(String eventId) async {
+    if (_occupancyMissing) return null;
+    try {
+      final rows = _rows(await _rpc('door_occupancy', params: {'p_event': eventId}));
+      return rows.isEmpty ? null : parseOccupancy(rows.first);
+    } catch (error) {
+      if (_isMissingFunction(error)) _occupancyMissing = true;
+      return null;
+    }
+  }
+
+  /// Records [count] guests of a ticket leaving. The database refuses it unless the event tracks exits, and never lets more leave than are inside. Never throws, like [scan].
+  Future<ExitOutcome> recordExit(String ticketCode, String eventId, {int count = 1}) async {
+    final code = normalizeScan(ticketCode);
+    if (code.isEmpty || count < 1) return const ExitOutcome(ExitResult.error);
+    try {
+      final rows = _rows(await _rpc('door_record_exit', params: {'p_ticket_code': code, 'p_count': count, 'p_event': eventId}));
+      return parseExitOutcome(rows.isEmpty ? null : rows.first);
+    } catch (error) {
+      return exitOutcomeFromError(_messageOf(error));
+    }
+  }
 }

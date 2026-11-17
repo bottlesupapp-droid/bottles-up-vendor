@@ -8,6 +8,7 @@ import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
 import '../../bottle_signs/screens/bottle_signs_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../discounts/screens/discounts_screen.dart';
+import '../../door_control/screens/door_control_screen.dart';
 import '../../preview/screens/preview_gallery_screen.dart';
 import '../../door_sales/screens/shift_summary_screen.dart';
 import '../../door_staff/screens/club_door_staff_screen.dart';
@@ -70,6 +71,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'report-emails' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager || workspace.role == WorkspaceRole.organizer => ReportRecipientsScreen(workspace: workspace),
       // Where the club's sales come from, and its closing reports: the owner and the manager.
       'sales-tracking' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => SalesTrackingScreen(workspace: workspace),
+      // Door control is the owner's and the manager's: who is inside, exit tracking, and an override (with a reason) for a guest held back only by the entry code. Door staff do not have it (the owner picks the club).
+      'door-control' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DoorControlScreen(workspace: workspace),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };

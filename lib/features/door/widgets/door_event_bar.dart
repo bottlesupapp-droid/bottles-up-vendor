@@ -7,11 +7,14 @@ import '../logic/door_rules.dart';
 /// Which event the door is working, and how many guests are in. The brief asks that the active event stay visible on
 /// every operational screen; with several events the person chooses, and the choice is the one place a scan is aimed.
 class DoorEventBar extends StatelessWidget {
-  const DoorEventBar({super.key, required this.events, required this.selected, required this.onSelect});
+  const DoorEventBar({super.key, required this.events, required this.selected, required this.onSelect, this.occupancy});
 
   final List<DoorEvent> events;
   final DoorEvent selected;
   final ValueChanged<String> onSelect;
+
+  /// How many are in and whether exits are tracked, when the server says. Without it the bar shows what door_events gave.
+  final Occupancy? occupancy;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +56,12 @@ class DoorEventBar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(admittedSummary(selected), key: const Key('admitted-summary'), style: theme.textTheme.bodyMedium),
+          if (occupancy != null) ...[
+            Text(occupancyHeadline(occupancy!), key: const Key('occupancy-headline'), style: theme.textTheme.titleMedium),
+            const SizedBox(height: 2),
+            Text(occupancySummary(occupancy, expected: selected.guestsExpected), key: const Key('admitted-summary'), style: theme.textTheme.bodyMedium),
+          ] else
+            Text(admittedSummary(selected), key: const Key('admitted-summary'), style: theme.textTheme.bodyMedium),
         ],
       ),
     );

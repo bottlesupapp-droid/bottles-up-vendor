@@ -11,6 +11,11 @@ final doorEventsProvider = FutureProvider.autoDispose.family<List<DoorEvent>, St
   return ref.watch(doorServiceProvider).events(membershipId);
 });
 
+/// How many guests are in the event and whether exits are tracked. Read again after every entry or exit, never kept once the screen is gone. Null when the server cannot say.
+final doorOccupancyProvider = FutureProvider.autoDispose.family<Occupancy?, String>((ref, eventId) {
+  return ref.watch(doorServiceProvider).occupancy(eventId);
+});
+
 /// Which event the person chose, shared by the Scan and Guests tabs of one workspace so switching tabs keeps it.
 /// Null means "not chosen yet": the screens fall back to [defaultEvent].
 final selectedDoorEventProvider = StateProvider.family<String?, String>((ref, membershipId) => null);
