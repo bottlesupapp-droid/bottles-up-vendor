@@ -29,6 +29,7 @@ import '../../workspace/models/workspace_role.dart';
 import '../logic/more_entries.dart';
 import 'workspace_settings_screen.dart';
 import '../../sales_source/screens/sales_tracking_screen.dart';
+import '../../complimentary/screens/complimentary_screen.dart';
 import '../../settlements/screens/settlements_screen.dart';
 
 /// The page behind a More entry, or null while that part is not built. Add to this as each part is built; nothing else changes.
@@ -77,12 +78,14 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'settlement' when workspace.role == WorkspaceRole.organizer => SettlementsScreen(workspace: workspace),
       // Door control is the owner's and the manager's: who is inside, exit tracking, and an override (with a reason) for a guest held back only by the entry code. Door staff do not have it (the owner picks the club).
       'door-control' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DoorControlScreen(workspace: workspace),
+      // Complimentary bottle offers with a claim link: the owner's and the manager's.
+      'complimentary' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => ComplimentaryScreen(workspace: workspace),
       'settings' => WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };
 
 /// Rows for parts that are not built yet are left out of the menu, so nobody opening the app (a client, a store reviewer) meets a row that goes nowhere. Switch it on while building to see
-/// every part of the brief again, each plainly marked "Not available yet". (The parts: Complimentary bottles, the door's Promo codes and an organizer's Notifications.)
+/// every part of the brief again, each plainly marked "Not available yet". (The parts: the door's Promo codes and an organizer's Notifications.)
 const bool showUnbuiltMoreEntries = false;
 
 /// The More tab of an owner, a manager, an organizer, a door or a security role: the parts that do not have a tab of their own. A part that is not built says so,
