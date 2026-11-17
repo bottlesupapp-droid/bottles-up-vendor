@@ -181,6 +181,7 @@ void main() {
       await typeIn(tester, 'offer-reason', 'Birthday');
       await tapKey(tester, 'dialog-confirm');
       expect(find.text('Free bottles are not set up for this club yet: the owner sets the limits first.'), findsOneWidget);
+      expect(db.paramsOf('comp_offer_create').single!['p_expires_hours'], 24, reason: 'the link lasts 24 hours unless staff choose otherwise');
     });
   });
 
@@ -210,6 +211,12 @@ void main() {
       expect(textOf(tester, 'offer-sheet-place'), 'Place: Booth 1 (chosen by the recipient)');
       expect(textOf(tester, 'offer-sheet-concession'), 'Free bottle waiting for approval (over the club\'s limit)');
       expect(find.text('Why: Birthday table'), findsOneWidget);
+      db.offers = [offerRow(status: 'location_submitted', location: 'Booth 2', setBy: 'staff')];
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      await open(tester, manager);
+      await openOffer(tester, 'o1');
+      expect(textOf(tester, 'offer-sheet-place'), 'Place: Booth 2 (chosen by staff)');
       expect(find.text('Sign: Happy Birthday'), findsOneWidget);
       expect(find.textContaining('recorded as complimentary, never as a sale'), findsOneWidget);
     });

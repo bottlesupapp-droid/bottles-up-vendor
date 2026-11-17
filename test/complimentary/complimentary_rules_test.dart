@@ -93,6 +93,7 @@ void main() {
       expect(parseOfferBooking({'guest_name': 'x'}), isNull);
       expect(parseAcceptOutcome({'concession_status': 'pending'})!.pending, isTrue);
       expect(parseAcceptOutcome({'concession_status': 'applied'})!.pending, isFalse);
+      expect(parseAcceptOutcome({'offer_id': 'o1'})!.pending, isFalse, reason: 'an answer that says nothing about the free bottle is not "waiting"');
       expect(parseAcceptOutcome('nope'), isNull);
     });
   });
