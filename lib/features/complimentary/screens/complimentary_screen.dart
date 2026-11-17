@@ -24,7 +24,7 @@ BuTone _tone(OfferTone t) => switch (t) {
 };
 
 /// Complimentary bottles (brief section 20): the offers the club has made, a form for a new one, and the steps from there: place the recipient at a table, accept at their booking (an ordinary free bottle
-/// under the club's limits), mark delivered, or cancel. The owner and the manager. Nothing is sent: the e-mail with the claim link is not switched on, and the page says so.
+/// under the club's limits), mark delivered, or cancel. The owner and the manager. E-mail the link sends it through the website; success is only ever said after the server answered.
 class ComplimentaryScreen extends ConsumerStatefulWidget {
   const ComplimentaryScreen({super.key, required this.workspace, this.clock = DateTime.now});
 
@@ -81,7 +81,7 @@ class _ComplimentaryScreenState extends ConsumerState<ComplimentaryScreen> {
     if (draft == null || !mounted) return;
     await _run(() async {
       await ref.read(complimentaryServiceProvider).create(venue, draft);
-      return 'The offer is made. Nothing has been sent: place and accept it by hand for now.';
+      return 'The offer is made. Open it and press E-mail the link to send it.';
     });
   }
 
@@ -142,6 +142,27 @@ class _ComplimentaryScreenState extends ConsumerState<ComplimentaryScreen> {
     });
   }
 
+  Future<void> _sendLink(OfferRow o) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(sendButtonLabel(o)),
+            content: Text(sendConfirmText(o), key: const Key('offer-send-confirm')),
+            actions: [
+              TextButton(key: const Key('send-back'), onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Back')),
+              FilledButton(key: const Key('send-yes'), onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Send the e-mail')),
+            ],
+          ),
+    );
+    if (yes != true || !mounted) return;
+    // Nothing is said until the server has answered: the message below is the answer, never a promise.
+    await _run(() async {
+      final result = await ref.read(complimentaryServiceProvider).sendLink(o.id);
+      return sendResultMessage(result, o.recipientEmail);
+    });
+  }
+
   Future<void> _delivered(OfferRow o) async {
     final yes = await showDialog<bool>(
       context: context,
@@ -196,6 +217,23 @@ class _ComplimentaryScreenState extends ConsumerState<ComplimentaryScreen> {
                 Text('${info.label}${info.note.isEmpty ? '' : ' · ${info.note}'}', key: const Key('offer-sheet-status'), style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 Text('Why: ${o.reason}', style: theme.textTheme.bodySmall),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final sends = ref.watch(offerSendsProvider(o.id)).valueOrNull ?? const <OfferSend>[];
+                    if (sends.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Column(
+                        key: const Key('offer-sends'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('E-mails of the link', style: theme.textTheme.labelMedium),
+                          for (final s in sends.take(3)) Text(sendLine(s), key: Key('offer-send-${s.id}'), style: theme.textTheme.bodySmall),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 if (o.sign != null) Text('Sign: ${o.sign}', style: theme.textTheme.bodySmall),
                 if (o.locationName != null)
                   Text('Place: ${o.locationName} (chosen by ${o.locationSetBy == 'recipient' ? 'the recipient' : 'staff'})', key: const Key('offer-sheet-place'), style: theme.textTheme.bodySmall),
@@ -203,7 +241,9 @@ class _ComplimentaryScreenState extends ConsumerState<ComplimentaryScreen> {
                 if (o.expiresAt != null) Text('Expires ${DateFormat('EEE d MMM, HH:mm').format(o.expiresAt!.toLocal())}', style: theme.textTheme.bodySmall),
                 Text('Worth ${(o.valueCents / 100).toStringAsFixed(2)} at list price: recorded as complimentary, never as a sale.', style: theme.textTheme.bodySmall),
                 const SizedBox(height: 12),
-                if (o.actions.isEmpty) Text('Nothing more to do here.', key: const Key('offer-sheet-nothing'), style: theme.textTheme.bodySmall),
+                if (o.actions.isEmpty && !canSendLink(o)) Text('Nothing more to do here.', key: const Key('offer-sheet-nothing'), style: theme.textTheme.bodySmall),
+                if (canSendLink(o))
+                  Padding(padding: const EdgeInsets.only(bottom: 8), child: FilledButton(key: const Key('offer-action-send_link'), onPressed: () => Navigator.of(ctx).pop('send_link'), child: Text(sendButtonLabel(o)))),
                 for (final (a, label) in [('set_location', 'Place at a table'), ('accept', 'Accept at a booking'), ('mark_delivered', 'Mark as delivered'), ('cancel', 'Cancel the offer')])
                   if (o.can(a)) Padding(padding: const EdgeInsets.only(bottom: 8), child: FilledButton(key: Key('offer-action-$a'), onPressed: () => Navigator.of(ctx).pop(a), child: Text(label))),
               ],
@@ -212,6 +252,8 @@ class _ComplimentaryScreenState extends ConsumerState<ComplimentaryScreen> {
     );
     if (action == null || !mounted) return;
     switch (action) {
+      case 'send_link':
+        await _sendLink(o);
       case 'set_location':
         await _place(o);
       case 'accept':

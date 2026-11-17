@@ -17,6 +17,21 @@ class FakeOffersBackend {
   bool offline = false;
   bool missing = false;
 
+  /// The attempts to e-mail an offer's link, as comp_offer_sends answers them.
+  List<Map<String, dynamic>> sends = [];
+
+  /// Every call of an edge function, and what it answers (or throws). The default is a send that went.
+  final List<(String, Map<String, dynamic>)> invokes = [];
+  FutureOr<dynamic> Function(String name, Map<String, dynamic> body)? invokeHandler;
+
+  Future<dynamic> invoke(String name, Map<String, dynamic> body) async {
+    invokes.add((name, body));
+    if (offline) throw Exception('SocketException: connection lost');
+    final handler = invokeHandler;
+    if (handler != null) return handler(name, body);
+    return {'sent': true};
+  }
+
   Future<dynamic> call(String function, {Map<String, dynamic>? params}) async {
     calls.add((function, params));
     if (offline) throw Exception('SocketException: connection lost');
@@ -32,6 +47,7 @@ class FakeOffersBackend {
       'comp_offer_accept' => {'offer_id': 'o1', 'status': 'accepted', 'concession_id': 'c1', 'concession_status': 'applied'},
       'comp_offer_mark_delivered' => 'delivered',
       'comp_offer_cancel' => 'cancelled',
+      'comp_offer_sends' => sends,
       'stock_list' => stock,
       _ => throw StateError('unexpected call $function'),
     };
@@ -39,7 +55,7 @@ class FakeOffersBackend {
 
   List<Map<String, dynamic>> stock = [stockRow('p1', 'Patron', '750ml'), stockRow('v1', 'Vodka', null)];
 
-  ComplimentaryService get service => ComplimentaryService(rpc: OpsRpc(rpc: call));
+  ComplimentaryService get service => ComplimentaryService(rpc: OpsRpc(rpc: call, invoker: invoke));
   InventoryService get inventory => InventoryService(rpc: OpsRpc(rpc: call));
 
   List<Map<String, dynamic>?> paramsOf(String function) => [
@@ -114,4 +130,16 @@ Map<String, dynamic> offerRow({
         'accepted' => ['mark_delivered'],
         _ => <String>[],
       },
+};
+
+/// One row of comp_offer_sends.
+Map<String, dynamic> sendRow({String id = 's1', String to = 'gina@x.example', String status = 'sent', String? failure, String at = '2026-11-17T21:04:00Z', bool first = true, bool mine = true}) => {
+  'id': id,
+  'to_email': to,
+  'status': status,
+  'failure': failure,
+  'created_at': at,
+  'finished_at': status == 'pending' ? null : at,
+  'first_send': first,
+  'mine': mine,
 };

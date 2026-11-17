@@ -1,9 +1,12 @@
+import 'package:intl/intl.dart';
+
 import '../../ops/logic/ops_json.dart';
 
 // Complimentary bottle OFFERS with a claim link (website 20261123100000_complimentary_offers.sql; brief section 20). The club's owner or manager offers a bottle to a person by e-mail; the person
 // chooses where they are; staff place them at a booking and accept, which makes an ordinary free bottle through the existing free-bottle path (the club's limits and approval rules apply there).
-// NOTHING IS SENT yet: the e-mail that carries the link and the public claim page are not built, so an offer waits as "Approved" and staff can place and accept it by hand. The database counts,
-// decides who may do what (each row says which steps are open: `actions`) and keeps the record; this file reads it, words it, and checks what was typed.
+// The link is e-mailed by the website's send-complimentary-offer function (website 20261124100000_complimentary_send.sql) when staff press E-mail the link, and the recipient answers on the public claim
+// page; an offer waits as "Approved" until then, and staff can always place and accept it by hand. The database counts, decides who may do what (each row says which steps are open: `actions`)
+// and keeps the record; this file reads it, words it, and checks what was typed.
 
 enum OfferTone { neutral, attention, good, bad }
 
@@ -17,7 +20,7 @@ class OfferStatusInfo {
 
 /// The brief's states, in words. "Approved" is before the link has been sent, which nothing does yet.
 OfferStatusInfo offerStatusInfo(String? status) => switch (status) {
-  'approved' => const OfferStatusInfo('Approved', 'The link has not been sent: sending is not switched on yet', OfferTone.attention),
+  'approved' => const OfferStatusInfo('Approved', 'The link has not been e-mailed yet', OfferTone.attention),
   'sent' => const OfferStatusInfo('Sent', 'Waiting for the recipient to open the link', OfferTone.attention),
   'awaiting_location' => const OfferStatusInfo('Awaiting location', 'The link was opened; the recipient has not chosen a table', OfferTone.attention),
   'location_submitted' => const OfferStatusInfo('Location submitted', 'Check the place and choose the booking', OfferTone.attention),
@@ -231,6 +234,84 @@ String? checkCancelReason(String text) {
   return null;
 }
 
-/// The note on the page: what is and is not built, so nobody thinks a link has gone out.
+/// The note on the page: what an offer is and how the link gets to the person.
 const String claimNote =
-    'An offer is a bottle you give to someone with no table yet. They get a link, choose where they are, and you place them at their booking: that makes an ordinary free bottle, under the club\'s own limits. The e-mail with the link is not switched on yet, so nothing is sent from here: place and accept an offer by hand.';
+    'An offer is a bottle you give to someone with no table yet. Open an offer and press E-mail the link: they get a link, choose where they are, and you place them at their booking, which makes an ordinary free bottle under the club\'s own limits. If the link fails, place and accept an offer by hand.';
+
+// ---------------------------------------------------------------------------
+// E-mailing the link
+// ---------------------------------------------------------------------------
+
+/// Whether the link can still be e-mailed: the same states the database allows (it checks again). An offer that is expired, cancelled, placed or delivered cannot.
+bool canSendLink(OfferRow o) => const {'approved', 'sent', 'awaiting_location'}.contains(o.status);
+
+/// "E-mail the link" the first time, "E-mail the link again" once it has gone out.
+String sendButtonLabel(OfferRow o) => o.status == 'approved' ? 'E-mail the link' : 'E-mail the link again';
+
+/// What the person is asked before it goes: the address is the offer's own and cannot be changed here.
+String sendConfirmText(OfferRow o) =>
+    'This sends one e-mail to ${o.recipientEmail} with a link to claim ${o.item}. The link works once. ${o.status == 'approved' ? '' : 'The link they were sent before stops working. '}Nothing is charged.';
+
+/// One attempt to e-mail the link, as the offer's list of sends shows it.
+class OfferSend {
+  const OfferSend({required this.id, required this.toEmail, required this.status, required this.failure, required this.createdAt, required this.firstSend, required this.mine});
+
+  final String id;
+  final String toEmail;
+
+  /// pending, sent or failed.
+  final String status;
+
+  /// not_configured or send_failed, only when it failed.
+  final String? failure;
+  final DateTime? createdAt;
+  final bool firstSend;
+  final bool mine;
+}
+
+OfferSend? parseOfferSend(Map<String, dynamic> r) {
+  final id = opsStr(r, 'id');
+  final status = opsStr(r, 'status');
+  if (id == null || status == null || !const {'pending', 'sent', 'failed'}.contains(status)) return null;
+  return OfferSend(
+    id: id,
+    toEmail: opsStr(r, 'to_email') ?? '',
+    status: status,
+    failure: opsStr(r, 'failure'),
+    createdAt: opsTime(r, 'created_at'),
+    firstSend: r['first_send'] == true,
+    mine: r['mine'] == true,
+  );
+}
+
+/// One line of the log: what happened and when. A failure says why in words and that sending again is possible; nothing the provider said is ever shown.
+String sendLine(OfferSend s) {
+  final at = s.createdAt == null ? '' : ' · ${DateFormat('EEE d MMM, HH:mm').format(s.createdAt!.toLocal())}';
+  return switch (s.status) {
+    'sent' => 'E-mailed to ${s.toEmail}$at',
+    'pending' => 'Sending to ${s.toEmail}: no answer yet$at',
+    _ => s.failure == 'not_configured' ? 'Not delivered: e-mail is not set up on the server$at' : 'Not delivered$at: send it again',
+  };
+}
+
+/// What the e-mail function answered: whether it went and, if not, why.
+class LinkSendResult {
+  const LinkSendResult({required this.sent, required this.reason});
+
+  final bool sent;
+  final String? reason;
+}
+
+LinkSendResult? parseLinkSendResult(Object? data) {
+  if (data is! Map || data['sent'] is! bool) return null;
+  final sent = data['sent'] as bool;
+  final reason = data['reason'];
+  return LinkSendResult(sent: sent, reason: sent ? null : (reason == 'not_configured' ? 'not_configured' : 'send_failed'));
+}
+
+/// The sentence for the person, only ever after the function has answered: success is never announced before it.
+String sendResultMessage(LinkSendResult r, String email) {
+  if (r.sent) return 'The link was e-mailed to $email.';
+  if (r.reason == 'not_configured') return 'E-mail is not set up on the server, so nothing was sent. Place the recipient by hand, or ask for e-mail to be set up.';
+  return 'The e-mail could not be delivered. Nothing is lost: try again.';
+}

@@ -24,9 +24,9 @@ void main() {
   final sql = File('$website/supabase/migrations/20261123100000_complimentary_offers.sql');
 
   group('What a state says', () {
-    test('every state of the brief has its words; "Approved" says the link has not been sent', () {
+    test('every state of the brief has its words; "Approved" says the link has not been e-mailed', () {
       expect(offerStatusInfo('approved').label, 'Approved');
-      expect(offerStatusInfo('approved').note, contains('has not been sent'));
+      expect(offerStatusInfo('approved').note, contains('has not been e-mailed'));
       expect(offerStatusInfo('sent').label, 'Sent');
       expect(offerStatusInfo('awaiting_location').label, 'Awaiting location');
       expect(offerStatusInfo('location_submitted').label, 'Location submitted');
@@ -146,8 +146,10 @@ void main() {
       expect(checkCancelReason('x' * 300), isNull);
     });
 
-    test('the note says nothing is sent yet', () {
-      expect(claimNote, contains('nothing is sent from here'));
+    test('the note says how the link gets to the person, and that it can be done by hand', () {
+      expect(claimNote, contains('press E-mail the link'));
+      expect(claimNote, isNot(contains('not switched on')));
+      expect(claimNote, contains('place and accept an offer by hand'));
       expect(claimNote, contains('ordinary free bottle'));
     });
   });
