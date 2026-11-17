@@ -13,6 +13,12 @@ class FakeSettlementBackend {
   final Map<String, FutureOr<dynamic> Function(Map<String, dynamic>? params)> handlers = {};
   List<Map<String, dynamic>> rows = [];
   Map<String, dynamic> detailJson = detail();
+
+  /// What the database says about the adjustments after payment of the settlement on screen (see [adjustmentsPayload]).
+  Map<String, dynamic> adjustmentsJson = adjustmentsPayload();
+
+  /// The two lists' badges (see [flagRow]).
+  List<Map<String, dynamic>> flags = [];
   bool offline = false;
   bool missing = false;
 
@@ -33,6 +39,14 @@ class FakeSettlementBackend {
       'settlement_question' => 'disputed',
       'settlement_resolve' => 'estimated',
       'settlement_acknowledge' => true,
+      'settlement_adjustments' => adjustmentsJson,
+      'settlement_adjustment_flags_for_venue' || 'settlement_adjustment_flags_for_organizer' => flags,
+      'settlement_adjustment_record' => 'x-new',
+      'settlement_adjustment_question' => 'disputed',
+      'settlement_adjustment_answer' => 'open',
+      'settlement_adjustment_acknowledge' => true,
+      'settlement_adjustment_settle' => 'settled',
+      'settlement_adjustment_waive' => 'waived',
       _ => throw StateError('unexpected call $function'),
     };
   }
@@ -172,4 +186,96 @@ Map<String, dynamic> detail({
   'can': {
     for (final k in const ['save_sales', 'adjust', 'review', 'approve', 'record_payment', 'acknowledge', 'question', 'resolve']) k: can.contains(k),
   },
+};
+
+/// One adjustment after payment, as the database sends it. [can] names what is true for the person; everything else is false.
+Map<String, dynamic> adjustmentJson({
+  String id = 'x1',
+  String kind = 'refund',
+  int amount = -5000,
+  String status = 'open',
+  String reason = 'Refund of a Friday bottle',
+  String? ref = 'RF-2201',
+  Set<String> can = const {},
+  String? disputedReason,
+  String? ackAt,
+  String? resolvedOn,
+  String? resolutionReference,
+  String? resolutionNote,
+  String recordedBy = 'Olly Owner',
+}) => {
+  'id': id,
+  'kind': kind,
+  'amount_cents': amount,
+  'direction': amount < 0 ? 'organizer_owes_club' : 'club_owes_organizer',
+  'reason': reason,
+  'source_ref': ref,
+  'status': status,
+  'recorded_at': '2026-11-24T10:00:00Z',
+  'recorded_by_name': recordedBy,
+  'disputed_reason': status == 'disputed' ? (disputedReason ?? 'Which bottle was refunded?') : null,
+  'disputed_at': status == 'disputed' ? '2026-11-24T11:00:00Z' : null,
+  'organizer_ack_at': ackAt,
+  'organizer_ack_by_name': ackAt == null ? null : 'Olive Organizer',
+  'resolved_amount_cents': status == 'settled' ? amount.abs() : null,
+  'resolved_on': resolvedOn,
+  'resolution_reference': resolutionReference,
+  'resolution_note': status == 'waived' ? (resolutionNote ?? 'Not worth recovering') : resolutionNote,
+  'resolved_at': status == 'settled' || status == 'waived' ? '2026-11-25T09:00:00Z' : null,
+  'resolved_by_name': status == 'settled' || status == 'waived' ? 'Olly Owner' : null,
+  'resolution_label': status == 'settled' ? 'Recorded external payment' : (status == 'waived' ? 'Not recovered' : null),
+  'can': {for (final k in const ['acknowledge', 'question', 'answer', 'settle', 'waive']) k: can.contains(k)},
+};
+
+Map<String, dynamic> adjustmentLogJson(
+  String action, {
+  String adjustment = 'x1',
+  String side = 'venue',
+  int? amount,
+  String? note,
+  String by = 'Olly Owner',
+  bool me = false,
+  String at = '2026-11-24T10:00:00Z',
+}) => {'adjustment_id': adjustment, 'at': at, 'side': side, 'action': action, 'from_status': null, 'to_status': null, 'amount_cents': amount, 'note': note, 'by_name': by, 'by_me': me};
+
+/// What `settlement_adjustments` gives for a settlement: the totals are worked out from [items] the way the database works them out.
+Map<String, dynamic> adjustmentsPayload({
+  String side = 'venue',
+  bool applies = true,
+  int paid = 30000,
+  List<Map<String, dynamic>> items = const [],
+  List<Map<String, dynamic>> log = const [],
+  bool canRecord = false,
+  String settlementId = 's1',
+}) {
+  int sum(bool Function(Map<String, dynamic>) test) => [for (final i in items) if (test(i)) i['amount_cents'] as int].fold(0, (a, b) => a + b);
+  bool open(Map<String, dynamic> i) => i['status'] == 'open' || i['status'] == 'disputed';
+  final total = sum((_) => true);
+  return {
+    'agreement_id': 'a1',
+    'settlement_id': applies ? settlementId : null,
+    'side': side,
+    'applies': applies,
+    if (applies) ...{
+      'currency': 'cad',
+      'paid_amount_cents': paid,
+      'paid_on': '2026-11-22',
+      'count': items.length,
+      'adjustments_cents': total,
+      'net_cents': paid + total,
+      'open_to_organizer_cents': sum((i) => open(i) && (i['amount_cents'] as int) > 0),
+      'open_to_club_cents': -sum((i) => open(i) && (i['amount_cents'] as int) < 0),
+    },
+    'items': items,
+    'log': log,
+    'can': {'record': canRecord},
+  };
+}
+
+Map<String, dynamic> flagRow({String agreement = 'a1', int count = 1, int open = 1, int toOrganizer = 0, int toClub = 5000}) => {
+  'agreement_id': agreement,
+  'adjustment_count': count,
+  'open_count': open,
+  'open_to_organizer_cents': toOrganizer,
+  'open_to_club_cents': toClub,
 };
