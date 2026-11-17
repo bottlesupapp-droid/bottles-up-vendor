@@ -362,3 +362,98 @@ String doorLoadMessage({required bool unavailable, required bool accessEnded}) {
   if (accessEnded) return 'Your access has ended, or you are signed out.';
   return 'This could not be loaded. Check your connection and try again.';
 }
+
+// ---------------------------------------------------------------------------
+// Exits and live occupancy (website 20261122100000_door_exits_and_overrides.sql; brief section 18: "Track exits if displaying live occupancy; otherwise label Total Checked In")
+// ---------------------------------------------------------------------------
+
+/// How many guests are in an event, as the database counts them. [tracking] says whether this event records exits: only then is [inside] a live figure. Without tracking the honest
+/// figure is how many have checked in, and the screen says "checked in", never "inside".
+class Occupancy {
+  const Occupancy({required this.tracking, required this.admitted, required this.exited, required this.inside});
+
+  final bool tracking;
+  final int admitted;
+  final int exited;
+  final int inside;
+}
+
+/// The database's answer to door_occupancy, or null for anything the app cannot read (never guessed).
+Occupancy? parseOccupancy(Map<String, dynamic>? row) {
+  if (row == null) return null;
+  final tracking = row['tracking'];
+  final admitted = row['admitted'];
+  final exited = row['exited'];
+  final inside = row['inside'];
+  if (tracking is! bool || admitted is! int || exited is! int || inside is! int) return null;
+  return Occupancy(tracking: tracking, admitted: admitted, exited: exited, inside: inside);
+}
+
+/// The big figure: "Inside now" only when exits are tracked, otherwise "Checked in".
+String occupancyHeadline(Occupancy o) => o.tracking ? 'Inside now: ${o.inside}' : 'Total checked in: ${o.admitted}';
+
+/// The line under the bar. With exits tracked it breaks the figure down; without, it is the old "N of M guests in".
+String occupancySummary(Occupancy? o, {required int expected}) {
+  if (o == null) return '';
+  if (o.tracking) return '${o.inside} inside now · ${o.admitted} checked in · ${o.exited} left';
+  return '${o.admitted} of $expected guest${expected == 1 ? '' : 's'} checked in';
+}
+
+/// Every answer recording an exit can end in. The database returns all but the last two; the app raises those.
+enum ExitResult {
+  ok('ok'),
+  notTracking('not_tracking'),
+  nothingInside('nothing_inside'),
+  tooMany('too_many'),
+  notFound('not_found'),
+  wrongEvent('wrong_event'),
+  accessEnded('access_ended'),
+  error('error');
+
+  const ExitResult(this.db);
+
+  final String db;
+
+  static ExitResult? fromDb(Object? value) {
+    if (value is! String) return null;
+    for (final r in values) {
+      if (r.db == value && r != accessEnded && r != error) return r;
+    }
+    return null;
+  }
+}
+
+class ExitOutcome {
+  const ExitOutcome(this.result, {this.customerName, this.inside, this.exited});
+
+  final ExitResult result;
+  final String? customerName;
+
+  /// Guests of this ticket still inside after this answer.
+  final int? inside;
+  final int? exited;
+
+  bool get recorded => result == ExitResult.ok;
+}
+
+ExitOutcome parseExitOutcome(Map<String, dynamic>? row) {
+  if (row == null) return const ExitOutcome(ExitResult.error);
+  final result = ExitResult.fromDb(row['result']);
+  if (result == null) return const ExitOutcome(ExitResult.error);
+  return ExitOutcome(result, customerName: row['customer_name'] as String?, inside: row['inside'] as int?, exited: row['exited'] as int?);
+}
+
+/// What an exit answer tells the person at the door.
+ResultCopy exitCopy(ExitOutcome o) => switch (o.result) {
+  ExitResult.ok => ResultCopy('Left', (o.inside ?? 0) > 0 ? '${o.inside} more from this ticket ${o.inside == 1 ? 'is' : 'are'} still inside.' : 'Everyone on this ticket has left.', Tone.ok),
+  ExitResult.notTracking => const ResultCopy('Exits are not tracked', 'This event is not recording exits. A manager can turn that on.', Tone.warn),
+  ExitResult.nothingInside => const ResultCopy('Nobody inside', 'Nobody from this ticket is inside, so no one can leave.', Tone.warn),
+  ExitResult.tooMany => const ResultCopy('More than are inside', 'Fewer guests from this ticket are inside than that.', Tone.warn),
+  ExitResult.notFound => const ResultCopy('Ticket not found', 'This code is not a BottlesUp ticket. Try again.', Tone.error),
+  ExitResult.wrongEvent => const ResultCopy('Not for this event', 'This ticket is for a different event.', Tone.error),
+  ExitResult.accessEnded => const ResultCopy('Your access has ended', 'Your shift or invitation is over, or you were signed out. Sign in again or ask your manager.', Tone.error),
+  ExitResult.error => const ResultCopy('Could not record the exit', 'Something went wrong. Try again.', Tone.error),
+};
+
+/// The exit outcome for a failed call: the same reading of the database's sentence as for a scan.
+ExitOutcome exitOutcomeFromError(String message) => outcomeFromErrorMessage(message) == DoorResult.accessEnded ? const ExitOutcome(ExitResult.accessEnded) : const ExitOutcome(ExitResult.error);

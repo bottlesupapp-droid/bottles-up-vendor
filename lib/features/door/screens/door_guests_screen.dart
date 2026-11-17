@@ -9,6 +9,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/ui/bu_kit.dart';
 import '../../server_desk/widgets/desk_chip.dart';
 import '../../vip/screens/vip_lookup_screen.dart';
+import '../../../core/ui/bu_coming_soon.dart';
 import '../logic/door_rules.dart';
 import '../providers/door_providers.dart';
 import '../services/door_service.dart';
@@ -162,7 +163,11 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
       });
     }
     ref.invalidate(doorEventsProvider(widget.membershipId));
+    ref.invalidate(doorOccupancyProvider(_eventOf(ticketCode)));
   }
+
+  /// The event the list is showing (an admission is for it), for re-reading the occupancy.
+  String _eventOf(String ticketCode) => resolveEvent(ref.read(doorEventsProvider(widget.membershipId)).valueOrNull ?? const [], ref.read(selectedDoorEventProvider(widget.membershipId)))?.eventId ?? '';
 
   void _done() => setState(() {
         _outcome = null;
@@ -215,6 +220,47 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
     );
   }
 
+  /// The brief's filters for the door list (section 18): Tickets, Booth Guests, VIP, Invited, Special Guests. Tickets is the list below. VIP opens the VIP lookup. The other three have
+  /// no data behind them yet (booth guests are checked in with their table's passes, and nothing records invited or special guests), so each says "Coming soon" rather than showing an
+  /// empty list that looks like nobody is invited.
+  Widget _filters() {
+    final venueId = widget.venueId;
+    Widget soon(String key, String label, String text) => ActionChip(
+      key: Key(key),
+      avatar: null,
+      label: Row(mainAxisSize: MainAxisSize.min, children: [Text(label), const SizedBox(width: 6), const BuComingSoonPill()]),
+      onPressed: () => showComingSoon(context, title: label, text: text),
+    );
+    return SizedBox(
+      height: 44,
+      // A row in a sideways scroll (five chips), so every chip exists and a screen reader can reach them all.
+      child: SingleChildScrollView(
+        key: const Key('door-filters'),
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(key: const Key('door-filter-tickets'), label: const Text('Tickets'), selected: true, onSelected: (_) {})),
+            Padding(padding: const EdgeInsets.only(right: 8), child: soon('door-filter-booth', 'Booth guests', 'Guests of a booth, checked in one by one with their own passes, in the same list.')),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child:
+                  venueId == null || venueId.isEmpty
+                      ? soon('door-filter-vip', 'VIP', 'Look up a VIP guest and the perks they have tonight.')
+                      : ActionChip(
+                        key: const Key('door-filter-vip'),
+                        avatar: const Icon(Ionicons.star_outline, size: 16),
+                        label: const Text('VIP'),
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => VipLookupScreen(venueId: venueId))),
+                      ),
+            ),
+            Padding(padding: const EdgeInsets.only(right: 8), child: soon('door-filter-invited', 'Invited', 'Guests on the organizer\'s list who do not need a ticket.')),
+            soon('door-filter-special', 'Special guests', 'Complimentary and special guests the club has named for the night.'),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _body(List<DoorEvent> events, DoorEvent event) {
     final theme = Theme.of(context);
     final guests = _guests;
@@ -226,6 +272,7 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
         DoorEventBar(
           events: events,
           selected: event,
+          occupancy: ref.watch(doorOccupancyProvider(event.eventId)).valueOrNull,
           onSelect: (id) {
             ref.read(selectedDoorEventProvider(widget.membershipId).notifier).state = id;
             _seq++;
@@ -239,6 +286,8 @@ class _DoorGuestsScreenState extends ConsumerState<DoorGuestsScreen> {
             });
           },
         ),
+        const SizedBox(height: BuSpace.m),
+        _filters(),
         const SizedBox(height: BuSpace.l),
         if (_outcome != null) ...[
           ScanResultPanel(

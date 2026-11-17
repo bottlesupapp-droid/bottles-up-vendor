@@ -599,6 +599,19 @@ void main() {
       expect(db.paramsOf('door_admit_group').where((p) => p?['p_count'] == null).length, 2, reason: 'the first ask and ONE more');
     });
 
+    testWidgets('admitting from the list reads the count inside again', (tester) async {
+      tall(tester);
+      db.handlers['door_occupancy'] = (_) => [
+        {'tracking': true, 'admitted': 5, 'exited': 1, 'inside': 4},
+      ];
+      db.handlers['door_admit_group'] = (p) => p?['p_ticket_code'] == 'GA-3' ? [groupRow('ok', name: 'New Nia', quantity: 1, admitted: 1)] : ticket.answer(p);
+      await search(tester);
+      final before = db.count('door_occupancy');
+      expect(before, greaterThan(0));
+      await tapKey(tester, 'admit-GA-3');
+      expect(db.count('door_occupancy'), greaterThan(before));
+    });
+
     testWidgets('a guest of one ticket seat is admitted straight from the list', (tester) async {
       tall(tester);
       db.handlers['door_admit_group'] = (p) => p?['p_ticket_code'] == 'GA-3' ? [groupRow('ok', name: 'New Nia', quantity: 1, admitted: 1)] : ticket.answer(p);

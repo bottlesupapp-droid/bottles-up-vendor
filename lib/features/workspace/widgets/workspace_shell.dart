@@ -9,6 +9,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/ui/bu_kit.dart';
 import '../../../core/ui/glass_kit.dart';
 import '../../auth/providers/supabase_auth_provider.dart';
+import '../logic/context_night.dart';
 import '../logic/workspace_routing.dart';
 import '../models/role_navigation.dart';
 import '../models/workspace.dart';
@@ -74,6 +75,7 @@ class WorkspaceContextBar extends StatelessWidget {
     required this.canSwitch,
     required this.onSwitch,
     required this.onSignOut,
+    this.clock = DateTime.now,
   });
 
   final Workspace workspace;
@@ -83,6 +85,9 @@ class WorkspaceContextBar extends StatelessWidget {
   /// Called after the person has confirmed. Everyone gets this, including people with a single workspace (who never
   /// see the workspace list), so a shared phone at the club can always be handed over.
   final VoidCallback onSignOut;
+
+  /// The time the night is worked out from (a test passes its own).
+  final DateTime Function() clock;
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
@@ -112,6 +117,7 @@ class WorkspaceContextBar extends StatelessWidget {
     final theme = Theme.of(context);
     final bu = context.bu;
     final until = workspace.accessEndAt;
+    final night = contextNightLine(workspace, clock());
     return Container(
       key: const Key('workspace-context-bar'),
       width: double.infinity,
@@ -144,6 +150,8 @@ class WorkspaceContextBar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (night != null)
+                  Text(night, key: const Key('context-night'), style: theme.textTheme.bodySmall?.copyWith(color: bu.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
