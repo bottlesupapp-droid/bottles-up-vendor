@@ -13,6 +13,7 @@ import 'package:bottles_up_vendor/features/workspace/models/workspace.dart';
 import 'package:bottles_up_vendor/features/workspace/models/workspace_role.dart';
 import 'package:bottles_up_vendor/features/report_emails/screens/report_recipients_screen.dart';
 import 'package:bottles_up_vendor/features/sales_source/screens/sales_tracking_screen.dart';
+import 'package:bottles_up_vendor/features/complimentary/screens/complimentary_screen.dart';
 import 'package:bottles_up_vendor/features/settlements/screens/settlements_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +44,7 @@ const Set<String> builtMore = {
   'owner/report-emails', 'manager/report-emails', 'organizer/report-emails',
   'owner/sales-tracking', 'manager/sales-tracking',
   'owner/organizer-settlements', 'manager/organizer-settlements', 'organizer/settlement',
+  'owner/complimentary', 'manager/complimentary',
 };
 
 void main() {
@@ -79,6 +81,15 @@ void main() {
     }
   });
 
+  test('complimentary bottles are the owner\'s and the manager\'s, and nobody else gets them', () {
+    for (final role in [WorkspaceRole.owner, WorkspaceRole.manager]) {
+      expect(moreDestinationFor(ws(role), 'complimentary'), isA<ComplimentaryScreen>(), reason: role.name);
+    }
+    for (final role in [WorkspaceRole.organizer, WorkspaceRole.door, WorkspaceRole.security]) {
+      expect(moreDestinationFor(ws(role), 'complimentary'), isNull, reason: role.name);
+    }
+  });
+
   test('entry ids are unique within a role, and each has a label and words', () {
     for (final role in WorkspaceRole.values) {
       final ids = moreEntriesFor(role).map((e) => e.id).toList();
@@ -102,8 +113,7 @@ void main() {
     for (final e in moreEntriesFor(WorkspaceRole.manager)) {
       expect(find.byKey(Key('more-${e.id}')), findsOneWidget, reason: e.id);
     }
-    expect(find.descendant(of: find.byKey(const Key('more-complimentary')), matching: find.textContaining('Not available yet.')), findsOneWidget);
-    expect(tester.widget<ListTile>(find.byKey(const Key('more-complimentary'))).onTap, isNull);
+    expect(tester.widget<ListTile>(find.byKey(const Key('more-complimentary'))).onTap, isNotNull, reason: 'built: it opens the offers');
     expect(find.descendant(of: find.byKey(const Key('more-chat')), matching: find.textContaining('Not available yet')), findsNothing);
     await tester.tap(find.byKey(const Key('more-chat')));
     await tester.pumpAndSettle();
@@ -142,14 +152,14 @@ void main() {
     expect(showUnbuiltMoreEntries, isFalse);
   });
 
-  testWidgets('the three parts that are not built are the ones left out', (tester) async {
+  testWidgets('the two parts that are not built are the ones left out', (tester) async {
     final hidden = <String>{};
     for (final role in WorkspaceRole.values) {
       for (final e in moreEntriesFor(role)) {
         if (!builtMore.contains('${role.name}/${e.id}')) hidden.add('${role.name}/${e.id}');
       }
     }
-    expect(hidden, {'owner/complimentary', 'manager/complimentary', 'organizer/notifications', 'door/promo-codes'});
+    expect(hidden, {'organizer/notifications', 'door/promo-codes'});
   });
 
   test('door control is the club manager\'s and the owner\'s, and door staff do not get it', () {
