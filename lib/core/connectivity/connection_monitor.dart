@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 // "Connection lost" (developer brief 15 Oct, section 33: "Show disconnected or pending-sync status"). A small check that the phone can reach the server, so the person is
 // told they are offline BEFORE they type a long form, not after a save fails. It never decides what can or cannot be done: every screen still shows its own plain failure
@@ -21,7 +22,7 @@ const Duration connectionCheckEvery = Duration(seconds: 15);
 const Duration probeTimeout = Duration(seconds: 5);
 
 class NetworkStatus {
-  const NetworkStatus({required this.online, this.failures = 0, this.checking = false});
+  const NetworkStatus({required this.online, this.failures = 0, this.checking = false, this.lastReachedAt});
 
   /// Whether the person should be told they are online. Starts true: nothing is said until two checks have failed.
   final bool online;
@@ -30,18 +31,23 @@ class NetworkStatus {
   final int failures;
   final bool checking;
 
-  NetworkStatus copy({bool? online, int? failures, bool? checking}) => NetworkStatus(online: online ?? this.online, failures: failures ?? this.failures, checking: checking ?? this.checking);
+  /// When a check last reached the server (brief: "Show last sync time"). Null until the first one has.
+  final DateTime? lastReachedAt;
+
+  NetworkStatus copy({bool? online, int? failures, bool? checking, DateTime? lastReachedAt}) =>
+      NetworkStatus(online: online ?? this.online, failures: failures ?? this.failures, checking: checking ?? this.checking, lastReachedAt: lastReachedAt ?? this.lastReachedAt);
 }
 
-/// The state after one more check. A success is online at once; a failure only turns into "offline" after [failuresBeforeOffline] in a row.
-NetworkStatus afterCheck(NetworkStatus s, {required bool reachable}) {
-  if (reachable) return s.copy(online: true, failures: 0);
+/// The state after one more check. A success is online at once and notes [at] as the last time the server was reached; a failure only turns into "offline" after
+/// [failuresBeforeOffline] in a row and keeps the last time as it was.
+NetworkStatus afterCheck(NetworkStatus s, {required bool reachable, DateTime? at}) {
+  if (reachable) return s.copy(online: true, failures: 0, lastReachedAt: at);
   final failures = s.failures + 1;
   return s.copy(failures: failures, online: failures < failuresBeforeOffline);
 }
 
 class ConnectionMonitor extends StateNotifier<NetworkStatus> with WidgetsBindingObserver {
-  ConnectionMonitor(this._probe, {Duration every = connectionCheckEvery, bool autoStart = true}) : super(const NetworkStatus(online: true)) {
+  ConnectionMonitor(this._probe, {Duration every = connectionCheckEvery, bool autoStart = true, DateTime Function() clock = DateTime.now}) : _clock = clock, super(const NetworkStatus(online: true)) {
     if (autoStart) {
       _timer = Timer.periodic(every, (_) => check());
       WidgetsBinding.instance.addObserver(this);
@@ -49,6 +55,7 @@ class ConnectionMonitor extends StateNotifier<NetworkStatus> with WidgetsBinding
   }
 
   final ConnectionProbe _probe;
+  final DateTime Function() _clock;
   Timer? _timer;
 
   /// One check now. A second call while one is running is ignored.
@@ -62,7 +69,7 @@ class ConnectionMonitor extends StateNotifier<NetworkStatus> with WidgetsBinding
       reachable = false;
     }
     if (!mounted) return;
-    state = afterCheck(state.copy(checking: false), reachable: reachable);
+    state = afterCheck(state.copy(checking: false), reachable: reachable, at: reachable ? _clock() : null);
   }
 
   @override
@@ -79,6 +86,19 @@ class ConnectionMonitor extends StateNotifier<NetworkStatus> with WidgetsBinding
     super.dispose();
   }
 }
+
+/// The line under the offline message: when the server was last reached, in plain words. [now] decides whether the day is worth saying.
+String lastConnectedLine(DateTime? at, DateTime now) {
+  if (at == null) return 'Not connected since the app was opened';
+  final local = at.toLocal();
+  final today = now.toLocal();
+  final sameDay = local.year == today.year && local.month == today.month && local.day == today.day;
+  return sameDay ? 'Last connected at ${DateFormat('HH:mm').format(local)}' : 'Last connected ${DateFormat('MMM d, HH:mm').format(local)}';
+}
+
+/// What is waiting to be sent while offline: nothing, because the app never holds an action back. Every save, payment, admission and booking goes to the server at once and is only
+/// shown as done when the server says so (brief: "Do not mark an offline payment, admission, or booking as confirmed without the required server confirmation").
+const String nothingWaitingLine = 'Nothing is waiting to be sent';
 
 /// Whether the monitor runs at all. Off by default so tests and previews never start a timer or touch the network; the app turns it on in main.dart.
 final connectionMonitorEnabledProvider = Provider<bool>((ref) => false);

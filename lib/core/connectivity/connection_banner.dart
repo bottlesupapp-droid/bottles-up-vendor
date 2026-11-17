@@ -7,7 +7,10 @@ import 'connection_monitor.dart';
 /// Shown at the top of a workspace while the phone cannot reach the server. Says what it means in plain words, offers Try again, and disappears by itself when the
 /// connection is back. Nothing is blocked: screens still show their own failure messages and keep what was typed.
 class ConnectionBanner extends ConsumerWidget {
-  const ConnectionBanner({super.key});
+  const ConnectionBanner({super.key, this.clock = DateTime.now});
+
+  /// The time "last connected" is compared with (a test passes its own).
+  final DateTime Function() clock;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,10 +28,21 @@ class ConnectionBanner extends ConsumerWidget {
             const Icon(Ionicons.cloud_offline_outline, size: 20, color: Colors.white),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                "You're offline. Nothing can be saved until the connection is back.",
-                key: const Key('connection-banner-text'),
-                style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "You're offline. Nothing can be saved until the connection is back.",
+                    key: const Key('connection-banner-text'),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${lastConnectedLine(state.lastReachedAt, clock())} · $nothingWaitingLine',
+                    key: const Key('connection-banner-sync'),
+                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
+                  ),
+                ],
               ),
             ),
             TextButton(
