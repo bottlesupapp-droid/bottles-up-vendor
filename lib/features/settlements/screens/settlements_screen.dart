@@ -7,6 +7,7 @@ import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/venue_picker.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
+import '../logic/settlement_adjustment_rules.dart';
 import '../logic/settlement_rules.dart';
 import '../providers/settlement_providers.dart';
 import 'settlement_detail_screen.dart';
@@ -45,8 +46,10 @@ class _SettlementsScreenState extends ConsumerState<SettlementsScreen> {
   void _refresh() {
     if (_organizer) {
       ref.invalidate(orgSettlementsProvider(widget.workspace.orgId));
+      ref.invalidate(orgAdjustmentFlagsProvider(widget.workspace.orgId));
     } else {
       ref.invalidate(venueSettlementsProvider(_venueId ?? ''));
+      ref.invalidate(venueAdjustmentFlagsProvider(_venueId ?? ''));
     }
   }
 
@@ -69,6 +72,8 @@ class _SettlementsScreenState extends ConsumerState<SettlementsScreen> {
       );
     }
     final value = _organizer ? ref.watch(orgSettlementsProvider(widget.workspace.orgId)) : ref.watch(venueSettlementsProvider(venueId!));
+    // Which paid settlements have adjustments after payment. A badge is never worth failing the list for: no answer is no badge.
+    final flags = (_organizer ? ref.watch(orgAdjustmentFlagsProvider(widget.workspace.orgId)) : ref.watch(venueAdjustmentFlagsProvider(venueId!))).valueOrNull ?? const <String, AdjustmentFlag>{};
     return RefreshIndicator(
       onRefresh: () async => _refresh(),
       child: ListView(
@@ -98,8 +103,10 @@ class _SettlementsScreenState extends ConsumerState<SettlementsScreen> {
                       BuListRow(
                         key: Key('settlement-${r.agreementId}'),
                         title: r.eventTitle,
-                        subtitle: '${_organizer ? r.venueName : r.organizerName} · ${r.terms}\n${r.started ? 'Owed: ${settlementMoney(r.payableCents ?? 0)}' : settlementStatusInfo(null).note}',
-                        maxSubtitleLines: 3,
+                        subtitle:
+                            '${_organizer ? r.venueName : r.organizerName} · ${r.terms}\n${r.started ? 'Owed: ${settlementMoney(r.payableCents ?? 0)}' : settlementStatusInfo(null).note}'
+                            '${flags[r.agreementId] == null ? '' : '\n${adjustmentFlagText(flags[r.agreementId]!)}'}',
+                        maxSubtitleLines: 4,
                         trailing: BuStatusPill(settlementStatusInfo(r.status).label, key: Key('settlement-status-${r.agreementId}'), tone: toneOf(settlementStatusInfo(r.status).tone)),
                         onTap: () => _open(r),
                       ),

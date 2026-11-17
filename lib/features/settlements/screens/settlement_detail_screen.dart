@@ -9,6 +9,7 @@ import '../../ops/widgets/ops_async_view.dart';
 import '../../ops/widgets/ops_dialogs.dart';
 import '../logic/settlement_rules.dart';
 import '../providers/settlement_providers.dart';
+import '../widgets/settlement_adjustments_section.dart';
 import '../widgets/settlement_dialogs.dart';
 import 'settlements_screen.dart' show toneOf;
 
@@ -325,6 +326,7 @@ class _SettlementDetailScreenState extends ConsumerState<SettlementDetailScreen>
                           padding: const EdgeInsets.only(top: BuSpace.m),
                           child: Text(d.side == 'organizer' ? 'Nothing for you to do here.' : 'Nothing more to do here.', key: const Key('settlement-nothing'), style: theme.textTheme.bodySmall),
                         ),
+                      if (s != null && s.isPaid) SettlementAdjustmentsSection(agreementId: d.agreementId, clubName: d.venueName, organizerName: d.organizerName, clock: widget.clock),
                       if (d.log.isNotEmpty) ...[
                         const SizedBox(height: BuSpace.xl),
                         const BuSectionHeader(title: 'History'),
