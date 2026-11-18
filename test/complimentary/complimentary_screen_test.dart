@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'fake_offers_backend.dart';
 
 // The Complimentary bottles screen (website 20261123100000; brief section 20). The list, the form for a new offer, and each step from there. Which steps are open is whatever the database says (`actions`).
-// Nothing is sent: the page says so.
+// The link is e-mailed from the offer's sheet (see complimentary_send_test.dart).
 
 late FakeOffersBackend db;
 
@@ -66,11 +66,11 @@ void main() {
   setUp(() => db = FakeOffersBackend());
 
   group('The list', () {
-    testWidgets('the manager sees each offer with who it is for and its state, under a note that says nothing is sent', (tester) async {
+    testWidgets('the manager sees each offer with who it is for and its state, under a note that says how the link is sent', (tester) async {
       db.offers = [offerRow(), offerRow(id: 'o2', status: 'location_submitted', location: 'Booth 1', setBy: 'recipient', name: null, email: 'zed@x.example'), offerRow(id: 'o3', status: 'delivered')];
       await open(tester, manager);
       expect(db.paramsOf('comp_offers_list').single, {'p_venue': 'v1'});
-      expect(textOf(tester, 'offers-note'), contains('nothing is sent from here'));
+      expect(textOf(tester, 'offers-note'), contains('press E-mail the link'));
       expect(find.text('Club A'), findsOneWidget);
       expect(
         [
@@ -80,7 +80,7 @@ void main() {
       );
       expect(find.descendant(of: find.byKey(const Key('offer-o1')), matching: find.textContaining('2 × Patron · 750ml')), findsOneWidget);
       expect(find.descendant(of: find.byKey(const Key('offer-o1')), matching: find.textContaining('Gina · gina@x.example')), findsOneWidget);
-      expect(find.descendant(of: find.byKey(const Key('offer-o1')), matching: find.textContaining('has not been sent')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('offer-o1')), matching: find.textContaining('has not been e-mailed yet')), findsOneWidget);
       expect(find.descendant(of: find.byKey(const Key('offer-o2')), matching: find.textContaining('zed@x.example')), findsOneWidget);
       expect(find.descendant(of: find.byKey(const Key('offer-o2')), matching: find.textContaining('Booth 1')), findsOneWidget);
     });
@@ -156,7 +156,7 @@ void main() {
         'p_event': null,
         'p_expires_hours': 72,
       });
-      expect(find.text('The offer is made. Nothing has been sent: place and accept it by hand for now.'), findsOneWidget);
+      expect(find.text('The offer is made. Open it and press E-mail the link to send it.'), findsOneWidget);
       expect(db.count('comp_offers_list'), greaterThan(lists));
     });
 

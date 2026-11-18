@@ -1,3 +1,5 @@
+import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
+
 import '../../ops/services/ops_rpc.dart';
 import '../../workspace/services/workspace_service.dart' show RpcCaller;
 import '../logic/complimentary_rules.dart';
@@ -6,7 +8,7 @@ import '../logic/complimentary_rules.dart';
 /// for an offer (`actions`), and that the club's own free-bottle limits apply when an offer is accepted; nothing here decides any of it. A server without the migration makes the list an
 /// "unavailable" load failure, which the screen says in words.
 class ComplimentaryService {
-  ComplimentaryService({OpsRpc? rpc, RpcCaller? caller}) : _rpc = rpc ?? OpsRpc(rpc: caller);
+  ComplimentaryService({OpsRpc? rpc, RpcCaller? caller, EdgeInvoker? invoker}) : _rpc = rpc ?? OpsRpc(rpc: caller, invoker: invoker);
 
   final OpsRpc _rpc;
 
@@ -50,4 +52,34 @@ class ComplimentaryService {
   Future<void> cancel(String offerId, String reason) => _rpc.act(() async {
     await _rpc.call('comp_offer_cancel', {'p_offer': offerId, 'p_reason': reason.trim()});
   }, generic: 'The offer could not be cancelled. Check your connection and look at the offer before trying again.');
+
+  /// The latest attempts to e-mail this offer's link, newest first.
+  Future<List<OfferSend>> sends(String offerId) => _rpc.list('comp_offer_sends', {'p_offer': offerId}, parseOfferSend, 'the e-mails sent');
+
+  /// Asks the e-mail function to send the link. The request carries only the offer's id: the address is the offer's own and the database decides whether this person may send it now. A refusal
+  /// (not allowed, the offer has moved on, sent too often) is the function's own sentence in an [OpsActionException].
+  Future<LinkSendResult> sendLink(String offerId) async {
+    try {
+      final data = await _rpc.invoke('send-complimentary-offer', {'offerId': offerId});
+      final parsed = parseLinkSendResult(data);
+      if (parsed == null) throw const OpsActionException('The link could not be sent. Look at the offer before trying again.');
+      return parsed;
+    } on OpsActionException {
+      rethrow;
+    } on FunctionException catch (e) {
+      final details = e.details;
+      final said = details is Map && details['error'] is String ? details['error'] as String : null;
+      throw OpsActionException(
+        said ??
+            switch (e.status) {
+              401 => 'Sign in again to send this link.',
+              403 => 'You cannot send this link.',
+              429 => 'This link was sent too often. Wait before sending it again.',
+              _ => 'The link could not be sent. Check your connection and look at the offer before trying again.',
+            },
+      );
+    } catch (_) {
+      throw const OpsActionException('The link could not be sent. Check your connection and look at the offer before trying again.');
+    }
+  }
 }
