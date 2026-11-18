@@ -10,3 +10,6 @@ final reportRecipientsProvider = FutureProvider.autoDispose.family<List<ReportRe
 
 /// The latest attempts to e-mail one report, newest first.
 final reportDeliveriesProvider = FutureProvider.autoDispose.family<List<ReportDelivery>, ReportTarget>((ref, target) => ref.watch(reportEmailServiceProvider).deliveries(target));
+
+/// Whether one list's report is sent automatically, and what the latest automatic send did.
+final reportAutoStatusProvider = FutureProvider.autoDispose.family<ReportAutoStatus, ReportListScope>((ref, scope) => ref.watch(reportEmailServiceProvider).autoStatus(scope));

@@ -26,6 +26,15 @@ class ReportEmailService {
     await _rpc.call('remove_report_recipient', {'p_id': recipientId});
   }, generic: _saveFailed);
 
+  /// The switch for sending this list's report automatically when the night is closed, and what the latest automatic send did.
+  Future<ReportAutoStatus> autoStatus(ReportListScope scope) => _rpc.one('report_auto_status', scope.params, parseReportAutoStatus, 'the automatic sending settings');
+
+  /// Switches it on or off. The database says no to anyone who may not e-mail this report. Returns the state it is in now.
+  Future<bool> setAuto(ReportListScope scope, bool enabled) => _rpc.act(() async {
+    final data = await _rpc.call('report_auto_set', {...scope.params, 'p_enabled': enabled});
+    return data == true;
+  }, generic: _saveFailed);
+
   /// The latest attempts to e-mail this report, newest first.
   Future<List<ReportDelivery>> deliveries(ReportTarget target) => _rpc.list('report_deliveries', target.deliveryParams, parseReportDelivery, 'the e-mails sent');
 

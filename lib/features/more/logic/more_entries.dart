@@ -39,7 +39,7 @@ const _incidents = MoreEntry(id: 'incidents', label: 'Incidents', subtitle: 'Rep
 const _shiftSummary = MoreEntry(id: 'shift-summary', label: 'Shift summary', subtitle: 'Your check-ins, door sales and cash for this shift.', icon: Ionicons.stats_chart_outline);
 const _promoCodes = MoreEntry(id: 'promo-codes', label: 'Promo codes', subtitle: 'Codes you are allowed to apply at the door.', icon: Ionicons.pricetag_outline);
 const _salesTracking = MoreEntry(id: 'sales-tracking', label: 'Sales Tracking', subtitle: 'Where this club\'s sales come from, and the closing reports it sends.', icon: Ionicons.receipt_outline);
-const _reportEmails = MoreEntry(id: 'report-emails', label: 'Report e-mails', subtitle: 'Who receives each report by e-mail. Nothing is sent unless you press E-mail this report.', icon: Ionicons.mail_outline);
+const _reportEmails = MoreEntry(id: 'report-emails', label: 'Report e-mails', subtitle: 'Who receives each report by e-mail, and whether it is sent on its own when the night is closed.', icon: Ionicons.mail_outline);
 const _doorControl = MoreEntry(id: 'door-control', label: 'Door control', subtitle: 'Who is inside, whether exits are counted, and letting in a guest who lost their entry code.', icon: Ionicons.enter_outline);
 const _settings = MoreEntry(id: 'settings', label: 'Settings', subtitle: 'Who you are signed in as, and the privacy policy.', icon: Ionicons.settings_outline);
 

@@ -170,7 +170,7 @@ void main() {
       expect(listTitle(ReportKind.venueNight, venueName: 'Club A'), 'Night report: Club A');
       expect(listTitle(ReportKind.venueNight), 'Night report');
       expect(listTitle(ReportKind.ownerCombined), 'Combined report');
-      expect(reportEmailNote, contains('Nothing is sent on its own'));
+      expect(reportEmailNote, contains('presses E-mail this report'));
     });
 
     test('only the owner and the manager e-mail a club report from the report', () {
