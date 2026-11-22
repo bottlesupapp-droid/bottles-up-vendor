@@ -117,14 +117,23 @@ void main() {
       expect(built, ['a']);
     });
 
-    testWidgets('pushReplacement is guarded: a repeated replace builds the page once', (tester) async {
+    testWidgets('pushReplacement is guarded: a repeated replace is ignored (done at once), then allowed after the window', (tester) async {
       final clock = _Clock();
       final built = <String>[];
       final router = await _start(tester, clock, built);
-      router.pushReplacement('/a');
-      router.pushReplacement('/a');
+      router.pushReplacement<String>('/a');
+      // A replace that happens only completes when its page is closed; an ignored one is already done.
+      var ignored = false;
+      router.pushReplacement<String>('/a').then((_) => ignored = true);
+      await tester.pump();
+      expect(ignored, isTrue, reason: 'the repeat was ignored');
       await tester.pumpAndSettle();
       expect(built, ['a']);
+      clock.advance(const Duration(milliseconds: 700));
+      var ignoredLater = false;
+      router.pushReplacement<String>('/a').then((_) => ignoredLater = true);
+      await tester.pump();
+      expect(ignoredLater, isFalse, reason: 'after the window the same replace really happens');
     });
 
     testWidgets('a push and then a replace of the same page are two different things, both happen', (tester) async {
@@ -230,6 +239,11 @@ void main() {
       clock.advance(const Duration(milliseconds: 500));
       await tester.tap(find.text('go'));
       expect(taps, 2);
+    });
+
+    testWidgets('it keeps the rounded corners of the ripple it was given', (tester) async {
+      await tester.pumpWidget(host(BuGuardedInkWell(onTap: () {}, borderRadius: BorderRadius.circular(18), child: const SizedBox(width: 80, height: 40, child: Text('go')))));
+      expect(tester.widget<InkWell>(find.byType(InkWell)).borderRadius, BorderRadius.circular(18));
     });
 
     testWidgets('with no action it is not tappable', (tester) async {
