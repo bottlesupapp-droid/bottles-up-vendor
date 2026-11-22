@@ -143,8 +143,16 @@ void main() {
       final clock = _Clock();
       final router = await _start(tester, clock, []);
       router.push<String>('/a');
-      final second = router.push<String>('/a');
-      expect(await second, isNull);
+      // Not awaited: a push that really happened only completes when its page is closed, and a test that waits for that never ends. An ignored one is already done.
+      var done = false;
+      String? result = 'not set';
+      router.push<String>('/a').then((v) {
+        result = v;
+        done = true;
+      });
+      await tester.pump();
+      expect(done, isTrue, reason: 'the ignored push completed straight away');
+      expect(result, isNull);
     });
 
     testWidgets('a clock that moves backwards never holds anyone back', (tester) async {
