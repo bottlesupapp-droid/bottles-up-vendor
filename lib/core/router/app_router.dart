@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'guarded_router.dart';
 
 // Import screens (we'll create these next)
 import '../../features/auth/screens/login_screen.dart';
@@ -103,6 +106,9 @@ class AppRoutes {
   static const String subscription = '/profile/subscription';
 }
 
+/// How long a page takes to slide in or out. It was 400 ms, which reads as the app being slow to respond; 280 ms still reads as a slide and the page is usable sooner.
+const Duration pageTransitionDuration = Duration(milliseconds: 280);
+
 // Custom page transitions using CupertinoPageRoute
 class CupertinoTransitionPage extends CustomTransitionPage<void> {
   const CupertinoTransitionPage({
@@ -113,8 +119,8 @@ class CupertinoTransitionPage extends CustomTransitionPage<void> {
     super.key,
   }) : super(
           transitionsBuilder: _cupertinoTransitionsBuilder,
-          transitionDuration: const Duration(milliseconds: 400),
-          reverseTransitionDuration: const Duration(milliseconds: 400),
+          transitionDuration: pageTransitionDuration,
+          reverseTransitionDuration: pageTransitionDuration,
         );
 
   static Widget _cupertinoTransitionsBuilder(
@@ -139,9 +145,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   final workspaceSnapshot = ref.watch(workspaceStateProvider);
   final classicVendor = ref.watch(classicVendorStatusProvider);
 
-  return GoRouter(
+  return GuardedGoRouter(
     initialLocation: AppRoutes.login,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode,
     redirect: (context, state) {
       final isLoggedIn = isAuthenticated;
       final currentPath = state.uri.path;
