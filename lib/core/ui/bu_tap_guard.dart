@@ -1,11 +1,14 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 
 /// "One tap, once." Lets a tap through, then holds back further taps on the same thing for [window].
 ///
-/// Used where a tap starts something that takes a moment (opening a page, loading a list): the person sees nothing change for a beat, taps again, and the thing used to start twice.
-/// One guard belongs to one tappable thing, so tapping two different rows quickly is never held back.
+/// Used where a tap starts something that takes a moment (opening a sheet, loading a list): the person sees nothing change for a beat, taps again, and the thing used to start twice.
+/// The window is a little over a double tap (Flutter's own double-tap time is 300 ms), so an accidental second tap is held back and a deliberate tap again is not.
+/// One guard belongs to one tappable thing, so tapping two different rows quickly is never held back. Time comes from `package:clock`, so a test can move it with `tester.pump(duration)`:
+/// a test that taps the same row twice must let [window] pass in between, as a person would.
 class BuTapGuard {
-  BuTapGuard({this.window = const Duration(milliseconds: 500), DateTime Function()? now}) : _now = now ?? DateTime.now;
+  BuTapGuard({this.window = const Duration(milliseconds: 350), DateTime Function()? now}) : _now = now ?? (() => clock.now());
 
   final Duration window;
   final DateTime Function() _now;
