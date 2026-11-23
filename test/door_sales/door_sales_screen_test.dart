@@ -113,6 +113,7 @@ void main() {
       await tapKey(tester, 'sale-tier-t-gen');
       await tapKey(tester, 'sale-qty-plus');
       expect(textOf(tester, 'sale-qty'), '4');
+      await tester.pump(const Duration(milliseconds: 400)); // a person goes back to the first type a moment later, not in the same instant (a card lets one tap through per double-tap time)
       await tapKey(tester, 'sale-tier-t-vip');
       expect(textOf(tester, 'sale-qty'), '3', reason: 'changing to a type with fewer left keeps the number inside it');
     });

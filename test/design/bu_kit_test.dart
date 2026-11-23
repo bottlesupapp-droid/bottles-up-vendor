@@ -156,6 +156,8 @@ void main() {
       await show(tester, BuListRow(title: 'Team', subtitle: 'Staff and roles', icon: Icons.group, onTap: () => taps++));
       expect(find.byIcon(Ionicons.chevron_forward), findsOneWidget);
       await tester.tap(find.text('Staff and roles'));
+      // A row lets one tap through per double-tap time; a person taps the icon a moment later, not in the same instant.
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.byType(BuIconTile));
       expect(taps, 2);
     });

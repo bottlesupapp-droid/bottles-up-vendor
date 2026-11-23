@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 
 import '../theme/app_tokens.dart';
+import 'bu_tap_guard.dart';
 
 // The BottlesUp Business component kit: the small, reusable pieces the screens are built from, in the look of the Figma design (dark panels, one orange,
 // "eyebrow" labels over large headings, icon tiles, soft status pills). Screens use these instead of drawing their own boxes, so every screen
@@ -232,7 +233,7 @@ class BuCard extends StatelessWidget {
       ),
       child: Material(
         type: MaterialType.transparency,
-        child: InkWell(
+        child: BuGuardedInkWell(
           borderRadius: radius,
           onTap: onTap,
           child: Padding(padding: padding, child: child),
@@ -303,7 +304,7 @@ class BuListRow extends StatelessWidget {
     final bu = context.bu;
     final text = Theme.of(context).textTheme;
     final lead = leading ?? (icon == null ? null : BuIconTile(icon: icon!));
-    return InkWell(
+    return BuGuardedInkWell(
       onTap: onTap,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 64),

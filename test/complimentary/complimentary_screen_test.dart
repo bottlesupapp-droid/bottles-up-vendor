@@ -59,6 +59,8 @@ List<String> shownActions(WidgetTester tester) => [
 ];
 
 Future<void> openOffer(WidgetTester tester, String id) async {
+  // A card lets one tap through per double-tap time, so a person who opens the same offer again does so a moment later, not in the same instant.
+  await tester.pump(const Duration(milliseconds: 400));
   await tapKey(tester, 'offer-$id');
 }
 

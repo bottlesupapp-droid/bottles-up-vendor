@@ -265,6 +265,7 @@ void main() {
       await tapKey(tester, 'send-yes');
       expect(db.count('comp_offers_list'), greaterThan(listBefore), reason: 'the list shows what is true now');
       db.sends = [sendRow(id: 's9', status: 'sent')];
+      await tester.pump(const Duration(milliseconds: 400)); // a person opens the offer again a moment later, not in the same instant (a card lets one tap through per double-tap time)
       await tapKey(tester, 'offer-o1');
       expect(db.count('comp_offer_sends'), greaterThan(logBefore), reason: 'the log is read when the sheet opens');
       expect(find.byKey(const Key('offer-send-s9')), findsOneWidget);

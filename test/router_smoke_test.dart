@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bottles_up_vendor/core/router/app_router.dart';
+import 'package:bottles_up_vendor/core/router/guarded_router.dart';
 import 'package:bottles_up_vendor/features/auth/screens/login_screen.dart';
 
 /// In-memory PKCE storage, so the test never touches the device's preferences.
@@ -49,6 +50,13 @@ void main() {
       final router = container.read(routerProvider);
       expect(router, isNotNull);
       expect(router.routerDelegate, isNotNull);
+    });
+
+    test('the app\'s router is the guarded one (a repeated tap opens a page once)', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      expect(container.read(routerProvider), isA<GuardedGoRouter>());
     });
 
     test('Router has login route configured', () {
