@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:ionicons/ionicons.dart';
 
+import '../../business_name/services/business_name_service.dart' show BusinessRenamed;
+import '../../business_name/widgets/business_name_row.dart';
 import '../../owner/logic/owner_rules.dart' show siteUrl;
 import '../../workspace/models/workspace.dart';
 import '../widgets/delete_account_section.dart';
@@ -25,7 +27,7 @@ String? _signedInEmail() {
 /// Settings for a workspace: who is signed in and in which role, the privacy policy and what the app collects, and deleting the account. Switching workspace and signing out live in the
 /// Account menu at the top of every workspace screen, and this screen says so.
 class WorkspaceSettingsScreen extends StatelessWidget {
-  const WorkspaceSettingsScreen({super.key, required this.workspace, this.email, this.openLink = _openInBrowser, this.site, this.deleteAccount, this.onAccountDeleted});
+  const WorkspaceSettingsScreen({super.key, required this.workspace, this.email, this.openLink = _openInBrowser, this.site, this.deleteAccount, this.onAccountDeleted, this.renameBusiness, this.onBusinessRenamed});
 
   final Workspace workspace;
 
@@ -39,6 +41,10 @@ class WorkspaceSettingsScreen extends StatelessWidget {
   /// Deleting the account and where to go afterwards: the real ones unless a test gives its own.
   final Future<void> Function()? deleteAccount;
   final void Function(BuildContext context)? onAccountDeleted;
+
+  /// Renaming the business (the owner's, or the event organizer's, only; the row is read only without it) and what to do afterwards.
+  final RenameBusiness? renameBusiness;
+  final void Function(BusinessRenamed renamed)? onBusinessRenamed;
 
   Future<void> _privacy(BuildContext context) async {
     final base = (site ?? siteUrl).replaceAll(RegExp(r'/+$'), '');
@@ -63,6 +69,7 @@ class WorkspaceSettingsScreen extends StatelessWidget {
           title: Text(signedIn ?? 'Signed in'),
           subtitle: const Text('Your account'),
         ),
+        BusinessNameRow(workspace: workspace, rename: renameBusiness, onRenamed: onBusinessRenamed),
         ListTile(
           key: const Key('settings-acting-as'),
           contentPadding: EdgeInsets.zero,
