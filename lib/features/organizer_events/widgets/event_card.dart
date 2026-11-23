@@ -10,11 +10,14 @@ import '../logic/organizer_events_rules.dart';
 
 /// One event: what a guest would see (title, when, where, capacity), its state, and, for a draft only, Edit and Remove.
 class EventCard extends StatelessWidget {
-  const EventCard({super.key, required this.event, required this.onEdit, required this.onRemove, this.info, this.onBlockerAction, this.onCopyLink});
+  const EventCard({super.key, required this.event, required this.onEdit, required this.onRemove, this.onTickets, this.info, this.onBlockerAction, this.onCopyLink});
 
   final OrgEvent event;
   final VoidCallback onEdit;
   final VoidCallback onRemove;
+
+  /// Opens the event's ticket types. Offered for every event (the screen says when it has ended and nothing can change).
+  final VoidCallback? onTickets;
 
   /// Copies the public link of a live event. Offered only for an event that is live on the website.
   final VoidCallback? onCopyLink;
@@ -60,6 +63,7 @@ class EventCard extends StatelessWidget {
           Text(formatEventWhen(event.startDate, event.endDate), style: theme.textTheme.bodyMedium),
           Text(event.address == null ? event.venueName : '${event.venueName}, ${event.address}', style: theme.textTheme.bodySmall),
           if (event.capacity != null) Text('Capacity ${event.capacity}', style: theme.textTheme.bodySmall),
+          Text(event.ticketTierCount == 0 ? 'No ticket types yet' : (event.ticketTierCount == 1 ? '1 ticket type' : '${event.ticketTierCount} ticket types'), key: Key('tiers-count-${event.eventId}'), style: theme.textTheme.bodySmall),
           const SizedBox(height: 6),
           Text(note, key: Key('note-${event.eventId}'), style: theme.textTheme.bodySmall),
           if (blockers.isNotEmpty) ...[
@@ -77,17 +81,20 @@ class EventCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton.icon(key: Key('copy-link-${event.eventId}'), onPressed: onCopyLink, icon: const Icon(Ionicons.link_outline, size: 18), label: const Text('Copy event link')),
             ),
-          if (event.isDraft)
+          if (event.isDraft || onTickets != null)
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(key: Key('edit-${event.eventId}'), onPressed: onEdit, child: const Text('Edit')),
-                TextButton(
-                  key: Key('remove-${event.eventId}'),
-                  style: TextButton.styleFrom(foregroundColor: bu.red),
-                  onPressed: onRemove,
-                  child: const Text('Remove'),
-                ),
+                if (onTickets != null) TextButton.icon(key: Key('tickets-${event.eventId}'), onPressed: onTickets, icon: const Icon(Ionicons.ticket_outline, size: 18), label: const Text('Tickets')),
+                if (event.isDraft) ...[
+                  TextButton(key: Key('edit-${event.eventId}'), onPressed: onEdit, child: const Text('Edit')),
+                  TextButton(
+                    key: Key('remove-${event.eventId}'),
+                    style: TextButton.styleFrom(foregroundColor: bu.red),
+                    onPressed: onRemove,
+                    child: const Text('Remove'),
+                  ),
+                ],
               ],
             ),
         ],

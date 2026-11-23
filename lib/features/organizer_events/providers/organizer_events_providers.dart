@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../logic/event_states.dart';
+import '../logic/event_tickets_rules.dart';
 import '../logic/organizer_events_rules.dart';
 import '../services/organizer_events_service.dart';
+import '../services/organizer_tiers_service.dart';
 
 final organizerEventsServiceProvider = Provider<OrganizerEventsService>((ref) => OrganizerEventsService());
 
@@ -13,3 +15,10 @@ final organizerEventsProvider =
 /// Where each event stands and what blocks publishing it. Kept apart from the events themselves so the list still shows if this cannot be read.
 final organizerEventStatesProvider =
     FutureProvider.autoDispose.family<Map<String, EventStateInfo>, String>((ref, orgId) async => statesByEvent(await ref.watch(organizerEventsServiceProvider).states(orgId)));
+
+final organizerTiersServiceProvider = Provider<OrganizerTiersService>((ref) => OrganizerTiersService());
+
+/// The ticket types of one event of one business. Not kept once the screen is gone.
+final organizerTiersProvider = FutureProvider.autoDispose.family<List<OrgTier>, ({String orgId, String eventId})>(
+  (ref, key) => ref.watch(organizerTiersServiceProvider).tiers(key.orgId, key.eventId),
+);

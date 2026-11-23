@@ -7,7 +7,7 @@
 enum EventState {
   draft('draft', 'Draft', 'Only you can see this. Finish what is listed below; the BottlesUp team publishes it when it is ready.'),
   awaitingVenueApproval('awaiting_venue_approval', 'Awaiting venue approval', 'Only you can see this. You can keep working on the draft while the club decides.'),
-  readyToPublish('ready_to_publish', 'Ready to publish', 'Everything needed is in place. The BottlesUp team publishes it and sets up tickets with you.'),
+  readyToPublish('ready_to_publish', 'Ready to publish', 'Everything needed is in place. The BottlesUp team publishes it.'),
   live('live', 'Live', 'Live on the website. Contact BottlesUp to change it.'),
   ended('ended', 'Ended', 'This event has finished.');
 

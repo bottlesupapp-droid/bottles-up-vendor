@@ -108,7 +108,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('It is saved as a private draft. The BottlesUp team publishes it and sets up tickets with you.', style: theme.textTheme.bodySmall),
+          Text('It is saved as a private draft. The BottlesUp team publishes it. Add its tickets from its card in your events.', style: theme.textTheme.bodySmall),
           const SizedBox(height: 16),
           field(const Key('field-title'), _title, 'Title', hint: 'Rooftop Sessions', maxLength: EventLimits.title + 20),
           field(const Key('field-description'), _description, 'Description', hint: 'What guests can expect', lines: 4),
