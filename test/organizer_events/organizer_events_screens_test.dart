@@ -425,7 +425,7 @@ void main() {
       expect(find.descendant(of: find.byKey(const Key('status-d')), matching: find.text('Ready to publish')), findsOneWidget);
       expect(find.text('What is blocking publishing'), findsNothing);
       expect(find.byKey(const Key('blocker-action-d')), findsNothing);
-      expect(find.textContaining('BottlesUp team publishes it and sets up tickets'), findsOneWidget);
+      expect(find.textContaining('Everything needed is in place. The BottlesUp team publishes it.'), findsOneWidget);
     });
 
     testWidgets('an unverified business is a blocker with no button (verification is on the card above)', (tester) async {

@@ -17,6 +17,7 @@ import '../providers/organizer_events_providers.dart';
 import '../services/organizer_events_service.dart';
 import '../widgets/event_card.dart';
 import 'event_form_screen.dart';
+import 'event_tickets_screen.dart';
 
 /// Home and Events (organizer): the business's events, with a way to create one, change or remove a draft, and a plain "contact
 /// BottlesUp" on a published one. The database decides what this person may do; nothing here grants access. Drafts stay private
@@ -48,6 +49,13 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
     ref.invalidate(organizerEventsProvider(_orgId));
     ref.invalidate(organizerEventStatesProvider(_orgId));
     _say(event == null ? 'Draft created. It stays private until the BottlesUp team publishes it.' : 'Draft saved.');
+  }
+
+  Future<void> _openTickets(OrgEvent e) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => EventTicketsScreen(orgId: _orgId, event: e, pickDateTime: widget.pickDateTime, clock: widget.clock)),
+    );
+    if (mounted) ref.invalidate(organizerEventsProvider(_orgId));
   }
 
   /// The button next to a blocker: the club agreements are where a club is asked, and where its answer is seen.
@@ -135,7 +143,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
             BusinessStatusCard(orgId: _orgId),
             const BuPageHeader(eyebrow: 'Organizer', title: 'Your events'),
             const SizedBox(height: BuSpace.xs),
-            Text('Create your events here. They stay private drafts until the BottlesUp team publishes them and sets up tickets with you.', style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
+            Text('Create your events here. They stay private drafts until the BottlesUp team publishes them. Add tickets to an event from its card.', style: theme.textTheme.bodyMedium?.copyWith(color: context.bu.muted)),
             const SizedBox(height: BuSpace.l),
             Wrap(
               spacing: BuSpace.s,
@@ -165,7 +173,7 @@ class _OrganizerEventsScreenState extends ConsumerState<OrganizerEventsScreen> {
             for (final (title, group) in [('Drafts', g.drafts), ('Upcoming', g.upcoming), ('Past', g.past)])
               if (group.isNotEmpty) ...[
                 _heading(context, title),
-                for (final e in group) EventCard(event: e, info: infos[e.eventId], onBlockerAction: _openBlocker, onEdit: () => _openForm(e), onRemove: () => _remove(e), onCopyLink: () => _copyLink(e)),
+                for (final e in group) EventCard(event: e, info: infos[e.eventId], onBlockerAction: _openBlocker, onEdit: () => _openForm(e), onRemove: () => _remove(e), onTickets: () => _openTickets(e), onCopyLink: () => _copyLink(e)),
               ],
           ],
         );
