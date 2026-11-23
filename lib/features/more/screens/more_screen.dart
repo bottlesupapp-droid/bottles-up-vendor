@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ionicons/ionicons.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/ui/bu_kit.dart';
 import '../../agreements/screens/agreements_screen.dart';
 import '../../booking_conflicts/screens/booking_conflicts_screen.dart';
+import '../../business_name/logic/business_name_rules.dart' show canRenameBusiness;
+import '../../business_name/providers/business_name_providers.dart';
 import '../../bottle_signs/screens/bottle_signs_screen.dart';
 import '../../chat/screens/chat_screen.dart';
 import '../../discounts/screens/discounts_screen.dart';
@@ -26,6 +29,7 @@ import '../../venue_access/screens/venue_access_screen.dart';
 import '../../vip/screens/vip_screen.dart';
 import '../../workspace/models/workspace.dart';
 import '../../workspace/models/workspace_role.dart';
+import '../../workspace/providers/workspace_providers.dart' show workspaceSnapshotProvider;
 import '../logic/more_entries.dart';
 import 'workspace_settings_screen.dart';
 import '../../sales_source/screens/sales_tracking_screen.dart';
@@ -80,7 +84,8 @@ Widget? moreDestinationFor(Workspace workspace, String entryId) => switch (entry
       'door-control' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => DoorControlScreen(workspace: workspace),
       // Complimentary bottle offers with a claim link: the owner's and the manager's.
       'complimentary' when workspace.role == WorkspaceRole.owner || workspace.role == WorkspaceRole.manager => ComplimentaryScreen(workspace: workspace),
-      'settings' => WorkspaceSettingsScreen(workspace: workspace),
+      // Settings: who is signed in, the privacy pages, deleting the account, and (for the business's owner or organizer) the business name.
+      'settings' => canRenameBusiness(workspace) ? _SettingsWithRename(workspace: workspace) : WorkspaceSettingsScreen(workspace: workspace),
       _ => null,
     };
 
@@ -148,6 +153,23 @@ class MoreScreen extends StatelessWidget {
         // Sample screens for what the design has and the app does not yet (debug builds only, unless switched on).
         const PreviewMoreRow(),
       ],
+    );
+  }
+}
+
+/// Settings with the business name changeable: gives the row the real service, and asks for the workspace list again afterwards so the new name shows everywhere (the router keeps the person
+/// where they are while that happens).
+class _SettingsWithRename extends ConsumerWidget {
+  const _SettingsWithRename({required this.workspace});
+
+  final Workspace workspace;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return WorkspaceSettingsScreen(
+      workspace: workspace,
+      renameBusiness: (name) => ref.read(businessNameServiceProvider).rename(orgId: workspace.orgId, name: name),
+      onBusinessRenamed: (_) => ref.invalidate(workspaceSnapshotProvider),
     );
   }
 }
