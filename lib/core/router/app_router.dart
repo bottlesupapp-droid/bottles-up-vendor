@@ -55,6 +55,7 @@ import '../../features/events/screens/manage_event_tables_screen.dart';
 import '../../features/events/screens/manage_lineup_screen.dart';
 import '../../shared/widgets/main_shell.dart';
 import '../../features/workspace/logic/workspace_routing.dart';
+import '../../shared/models/user_model.dart' show VendorUser;
 import '../../features/workspace/providers/workspace_providers.dart';
 import '../../features/workspace/screens/accept_invitation_screen.dart';
 import '../../features/workspace/workspace_routes.dart';
@@ -138,17 +139,46 @@ class CupertinoTransitionPage extends CustomTransitionPage<void> {
   }
 }
 
+/// Tells the router to run its redirect rules again, in place. Nothing else.
+class _RouterRefresh extends ChangeNotifier {
+  bool _disposed = false;
+
+  void poke() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+}
+
 // Router provider
+//
+// The router is built ONCE for the life of the app. It used to `ref.watch` the four things its redirect rules read (signed in or not, the vendor row, the workspace list, the classic-vendor
+// status), so whenever any of them changed (the sign-in token renewing, Edit profile saving, a workspace's name being refreshed) the whole router was thrown away and rebuilt at the sign-in
+// address, and the person was bounced back to the start of the app. Now a change only asks the router to run its rules again for the place the person is already on (`refreshListenable`),
+// and the rules read the current values when they run. Signing out, signing in and a workspace appearing still move people exactly as before, because those are the rules' own decisions.
 final routerProvider = Provider<GoRouter>((ref) {
-  final isAuthenticated = ref.watch(isAuthenticatedProvider);
-  final vendorUser = ref.watch(currentVendorUserProvider);
-  final workspaceSnapshot = ref.watch(workspaceStateProvider);
-  final classicVendor = ref.watch(classicVendorStatusProvider);
+  final refresh = _RouterRefresh();
+  ref.onDispose(refresh.dispose);
+  // A microtask, not straight away: a provider can change while the app is building, and the router must not be told to refresh in the middle of a build.
+  void poke(Object? _, Object? __) => Future<void>.microtask(refresh.poke);
+  ref.listen<bool>(isAuthenticatedProvider, poke);
+  ref.listen<VendorUser?>(currentVendorUserProvider, poke);
+  ref.listen<WorkspaceSnapshot>(workspaceStateProvider, poke);
+  ref.listen<ClassicVendorStatus>(classicVendorStatusProvider, poke);
 
   return GuardedGoRouter(
     initialLocation: AppRoutes.login,
     debugLogDiagnostics: kDebugMode,
+    refreshListenable: refresh,
     redirect: (context, state) {
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
+      final vendorUser = ref.read(currentVendorUserProvider);
+      final workspaceSnapshot = ref.read(workspaceStateProvider);
+      final classicVendor = ref.read(classicVendorStatusProvider);
       final isLoggedIn = isAuthenticated;
       final currentPath = state.uri.path;
 
